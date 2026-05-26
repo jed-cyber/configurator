@@ -7040,16 +7040,46 @@ window._hdriReadyPromise = new Promise((resolve) => {
 function applyEquirect(tex) {
   // ✨ v77.937c — env lock 후 모든 후속 applyEquirect 호출 차단 (중복 HDRI 로드 방지).
   //   lock 은 더 이상 여기서 발동 안 함 (applyLookdevPreset 끝에서 결정론적 lock 으로 이동).
-  // ✨ v78.081 — GitHub Pages CDN 지연 대응: lock 후 HDRI 도착해도 rawEquirect 가 아직 null 이면
-  //   background sphere 용도로만 set 허용. PMREM 은 여전히 재생성 안 함 (lookdev preset 의 것 유지).
+  // ✨ v78.081 / v78.083 — GitHub Pages CDN 지연 대응: lock 후 HDRI 도착해도 rawEquirect 가 아직 null 이면
+  //   background sphere + PMREM 모두 강제 적용 (메탈 반사 확보).
   //   로컬 환경(빠른 FS)에서는 lock 전에 HDRI 로드되므로 이 분기 실행 안 됨 → 영향 없음.
+  //   v78.083 추가: lookdev preset 이 envMap 파일 못 찾았을 경우 (한글 파일명 누락 등) lock 시점에 비어있거나 fallback PMREM 잠김.
+  //     → 첫 HDRI 도착 시 unlock → regenerateEnvMap → relock 패턴으로 envMap 교체. (line 7510~7530 의 _useHdriAsBackground 패턴과 동일)
   if (scene._envFinalLocked) {
     if (!rawEquirect && tex) {
       rawEquirect = tex;
       tex.mapping = THREE.EquirectangularReflectionMapping;
       tex.wrapS = THREE.RepeatWrapping;
       tex.needsUpdate = true;
-      console.log('[v78.081] env locked but rawEquirect was null → set for background only (PMREM not regenerated)');
+      // ✨ v78.083 — PMREM 강제 재생성 (lock 임시 해제 → regen → relock).
+      try {
+        // 1) lock 풀기
+        Object.defineProperty(scene, 'environment', {
+          configurable: true, writable: true, value: scene.environment
+        });
+        scene._envFinalLocked = false;
+        // 2) reflColorState 를 _REFL_OVERVIEW 락인값 적용 (line 7053~7058 패턴)
+        if (window._REFL_OVERVIEW && typeof reflColorState !== 'undefined') {
+          reflColorState.brightness = window._REFL_OVERVIEW.brightness;
+          reflColorState.contrast   = window._REFL_OVERVIEW.contrast;
+          reflColorState.saturation = window._REFL_OVERVIEW.saturation;
+          reflColorState.tint       = window._REFL_OVERVIEW.tint;
+        }
+        // 3) HDRI 기반 PMREM 재생성
+        if (typeof regenerateEnvMap === 'function') regenerateEnvMap();
+        try { renderer.getContext().finish(); } catch(e) {}
+        // 4) 새 PMREM 으로 다시 lock
+        const _newFinalEnv = scene.environment;
+        Object.defineProperty(scene, 'environment', {
+          get() { return _newFinalEnv; },
+          set(v) { if (v && v.dispose && v !== _newFinalEnv) try { v.dispose(); } catch(e) {} },
+          configurable: true
+        });
+        scene._envFinalLocked = true;
+        console.log('[v78.083] lock 후 첫 HDRI 도착 → unlock+regen+relock 완료. envMap = HDRI 기반 PMREM. uuid:', _newFinalEnv?.uuid?.slice(0,6));
+      } catch(e) {
+        console.warn('[v78.083] unlock/regen/relock 실패 (background 만 set):', e);
+      }
     } else if (tex && tex.dispose && tex !== rawEquirect) {
       try { tex.dispose(); } catch(e) {}
     }
