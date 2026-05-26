@@ -172,8 +172,18 @@ splatScene.add(sparkRenderer);
 
 let splatMesh = null;
 const SPLAT_URL = './Immaculate Commercial Kitchen Space.spz';
-// ✨ v78.086 — fetch 로 splat 다운로드 + progress 표시 → 다운로드 완료 후 SplatMesh 생성 (브라우저 캐시 사용).
-async function loadSplat() {
+// ✨ v78.091 — 모바일에서 splat 자체 비활성 (임시). 60MB 다운로드 + GPU 부담 완전 제거.
+//   배경: 검정 (splat 부엌 공간 안 보임). 부드러움 우선.
+if (isMobile) {
+  console.log('[v78.091] mobile: splat 비활성 (60MB skip + GPU 부담 0)');
+  window._splatReadyToFade = true;
+  if (typeof window.parent._checkFadeLoading === 'function') {
+    window.parent._checkFadeLoading();
+  }
+} else {
+  loadSplatDesktop();
+}
+async function loadSplatDesktop() {
   console.log('[mobile] Splat 로드 시작:', SPLAT_URL);
   try {
     const response = await fetch(SPLAT_URL);
