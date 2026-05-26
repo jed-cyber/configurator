@@ -6017,10 +6017,19 @@ function enableCyclorama(p) {
 }
 
 /* --- Post processing --- */
-// MSAA 8x — WebGL2 가능시 최대 품질
+// ✨ v78.084 — 모바일 자동 detection. 모바일 GPU 는 MSAA 8x + high pixelRatio 너무 무거움.
+//   PC: MSAA 8x, pixelRatio 그대로 (변화 없음)
+//   모바일: MSAA 2x, pixelRatio max 1.5 → 큰 끊김 해소.
+const _isMobileRenderer = window.innerWidth <= 768 || /mobile|android|iphone|ipad/i.test(navigator.userAgent);
 const msaaSamples = renderer.capabilities.isWebGL2
-  ? Math.min(8, renderer.capabilities.maxSamples || 8) : 0;
+  ? (_isMobileRenderer ? 2 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
+// ✨ v78.084 — 모바일에서 pixelRatio cap (devicePixelRatio 가 3 인 폰도 있음 → 9배 픽셀)
+if (_isMobileRenderer) {
+  const _cappedPR = Math.min(renderer.getPixelRatio(), 1.5);
+  renderer.setPixelRatio(_cappedPR);
+  console.log('[v78.084] mobile pixelRatio capped:', renderer.getPixelRatio());
+}
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
   type: THREE.HalfFloatType,
