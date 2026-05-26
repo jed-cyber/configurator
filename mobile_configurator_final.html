@@ -158,8 +158,9 @@ const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 const splatScene = new THREE.Scene();
 const splatCamera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 0.05, 200);
 const splatRenderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'low-power' });
-// ✨ mobile: pixel ratio cap 1.5 (GPU 부하 ↓ 60% 이상)
-splatRenderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+// ✨ v78.087 — 모바일 splat pixelRatio 1.0 (이전 1.5). devicePixelRatio 3 폰: 3배 → 1배, 부담 89% 감소.
+//   splat 화질 약간 거칠어지지만 끊김보다 우선.
+splatRenderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.0 : 2));
 splatRenderer.setSize(innerWidth, innerHeight);
 splatRenderer.outputColorSpace = THREE.SRGBColorSpace;
 splatRenderer.toneMapping = THREE.NoToneMapping;

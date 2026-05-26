@@ -6017,18 +6017,17 @@ function enableCyclorama(p) {
 }
 
 /* --- Post processing --- */
-// ✨ v78.084 — 모바일 자동 detection. 모바일 GPU 는 MSAA 8x + high pixelRatio 너무 무거움.
+// ✨ v78.084/87 — 모바일 자동 detection. 모바일 GPU 부담 극단적 감소.
 //   PC: MSAA 8x, pixelRatio 그대로 (변화 없음)
-//   모바일: MSAA 2x, pixelRatio max 1.5 → 큰 끊김 해소.
+//   모바일 v78.087: MSAA 0, pixelRatio 1.0, post-processing 거의 다 비활성 → ~8배 가벼움.
 const _isMobileRenderer = window.innerWidth <= 768 || /mobile|android|iphone|ipad/i.test(navigator.userAgent);
 const msaaSamples = renderer.capabilities.isWebGL2
-  ? (_isMobileRenderer ? 2 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
+  ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
-// ✨ v78.084 — 모바일에서 pixelRatio cap (devicePixelRatio 가 3 인 폰도 있음 → 9배 픽셀)
+// ✨ v78.087 — 모바일 pixelRatio 1.0 (devicePixelRatio 3 인 폰: 9배 → 1배, 부담 89% 감소).
 if (_isMobileRenderer) {
-  const _cappedPR = Math.min(renderer.getPixelRatio(), 1.5);
-  renderer.setPixelRatio(_cappedPR);
-  console.log('[v78.084] mobile pixelRatio capped:', renderer.getPixelRatio());
+  renderer.setPixelRatio(1.0);
+  console.log('[v78.087] mobile pixelRatio = 1.0 (aggressive)');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
@@ -6547,6 +6546,8 @@ const coolTintPass = new THREE.ShaderPass({
       gl_FragColor = vec4(c.rgb * tint, c.a);
     }`
 });
+// ✨ v78.087 — 모바일에서 coolTintPass 끔. coolAmount=0 이지만 shader 매 frame 실행 비용.
+if (_isMobileRenderer) coolTintPass.enabled = false;
 composer.addPass(coolTintPass);
 
 const smaaPass = new THREE.SMAAPass(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio());
