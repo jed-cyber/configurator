@@ -7040,8 +7040,19 @@ window._hdriReadyPromise = new Promise((resolve) => {
 function applyEquirect(tex) {
   // ✨ v77.937c — env lock 후 모든 후속 applyEquirect 호출 차단 (중복 HDRI 로드 방지).
   //   lock 은 더 이상 여기서 발동 안 함 (applyLookdevPreset 끝에서 결정론적 lock 으로 이동).
+  // ✨ v78.081 — GitHub Pages CDN 지연 대응: lock 후 HDRI 도착해도 rawEquirect 가 아직 null 이면
+  //   background sphere 용도로만 set 허용. PMREM 은 여전히 재생성 안 함 (lookdev preset 의 것 유지).
+  //   로컬 환경(빠른 FS)에서는 lock 전에 HDRI 로드되므로 이 분기 실행 안 됨 → 영향 없음.
   if (scene._envFinalLocked) {
-    if (tex && tex.dispose && tex !== rawEquirect) try { tex.dispose(); } catch(e) {}
+    if (!rawEquirect && tex) {
+      rawEquirect = tex;
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.needsUpdate = true;
+      console.log('[v78.081] env locked but rawEquirect was null → set for background only (PMREM not regenerated)');
+    } else if (tex && tex.dispose && tex !== rawEquirect) {
+      try { tex.dispose(); } catch(e) {}
+    }
     return;
   }
   if (rawEquirect && rawEquirect !== tex) rawEquirect.dispose();
