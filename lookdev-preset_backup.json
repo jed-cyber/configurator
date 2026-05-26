@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "env": {
+    "background": false,
+    "intensity": 0.8,
+    "exposure": 0.37,
+    "rotationY": 0,
+    "envMapFile": "ChatGPT Image 2026년 4월 25일 오전 10_20_27.png",
+    "brightness": 1,
+    "contrast": 1,
+    "saturation": 0,
+    "tint": "#ffffff",
+    "backgroundBlurriness": 0.008
+  },
+  "directional": {
+    "enabled": true,
+    "intensity": 1.2,
+    "color": "#ffffff",
+    "position": {
+      "x": 0,
+      "y": 92.93900299072266,
+      "z": 92.93900299072266
+    },
+    "castShadow": true,
+    "shadowRadius": 30,
+    "shadowBlurSamples": 13,
+    "shadowMapSize": 1024,
+    "shadowBias": 0.00095,
+    "shadowNormalBias": 0.05
+  },
+  "bloom": {
+    "enabled": true,
+    "strength": 0.21,
+    "radius": 0,
+    "threshold": 0
+  },
+  "shadowCatcher": {
+    "enabled": false,
+    "opacity": 0.991,
+    "sizeMult": 5
+  },
+  "ssao": {
+    "enabled": true,
+    "kernelRadius": 1.513,
+    "minDistance": 0.00001,
+    "maxDistance": 2
+  },
+  "dof": {
+    "enabled": true,
+    "focus": 0.01,
+    "aperture": 0.00001,
+    "maxblur": 0.0051,
+    "autoTarget": null
+  },
+  "color": {
+    "enabled": false,
+    "brightness": 0,
+    "contrast": 0,
+    "hue": 0,
+    "saturation": 0
+  },
+  "vignette": {
+    "enabled": true,
+    "offset": 0.973,
+    "darkness": 1
+  },
+  "extraLights": [
+    {
+      "type": "directional",
+      "params": {
+        "enabled": true,
+        "intensity": 3,
+        "color": "#ffffff",
+        "position": {
+          "x": 0,
+          "y": 92.93900299072266,
+          "z": -92.93900299072266
+        },
+        "castShadow": true,
+        "shadowRadius": 4,
+        "shadowBlurSamples": 25,
+        "shadowMapSize": 1024,
+        "shadowNormalBias": 0.05
+      }
+    },
+    {
+      "type": "directional",
+      "params": {
+        "enabled": true,
+        "intensity": 6.32,
+        "color": "#ffffff",
+        "position": {
+          "x": 92.93900299072266,
+          "y": 23.234750747680664,
+          "z": 0
+        },
+        "castShadow": true,
+        "shadowRadius": 4,
+        "shadowBlurSamples": 25,
+        "shadowMapSize": 1024,
+        "shadowNormalBias": 0.05
+      }
+    },
+    {
+      "type": "directional",
+      "params": {
+        "enabled": true,
+        "intensity": 0.02,
+        "color": "#ffffff",
+        "position": {
+          "x": -92.93900299072266,
+          "y": 23.234750747680664,
+          "z": 0
+        },
+        "castShadow": true,
+        "shadowRadius": 6.9,
+        "shadowBlurSamples": 25,
+        "shadowMapSize": 1024,
+        "shadowNormalBias": 0.05
+      }
+    }
+  ],
+  "materials": {
+    "background": {
+      "color": "#1f1f1f",
+      "__name": "background",
+      "textures": {
+        "map": "QuartziteRenaissance002_COL_2K_METALNESS.png",
+        "normalMap": "QuartziteRenaissance002_NRM_2K_METALNESS.png",
+        "roughnessMap": "MetalBronzeWorn003_COL_2K_METALNESS.png"
+      },
+      "repeat": {
+        "x": 15,
+        "y": 15
+      },
+      "normalScale": 4,
+      "roughness": 0.304,
+      "metalness": 0,
+      "envMapIntensity": 0.58,
+      "textureSaturation": 0
+    },
+    "metal": {
+      "metalness": 0.956,
+      "__name": "metal",
+      "textures": {
+        "map": "C_Aluminum_Brushed_01_DIFF.jpg",
+        "normalMap": "C_Aluminum_Brushed_01_NORM_OGL.jpg"
+      },
+      "rotation": 1.5707963267948966,
+      "offset": {
+        "x": 0.008,
+        "y": 0
+      },
+      "repeat": {
+        "x": 0.7,
+        "y": 1
+      },
+      "roughness": 0.13,
+      "color": "#ffffff",
+      "normalScale": 0.24,
+      "envMapIntensity": 2,
+      "aoMapIntensity": 1
+    },
+    "panel": {
+      "color": "#9c9c9c",
+      "__name": "panel",
+      "textures": {
+        "map": "Plate.png"
+      },
+      "repeat": {
+        "x": 0.9,
+        "y": 1
+      },
+      "offset": {
+        "x": 0.03,
+        "y": 0.13
+      },
+      "roughness": 0
+    },
+    "wall": {
+      "textures": {
+        "map": "C_Aluminum_Brushed_01_DIFF.jpg",
+        "normalMap": "C_Aluminum_Brushed_01_NORM_OGL.jpg"
+      },
+      "__name": "wall",
+      "color": "#ededed",
+      "roughness": 0.15,
+      "metalness": 1,
+      "normalScale": 0.328,
+      "rotation": 1.5707963267948966,
+      "envMapIntensity": 2
+    },
+    "glass": {
+      "color": "#ffffff",
+      "__name": "glass",
+      "transmission": 1,
+      "ior": 1.5,
+      "thickness": 0.5,
+      "roughness": 0.05,
+      "metalness": 0,
+      "transparent": true,
+      "opacity": 1,
+      "attenuationColor": "#ffffff",
+      "attenuationDistance": 1000,
+      "_isPhysical": true
+    },
+    "emissive": {
+      "emissive": "#5d85fe",
+      "__name": "emissive",
+      "color": "#5d85fe",
+      "emissiveIntensity": 10
+    },
+    "black": {
+      "envMapIntensity": 0.5,
+      "__name": "black"
+    }
+  },
+  "objects": {}
+}
