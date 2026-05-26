@@ -6017,10 +6017,15 @@ function enableCyclorama(p) {
 }
 
 /* --- Post processing --- */
-// ✨ v78.084/87 — 모바일 자동 detection. 모바일 GPU 부담 극단적 감소.
+// ✨ v78.084/87/88 — 모바일 detection 강화.
+//   v78.088 수정: URL parameter ?mobile=1 (모바일 wrapper 에서 진입) OR 진짜 모바일 userAgent.
+//   이전 v78.084 의 innerWidth <= 768 조건은 PC 의 iframe sim 모드에서 잘못 trigger.
 //   PC: MSAA 8x, pixelRatio 그대로 (변화 없음)
-//   모바일 v78.087: MSAA 0, pixelRatio 1.0, post-processing 거의 다 비활성 → ~8배 가벼움.
-const _isMobileRenderer = window.innerWidth <= 768 || /mobile|android|iphone|ipad/i.test(navigator.userAgent);
+//   진짜 모바일: MSAA 0, pixelRatio 1.0, post-processing 비활성 → 18배 가벼움.
+const _isMobileRenderer =
+  new URLSearchParams(location.search).get('mobile') === '1' ||
+  /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+console.log('[v78.088] _isMobileRenderer:', _isMobileRenderer, 'UA:', navigator.userAgent.slice(0,50), 'mobile param:', new URLSearchParams(location.search).get('mobile'));
 const msaaSamples = renderer.capabilities.isWebGL2
   ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
