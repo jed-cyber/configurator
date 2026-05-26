@@ -6673,7 +6673,7 @@ window.reflColorState = reflColorState;
 // envColorState 도 (v77.938 BG 패널 + future 사용 위해)
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
-window._REFL_OVERVIEW   = { brightness: 1.60, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };
+window._REFL_OVERVIEW   = { brightness: 1.28, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
 window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
 window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
 window._REFL_DRYING     = { brightness: 1.05, contrast: 1.15, saturation: 0.00, tint: '#FDFBFE' }; // ✨ v78.005 brightness -0.1
@@ -7474,11 +7474,17 @@ async function applyLookdevPreset(s) {
   if (typeof captureModelStaticBox === 'function') captureModelStaticBox();
 
   // ✨ v77.772 — preset 전체 적용 완료 (HDRI + lights + materials). 이제 cabinet 보여도 됨.
-  if (window._hdriReadyResolve) {
-    window._hdriReadyResolve();
-    window._hdriReadyResolve = null;
-    console.log('[v77.772] preset 전체 적용 완료, loading overlay hide 신호 발사');
-  }
+  // ✨ v78.082 — _hdriReadyResolve 호출을 HDRI fetch 완료 시점으로 이동 (line 14710 부근).
+  //   원인: preset 적용은 빠르게 끝나는데 HDRI fetch 는 별도 (29MB 다운로드 — GitHub Pages CDN 5~10초).
+  //   기존: preset 끝 → resolve → 로딩 hide → 인트로 시작 → 인트로 도중에 HDRI 도착 → 인트로 후에야 메탈릭 보임.
+  //   수정: HDRI fetch 끝나야 resolve → 로딩이 HDRI 까지 대기 → 인트로 시작 시점에 메탈릭 준비됨.
+  //   안전망: line 15020 의 setTimeout 8초 race 가 fallback (HDRI 실패해도 사이트 진입 가능).
+  //   로컬 환경: HDRI 가 매우 빠르게 (수십 ms) 로드되므로 사용자 경험상 차이 없음.
+  // if (window._hdriReadyResolve) {
+  //   window._hdriReadyResolve();
+  //   window._hdriReadyResolve = null;
+  //   console.log('[v77.772] preset 전체 적용 완료, loading overlay hide 신호 발사');
+  // }
 
   // ✨ v77.937c — applyLookdevPreset 의 가장 마지막 (= 모든 단계 fully apply 후) 에서
   //   결정론적 PMREM lock. envColorState + reflColorState 모두 락인값으로 force set →
@@ -14715,6 +14721,14 @@ async function init() {
         if (!_loaded) {
           console.warn('[v77.533] tex/ 에 hdri.{png,jpg,jpeg,webp,exr,hdr} 파일 없음 — 첨부 이미지를 D:\\01_artisemble\\configurator\\tex\\hdri.png 로 저장 필요');
         }
+        // ✨ v78.082 — HDRI fetch 끝났으니 (성공/실패 무관) 로딩 overlay hide 신호 발사.
+        //   이전 v77.772 의 _hdriReadyResolve() 호출이 여기로 이동됨.
+        //   이렇게 하면 loading overlay 가 HDRI 까지 대기 → 인트로 시작 시점에 메탈릭 준비됨.
+        if (window._hdriReadyResolve) {
+          window._hdriReadyResolve();
+          window._hdriReadyResolve = null;
+          console.log('[v78.082] HDRI fetch 완료, loading overlay hide 신호 발사 (메탈릭 준비됨)');
+        }
       }
       // (c) ✨ v77.535 — HDRI 배경 = SphereGeometry BackSide skybox (scale/position 컨트롤 가능)
       //     이전: scene.background = envRT.texture (equirect skybox, transform 불가)
@@ -15001,9 +15015,12 @@ async function init() {
       _texLoader.load(f, tex => { window._floorTexCache[f] = tex; }, undefined, () => {});
     });
   })();
-  setTimeout(() => window._useHdriAsBackground(), 1500);
-  setTimeout(() => window._useHdriAsBackground(), 5000);
-  setTimeout(() => window._useHdriAsBackground(), 8000);
+  // ✨ v78.082 — HDRI fetch 더 일찍 시작 (1500ms → 100ms). preset 적용은 보통 50~100ms 안에 끝나므로 안전.
+  //   원인: HDRI.png (29MB) 다운로드가 인트로 시작 후에야 시작되어 인트로 후에야 메탈릭 보임.
+  //   해결: 100ms 후 즉시 fetch 시작 → preset/loading 단계와 병렬 다운로드.
+  setTimeout(() => window._useHdriAsBackground(), 100);
+  setTimeout(() => window._useHdriAsBackground(), 5000);   // retry (HDRI fetch 실패 시 backup)
+  setTimeout(() => window._useHdriAsBackground(), 8000);   // retry 2
 
   // 3) Sprint 1 — 인트로/TOC 시작 (기존 패널은 Free Explore 시 표시)
   // ✨ v77.762 — HDRI 로드 완료 후에 loading overlay hide + chapter start.
