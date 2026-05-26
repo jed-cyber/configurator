@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HK NEO+ Sterilizer Configurator</title>
+<meta http-equiv="refresh" content="0; url=./mobile_configurator_final.html">
+<link rel="canonical" href="./mobile_configurator_final.html">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at center, #151a23 0%, #05080d 100%);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  }
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: 11px; letter-spacing: 5px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    margin-bottom: 18px; font-weight: 500;
+  }
+  h1 {
+    font-size: 36px; font-weight: 800;
+    letter-spacing: -0.8px;
+    margin: 0 0 12px;
+  }
+  h1 .acc { color: #4a9eff; }
+  .sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 14px; letter-spacing: 1px;
+    margin-bottom: 36px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: #4a9eff;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fallback {
+    margin-top: 28px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+  }
+  .fallback a {
+    color: #4a9eff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(74,158,255,0.4);
+  }
+  .fallback a:hover { color: #6db4ff; }
+</style>
+</head>
+<body>
+  <div class="eyebrow">HK NEO+ STERILIZER</div>
+  <h1>NEO+ <span class="acc">Sterilizer</span></h1>
+  <div class="spinner"></div>
+  <div class="sub">Loading configurator…</div>
+  <div class="fallback">
+    Not redirecting? <a href="./mobile_configurator_final.html">Open manually</a>
+  </div>
+  <script>
+    // JS fallback (in case meta-refresh is blocked)
+    window.location.replace('./mobile_configurator_final.html');
+  </script>
+</body>
+</html>
