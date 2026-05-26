@@ -6550,6 +6550,8 @@ const coolTintPass = new THREE.ShaderPass({
 composer.addPass(coolTintPass);
 
 const smaaPass = new THREE.SMAAPass(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio());
+// ✨ v78.084 — 모바일에서 SMAA 끔. MSAA 와 중복 + 추가 frame 비용 큼. 모바일 끊김 해소.
+if (_isMobileRenderer) smaaPass.enabled = false;
 composer.addPass(smaaPass);
 
 /* --- Material registry --- */
@@ -20652,7 +20654,8 @@ init();
     window._dofPass = {
       // ✨ v77.926 — 디폴트 true (인트로부터 DoF + BG grading 즉시 활성).
       //   이전 default false → applyDof 가 호출되기 전 (인트로 동안) BG grading 안됨 → 사용자 보고 톤 점프.
-      enabled: true,
+      // ✨ v78.085 — 모바일 끊김 해소: DoF (depth of field blur) 모바일에서 자동 비활성. 8-tap blur 매우 무거움.
+      enabled: !(window.innerWidth <= 768 || /mobile|android|iphone|ipad/i.test(navigator.userAgent)),
       rt, mat: dofMat, scene: dofScene, cam: dofCam,
       resize() {
         const w = innerWidth, h = innerHeight;
