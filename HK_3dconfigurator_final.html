@@ -14266,6 +14266,7 @@ async function init() {
   //          → finishTransition() 끝 + 추가 retry (5초) 로 인트로 settle 후 강제 적용.
   window._hdriCustomLoaded = false;   // tex/ 의 HDRI 를 한 번 로드했는지 플래그
   //   ✨ v77.533/558/559/561 — HDRI.png (대문자, 6.3MB panorama) 우선. ver2 는 backup.
+  //   ✨ v78.090 reverted — HDRI 압축으로 사이즈 줄이고 모바일/PC 모두 사용. (HDRI fetch 살림)
   window._hdriCandidates = [
     'HDRI.png', 'hdri.png', 'Hdri.png',
     'hdri ver2.png', 'HDRI ver2.png', 'hdri_ver2.png', 'HDRI_ver2.png',
