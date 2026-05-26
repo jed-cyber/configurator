@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HK 3D Configurator + Splat 배경</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #000; }
+  /* splat 배경 canvas (뒤) */
+  /* ✨ v77.930 — splat-bg 에 Overview BG grading + blur 을 CSS 로 즉시 고정.
+     사용자 보고: 로딩 중 splat-bg filter 가 자연 상태로 보였다가 나중에 적용됨 (HK iframe load 지연).
+     해결: 부모 페이지 CSS 로 처음부터 적용 → 첫 splat 렌더 frame 부터 graded. */
+  /* ✨ v77.936 — parent splat-bg 숨김.
+     원인 (사용자 보고): v77.932 가 HK iframe splat 을 invisible 처리하고 parent splat-bg 만 보이게 했는데,
+     CSS blur(8px) 는 균일 블러라서 사용자 익숙한 DoF depth-based blur (cabinet 가까운 곳 sharp, 멀어진 splat 흐림)
+     가 사라짐 + 라이팅도 시각적으로 달라 보임.
+     해결: parent splat-bg 숨기고 HK iframe 의 DoF graded splat 을 다시 사용 (v77.932 롤백). */
+  #splat-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    display: none;
+  }
+  #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
+  /* HK configurator iframe (앞, transparent) */
+  #hk-frame { position: fixed; inset: 0; width: 100vw; height: 100vh; border: none; background: transparent; z-index: 1; }
+  /* Splat transform 컨트롤 패널 — 사용자 요청으로 숨김 (v77.773) */
+  #splat-panel {
+    display: none;
+    position: fixed; top: 12px; left: 12px; z-index: 99;
+    color: #fff; font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+    background: rgba(0,0,0,0.75); padding: 10px 14px; border-radius: 6px;
+    width: 240px; backdrop-filter: blur(10px);
+  }
+  #splat-panel label { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  #splat-panel span { width: 80px; color: #aab; flex-shrink: 0; }
+  #splat-panel input[type=number] {
+    flex: 1; padding: 3px 6px; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 3px;
+    color: #fff; font-family: inherit; font-size: 11px; text-align: right;
+  }
+  #splat-panel hr { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 8px 0; }
+  #splat-panel .sec { font-size: 9.5px; color: #88aaff; letter-spacing: 1.5px; margin-bottom: 4px; }
+  #splat-panel .hint { font-size: 9px; color: #889; margin-top: 6px; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<div id="splat-bg"></div>
+<iframe id="hk-frame" src=""></iframe>
+<script>
+// ✨ v77.781 — iframe cache buster. 매 페이지 로드마다 unique timestamp 로 HK iframe 강제 갱신.
+// ✨ v78.010 — final rename.
+document.getElementById('hk-frame').src = './HK_3dconfigurator_final.html?splat=1&_=' + Date.now();
+</script>
+
+<div id="splat-panel">
+  <div class="sec">SPLAT TRANSFORM</div>
+  <!-- ✨ v77.935 — parent splat 락인값을 HK iframe splat 의 락인값과 통일.
+       원인: v77.934 가 HK splat 을 invisible 처리하고 parent splat 만 보이게 했는데,
+             parent transform 이 HK 의 락인값과 달라서 splat 이 사용자가 익숙한 위치와 다른 곳에 렌더링됨.
+       락인값 (HK iframe splatRotX/Y/Z, splatPosX/Y/Z, splatScale 동기화). -->
+  <label><span>Rot X (°)</span><input type="number" id="rotX" value="0" step="5"></label>
+  <label><span>Rot Y (°)</span><input type="number" id="rotY" value="90" step="5"></label>
+  <label><span>Rot Z (°)</span><input type="number" id="rotZ" value="0" step="5"></label>
+  <hr>
+  <label><span>Pos X</span><input type="number" id="posX" value="3.5" step="0.1"></label>
+  <label><span>Pos Y</span><input type="number" id="posY" value="-0.2" step="0.1"></label>
+  <label><span>Pos Z</span><input type="number" id="posZ" value="-0.1" step="0.1"></label>
+  <hr>
+  <label><span>Scale</span><input type="number" id="scale" value="1.91" step="0.1" min="0.01"></label>
+  <hr>
+  <label><span>Splat file</span><input type="text" id="splatUrl" value="./Immaculate Commercial Kitchen Space.spz" style="font-size:10px"></label>
+  <button id="reload" style="width:100%; margin-top:6px; padding:5px; background:#246; color:#fff; border:1px solid #58a; border-radius:3px; cursor:pointer;">Reload splat</button>
+  <div class="hint">캐비닛은 iframe (HK_3dconfigurator_final) 그대로. Splat은 뒤에서 카메라 sync 되며 배경 역할.</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@latest/dist/spark.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import * as GaussianSplats3D from '@sparkjsdev/spark';
+
+const { SparkRenderer, SplatMesh } = GaussianSplats3D;
+const DEG = Math.PI / 180;
+
+// ─── Splat scene/camera/renderer (별도 인스턴스 — HK iframe과 분리) ───
+const splatScene = new THREE.Scene();
+const splatCamera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 0.05, 200);
+const splatRenderer = new THREE.WebGLRenderer({ antialias: true });
+splatRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+splatRenderer.setSize(innerWidth, innerHeight);
+splatRenderer.outputColorSpace = THREE.SRGBColorSpace;
+// ✨ v77.758 — HK iframe 과 톤매핑 + exposure 완전 통일.
+//   HK iframe init exposure 가 0.88 (v77.758) 로 변경됨 → splat 도 정확히 일치.
+//   두 렌더러가 매 프레임 같은 밝기로 합성됨 → 어떤 시점에서도 warm/cool drift 없음.
+splatRenderer.toneMapping = THREE.NoToneMapping;
+splatRenderer.toneMappingExposure = 0.88;
+document.getElementById('splat-bg').appendChild(splatRenderer.domElement);
+
+const sparkRenderer = new SparkRenderer({ renderer: splatRenderer });
+splatScene.add(sparkRenderer);
+
+let splatMesh = null;
+function loadSplat(url) {
+  if (splatMesh) { splatScene.remove(splatMesh); splatMesh = null; }
+  splatMesh = new SplatMesh({ url });
+  splatMesh.rotation.x = parseFloat(document.getElementById('rotX').value) * DEG;
+  splatMesh.rotation.y = parseFloat(document.getElementById('rotY').value) * DEG;
+  splatMesh.rotation.z = parseFloat(document.getElementById('rotZ').value) * DEG;
+  splatMesh.position.set(
+    parseFloat(document.getElementById('posX').value),
+    parseFloat(document.getElementById('posY').value),
+    parseFloat(document.getElementById('posZ').value)
+  );
+  const sc = parseFloat(document.getElementById('scale').value);
+  splatMesh.scale.set(sc, sc, sc);
+  splatScene.add(splatMesh);
+  window.splatMesh = splatMesh;
+  console.log('[splat-cfg] Splat 로드 시작:', url);
+}
+loadSplat(document.getElementById('splatUrl').value);
+
+// ─── 컨트롤 ───
+const $ = id => document.getElementById(id);
+const wire = (id, fn) => $(id).addEventListener('input', () => fn(parseFloat($(id).value)));
+wire('rotX', v => splatMesh && (splatMesh.rotation.x = v * DEG));
+wire('rotY', v => splatMesh && (splatMesh.rotation.y = v * DEG));
+wire('rotZ', v => splatMesh && (splatMesh.rotation.z = v * DEG));
+wire('posX', v => splatMesh && (splatMesh.position.x = v));
+wire('posY', v => splatMesh && (splatMesh.position.y = v));
+wire('posZ', v => splatMesh && (splatMesh.position.z = v));
+wire('scale', v => splatMesh && splatMesh.scale.set(v, v, v));
+$('reload').addEventListener('click', () => loadSplat($('splatUrl').value));
+
+// ─── HK iframe 카메라 sync ───
+const hkFrame = $('hk-frame');
+let hkWindow = null;
+
+hkFrame.addEventListener('load', () => {
+  hkWindow = hkFrame.contentWindow;
+  console.log('[splat-cfg] HK iframe loaded. polling for camera + sphere...');
+  let bgLocked = false, sphereLocked = false, floorLocked = false;
+  const poll = () => {
+    if (!hkWindow || !hkWindow.scene || !hkWindow.camera) { setTimeout(poll, 200); return; }
+    // 1) scene.background 영구 null (setter overwrite, HK 의 어떤 RAF도 못 덮음)
+    if (!bgLocked) {
+      try {
+        Object.defineProperty(hkWindow.scene, 'background', {
+          get() { return null; }, set(v) {},
+          configurable: true
+        });
+        bgLocked = true;
+        console.log('[splat-cfg] scene.background lock 완료 (영구 null).');
+      } catch(e) {}
+    }
+    // 2) sphere visible 영구 false
+    if (!sphereLocked && hkWindow._hdriSphere) {
+      try {
+        Object.defineProperty(hkWindow._hdriSphere, 'visible', {
+          get() { return false; }, set(v) {},
+          configurable: true
+        });
+        sphereLocked = true;
+        console.log('[splat-cfg] sphere.visible lock 완료.');
+      } catch(e) {}
+    }
+    // 3) floor visible 영구 false
+    if (!floorLocked && hkWindow._plainFloor) {
+      try {
+        Object.defineProperty(hkWindow._plainFloor, 'visible', {
+          get() { return false; }, set(v) {},
+          configurable: true
+        });
+        floorLocked = true;
+        console.log('[splat-cfg] floor.visible lock 완료.');
+      } catch(e) {}
+    }
+    // 4) RAF cancel
+    if (hkWindow._bgEnforceRaf) {
+      try { hkWindow.cancelAnimationFrame(hkWindow._bgEnforceRaf); hkWindow._bgEnforceRaf = -1; } catch(e) {}
+    }
+    if (!bgLocked || !sphereLocked || !floorLocked) setTimeout(poll, 200);
+    else console.log('[splat-cfg] 모든 잠금 완료.');
+  };
+  poll();
+  // ✨ v77.936 — v77.932 (HK splat invisible 락) 롤백.
+  //   v77.932 가 HK splat 을 invisible 처리하면서 DoF depth-based blur 가 사라지고
+  //   parent 의 균일 CSS blur 만 남아서 사용자가 익숙한 룩이 깨졌음.
+  //   복원: HK splat 다시 visible → DoF shader 가 splat 에 grading + depth-based blur 적용.
+  //   parent splat-bg 는 v77.936 CSS 에서 display:none 으로 숨김.
+  //   intro→TOC 변동 fix 는 v77.934 cyclorama hidden 만으로 충분.
+});
+
+// 윈도우 리사이즈
+window.addEventListener('resize', () => {
+  splatCamera.aspect = innerWidth / innerHeight;
+  splatCamera.updateProjectionMatrix();
+  splatRenderer.setSize(innerWidth, innerHeight);
+});
+
+// ─── Splat 자체 RAF (HK iframe 의 camera 매 frame 복사) ───
+function animate() {
+  requestAnimationFrame(animate);
+  // ✨ 항상 iframe.contentWindow 직접 접근 (module closure 가 stale 가능)
+  try {
+    const hk = hkFrame.contentWindow;
+    if (hk && hk.camera) {
+      const hc = hk.camera;
+      splatCamera.position.copy(hc.position);
+      splatCamera.quaternion.copy(hc.quaternion);
+      splatCamera.fov = hc.fov;
+      splatCamera.aspect = hc.aspect;
+      splatCamera.near = hc.near;
+      splatCamera.far = hc.far;
+      splatCamera.updateProjectionMatrix();
+    }
+  } catch(e) {}
+  splatRenderer.render(splatScene, splatCamera);
+}
+animate();
+console.log('[splat-cfg] Splat 렌더 루프 시작 — HK iframe과 카메라 sync 됨');
+
+// debug
+window.splatScene = splatScene;
+window.splatCamera = splatCamera;
+window.splatRenderer = splatRenderer;
+</script>
+
+</body>
+</html>

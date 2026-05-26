@@ -1,0 +1,57 @@
+# ===== Large source files (NOT needed for web deployment) =====
+# Cinema 4D source files
+*.c4d
+*.c4d.bak
+
+# Large GLB/GLTF source files (configurator uses hk_compressed.glb only)
+hk_mainmodeling_assemble.glb
+hk_mainmodeling_assemble.gltf
+hk_mainmodeling_assemble.bin
+hk_mainmodeling.glb
+hk_mainmodeling.gltf
+
+# 3D scan / point cloud
+*.spz
+Immaculate*Kitchen*.spz
+
+# Render outputs / project bundles
+*_dropandrender*
+lookdev-preset*.zip
+lookdev-preset*.json
+
+# Adobe After Effects projects
+*.aep
+*.aep.bak
+
+# Archive files
+*.zip
+*.rar
+*.7z
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Editor files =====
+*.swp
+*~
+.vscode/
+.idea/
+
+# ===== Backup files =====
+*.bak
+*.orig
+*_backup*
+*_old*
+
+# ===== Texture / asset source files (keep only what configurator needs) =====
+# (configurator references textures via tex/ folder — keep that)
+# Uncomment if needed:
+# *.exr
+# *.hdr
+
+# ===== Misc =====
+node_modules/
+.env
+.env.local

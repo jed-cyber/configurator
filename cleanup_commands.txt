@@ -1,0 +1,31 @@
+=== 정리 명령어 (cmd 에 복사+붙여넣기) ===
+
+방법 A: 폴더 주소창에서 cmd 실행
+1. D:\01_artisemble\configurator 폴더 열기
+2. 주소창 클릭 → 기존 경로 지우고 "cmd" 입력 + Enter
+3. 검정 cmd 창이 폴더 위치에서 열림
+4. 아래 명령어 전체 복사 → cmd 창 우클릭으로 붙여넣기 → Enter
+
+--- 복사 시작 ---
+ren HK_3dconfigurator.html HK_3dconfigurator_final.html
+del /Q splat_configurator.html
+del /Q lookdev_backup.html splat-demo_backup.html redesign_plan_backup.md HANDOFF_v77.581_backup.md
+del /Q "피드백_HK_컨피규레이터_v76.md"
+rmdir /S /Q captures
+rmdir /S /Q screenshots
+rmdir /S /Q _archive
+del /Q cleanup.bat cleanup2.bat "정리.bat" backup_create_backup.bat rename_to_backup.bat start.bat cleanup_final.ps1 cleanup_final.bat cleanup_commands.txt
+--- 복사 끝 ---
+
+5. 완료. splat_configurator_final.html 더블클릭으로 정상 작동 확인.
+
+
+방법 B: BAT 더블클릭이 안 된다면
+1. Win + R → cmd 입력 + Enter
+2. cmd 창에서: cd /d D:\01_artisemble\configurator
+3. 위 "복사 시작 ~ 복사 끝" 사이 명령어 paste + Enter
+
+
+방법 C: 한글 파일명 인코딩 문제 발생 시
+chcp 949 입력 후 위 명령어 재시도
+(한국어 윈도우 기본값이 일반적이지만 시스템마다 다를 수 있음)

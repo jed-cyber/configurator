@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#000000" />
+<title>HK NEO+ Sterilizer (Mobile)</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; overflow: hidden; height: 100%;
+    background: #000;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+    touch-action: pan-y;
+  }
+  /* iOS Safari full-screen */
+  body { height: 100vh; height: 100dvh; }
+  /* splat 배경 — 모바일 hidden (DoF graded HK iframe splat 만 사용) */
+  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: none; }
+  #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
+  /* HK iframe 앞, transparent */
+  /* ✨ v78.016 — 데스크탑에서도 모바일 레이아웃 시뮬레이션을 위해 iframe 폭 강제 좁게.
+     실제 모바일 디바이스 (max-width 414) 에서는 100vw 와 동일 효과. */
+  #hk-frame {
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    height: 100vh; height: 100dvh;
+    border: none; background: transparent; z-index: 1;
+    /* iOS notch 대응 */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-sizing: border-box;
+  }
+  /* 데스크탑에서 좌우 빈 공간 dark backdrop (모바일 frame 효과) */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at center, #1a1f2e 0%, #050810 100%);
+  }
+  /* splat 도 iframe 과 동일 폭 */
+  #splat-bg {
+    position: fixed; top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    height: 100vh; height: 100dvh;
+    z-index: 0; pointer-events: none;
+  }
+  /* 로딩 hint */
+  #mobileLoading {
+    position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0a0c14 0%, #1a1f2e 100%); color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px; letter-spacing: 1px; opacity: 1; transition: opacity 0.6s ease-out;
+  }
+  #mobileLoading.fade { opacity: 0; pointer-events: none; }
+  #mobileLoading .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #5476E3; margin: 0 4px; animation: dotPulse 1.4s infinite ease-in-out;
+  }
+  #mobileLoading .dot:nth-child(2) { animation-delay: 0.2s; }
+  #mobileLoading .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotPulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.0); } }
+  #mobileLoading .label { display: block; text-align: center; margin-top: 16px; opacity: 0.85; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div id="mobileLoading">
+  <div style="text-align:center;">
+    <div>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+    <div class="label">HK NEO+ STERILIZER<br>Loading...</div>
+  </div>
+</div>
+
+<div id="splat-bg"></div>
+<iframe id="hk-frame" src="" allow="fullscreen"></iframe>
+
+<script>
+// ✨ Mobile 진입점 — HK iframe 으로 mobile=1 query 전달
+document.getElementById('hk-frame').src = './HK_3dconfigurator_final.html?splat=1&mobile=1&_=' + Date.now();
+
+// iframe load 후 loading overlay fade
+document.getElementById('hk-frame').addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('mobileLoading').classList.add('fade');
+  }, 2500);
+});
+
+// 모바일 핀치줌 차단 (touchmove)
+document.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+// iOS bounce scroll 차단
+document.addEventListener('touchmove', (e) => {
+  if (e.target === document.body) e.preventDefault();
+}, { passive: false });
+
+// 방향 변경 시 viewport 재계산 트리거
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    const ifr = document.getElementById('hk-frame');
+    if (ifr.contentWindow) {
+      try { ifr.contentWindow.dispatchEvent(new Event('resize')); } catch(e) {}
+    }
+  }, 300);
+});
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+    "@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@latest/dist/spark.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import * as GaussianSplats3D from '@sparkjsdev/spark';
+
+const { SparkRenderer, SplatMesh } = GaussianSplats3D;
+const DEG = Math.PI / 180;
+const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+
+// ─── Splat scene (HK iframe과 별도) ───
+const splatScene = new THREE.Scene();
+const splatCamera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 0.05, 200);
+const splatRenderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'low-power' });
+// ✨ mobile: pixel ratio cap 1.5 (GPU 부하 ↓ 60% 이상)
+splatRenderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+splatRenderer.setSize(innerWidth, innerHeight);
+splatRenderer.outputColorSpace = THREE.SRGBColorSpace;
+splatRenderer.toneMapping = THREE.NoToneMapping;
+splatRenderer.toneMappingExposure = 0.88;
+document.getElementById('splat-bg').appendChild(splatRenderer.domElement);
+
+const sparkRenderer = new SparkRenderer({ renderer: splatRenderer });
+splatScene.add(sparkRenderer);
+
+let splatMesh = null;
+const SPLAT_URL = './Immaculate Commercial Kitchen Space.spz';
+function loadSplat() {
+  splatMesh = new SplatMesh({ url: SPLAT_URL });
+  splatMesh.rotation.x = 0;
+  splatMesh.rotation.y = 90 * DEG;
+  splatMesh.rotation.z = 0;
+  splatMesh.position.set(3.5, -0.2, -0.1);
+  splatMesh.scale.set(1.91, 1.91, 1.91);
+  splatScene.add(splatMesh);
+  window.splatMesh = splatMesh;
+  console.log('[mobile] Splat 로드 시작:', SPLAT_URL);
+}
+loadSplat();
+
+// ─── HK iframe 카메라 sync ───
+const hkFrame = document.getElementById('hk-frame');
+let hkWindow = null;
+
+hkFrame.addEventListener('load', () => {
+  hkWindow = hkFrame.contentWindow;
+  console.log('[mobile] HK iframe loaded.');
+  let bgLocked = false, sphereLocked = false, floorLocked = false;
+  const poll = () => {
+    if (!hkWindow || !hkWindow.scene || !hkWindow.camera) { setTimeout(poll, 200); return; }
+    if (!bgLocked) {
+      try {
+        Object.defineProperty(hkWindow.scene, 'background', {
+          get() { return null; }, set(v) {}, configurable: true
+        });
+        bgLocked = true;
+      } catch(e) {}
+    }
+    if (!sphereLocked && hkWindow._hdriSphere) {
+      try {
+        Object.defineProperty(hkWindow._hdriSphere, 'visible', {
+          get() { return false; }, set(v) {}, configurable: true
+        });
+        sphereLocked = true;
+      } catch(e) {}
+    }
+    if (!floorLocked && hkWindow._plainFloor) {
+      try {
+        Object.defineProperty(hkWindow._plainFloor, 'visible', {
+          get() { return false; }, set(v) {}, configurable: true
+        });
+        floorLocked = true;
+      } catch(e) {}
+    }
+    if (hkWindow._bgEnforceRaf) {
+      try { hkWindow.cancelAnimationFrame(hkWindow._bgEnforceRaf); hkWindow._bgEnforceRaf = -1; } catch(e) {}
+    }
+    if (!bgLocked || !sphereLocked || !floorLocked) setTimeout(poll, 200);
+  };
+  poll();
+});
+
+window.addEventListener('resize', () => {
+  splatCamera.aspect = innerWidth / innerHeight;
+  splatCamera.updateProjectionMatrix();
+  splatRenderer.setSize(innerWidth, innerHeight);
+});
+
+// ─── Splat 자체 RAF ───
+function animate() {
+  requestAnimationFrame(animate);
+  try {
+    const hk = hkFrame.contentWindow;
+    if (hk && hk.camera) {
+      const hc = hk.camera;
+      splatCamera.position.copy(hc.position);
+      splatCamera.quaternion.copy(hc.quaternion);
+      splatCamera.fov = hc.fov;
+      splatCamera.aspect = hc.aspect;
+      splatCamera.near = hc.near;
+      splatCamera.far = hc.far;
+      splatCamera.updateProjectionMatrix();
+    }
+  } catch(e) {}
+  splatRenderer.render(splatScene, splatCamera);
+}
+animate();
+console.log('[mobile] Splat 렌더 루프 시작');
+
+window.splatScene = splatScene;
+window.splatCamera = splatCamera;
+window.splatRenderer = splatRenderer;
+</script>
+
+</body>
+</html>

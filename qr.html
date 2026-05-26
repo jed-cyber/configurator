@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>HK NEO+ Sterilizer — QR Code</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at center, #151a23 0%, #05080d 100%);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .eyebrow {
+    font-size: 11px; letter-spacing: 5px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    margin-bottom: 18px; font-weight: 500;
+  }
+  h1 {
+    font-size: 42px; font-weight: 800;
+    letter-spacing: -0.8px;
+    margin: 0 0 8px;
+  }
+  h1 .acc { color: #4a9eff; }
+  .sub {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px; letter-spacing: 1px;
+    margin-bottom: 48px;
+  }
+  .qr {
+    background: #fff;
+    padding: 28px;
+    border-radius: 12px;
+    box-shadow:
+      0 24px 80px rgba(74,158,255,0.18),
+      0 8px 32px rgba(0,0,0,0.6);
+  }
+  .qr img {
+    display: block;
+    width: 420px; height: 420px;
+  }
+  .url {
+    margin-top: 36px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 1px;
+  }
+  .hint {
+    margin-top: 18px;
+    font-size: 10.5px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #4a9eff;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <div class="eyebrow">HK NEO+ STERILIZER</div>
+  <h1>NEO+ <span class="acc">Sterilizer</span></h1>
+  <div class="sub">Scan with your phone camera</div>
+  <div class="qr">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=0&data=http%3A%2F%2F192.168.0.2%3A8000%2Fmobile_configurator_final.html" alt="QR Code">
+  </div>
+  <div class="url">http://192.168.0.2:8000/mobile_configurator_final.html</div>
+  <div class="hint">Same Wi-Fi network required</div>
+</body>
+</html>
