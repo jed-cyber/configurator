@@ -89,11 +89,31 @@
 // ✨ Mobile 진입점 — HK iframe 으로 mobile=1 query 전달
 document.getElementById('hk-frame').src = './HK_3dconfigurator_final.html?splat=1&mobile=1&_=' + Date.now();
 
-// iframe load 후 loading overlay fade
+// ✨ v78.086 — loading overlay 를 splat 다운로드 완료까지 유지 (이전: iframe load 후 2.5초)
+//   이유: splat 60MB 다운로드가 인트로 시작 후에 진행되어 사용자가 검은 배경에서 splat 점진적 등장을 봄.
+//   해결: splat 100% 다운로드 완료 → loading fade. window._splatReadyToFade 가 신호.
+window._splatReadyToFade = false;
+window._checkFadeLoading = function() {
+  const _ifrLoaded = window._iframeLoaded === true;
+  if (window._splatReadyToFade && _ifrLoaded) {
+    // 둘 다 ready → 추가 1초 대기 (인트로 시작 안정화) 후 fade
+    setTimeout(() => {
+      const el = document.getElementById('mobileLoading');
+      if (el) el.classList.add('fade');
+    }, 1000);
+  }
+};
+// 안전망: 30 초 안에 fade 가 발동되지 않으면 강제 fade (splat fetch 실패 시).
+setTimeout(() => {
+  const el = document.getElementById('mobileLoading');
+  if (el && !el.classList.contains('fade')) {
+    el.classList.add('fade');
+    console.warn('[v78.086] 30 초 안전망 발동 → loading 강제 hide');
+  }
+}, 30000);
 document.getElementById('hk-frame').addEventListener('load', () => {
-  setTimeout(() => {
-    document.getElementById('mobileLoading').classList.add('fade');
-  }, 2500);
+  window._iframeLoaded = true;
+  window._checkFadeLoading();
 });
 
 // 모바일 핀치줌 차단 (touchmove)
@@ -151,7 +171,31 @@ splatScene.add(sparkRenderer);
 
 let splatMesh = null;
 const SPLAT_URL = './Immaculate Commercial Kitchen Space.spz';
-function loadSplat() {
+// ✨ v78.086 — fetch 로 splat 다운로드 + progress 표시 → 다운로드 완료 후 SplatMesh 생성 (브라우저 캐시 사용).
+async function loadSplat() {
+  console.log('[mobile] Splat 로드 시작:', SPLAT_URL);
+  try {
+    const response = await fetch(SPLAT_URL);
+    if (!response.ok) throw new Error('fetch failed: ' + response.status);
+    const contentLength = +response.headers.get('Content-Length') || 60000000;
+    const reader = response.body.getReader();
+    let received = 0;
+    const chunks = [];
+    const _progressEl = document.querySelector('#mobileLoading .label');
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      received += value.length;
+      const pct = Math.min(99, Math.round((received / contentLength) * 100));
+      if (_progressEl) _progressEl.innerHTML = `HK NEO+ STERILIZER<br>Loading ${pct}%`;
+    }
+    if (_progressEl) _progressEl.innerHTML = `HK NEO+ STERILIZER<br>Loading 100%`;
+    console.log('[v78.086] Splat fetch 완료:', received, 'bytes');
+  } catch (e) {
+    console.warn('[v78.086] Splat fetch progress 실패 (SplatMesh 가 다시 시도):', e);
+  }
+  // SplatMesh 생성 — fetch 가 끝나면 브라우저 캐시에서 즉시 로드.
   splatMesh = new SplatMesh({ url: SPLAT_URL });
   splatMesh.rotation.x = 0;
   splatMesh.rotation.y = 90 * DEG;
@@ -160,7 +204,9 @@ function loadSplat() {
   splatMesh.scale.set(1.91, 1.91, 1.91);
   splatScene.add(splatMesh);
   window.splatMesh = splatMesh;
-  console.log('[mobile] Splat 로드 시작:', SPLAT_URL);
+  // ✨ v78.086 — splat ready 신호. _checkFadeLoading 호출해서 iframe 도 ready 면 fade.
+  window._splatReadyToFade = true;
+  if (typeof _checkFadeLoading === 'function') _checkFadeLoading();
 }
 loadSplat();
 
