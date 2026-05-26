@@ -6029,10 +6029,11 @@ console.log('[v78.088] _isMobileRenderer:', _isMobileRenderer, 'UA:', navigator.
 const msaaSamples = renderer.capabilities.isWebGL2
   ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
-// ✨ v78.087 — 모바일 pixelRatio 1.0 (devicePixelRatio 3 인 폰: 9배 → 1배, 부담 89% 감소).
+// ✨ v78.087 / v78.089 — 모바일 pixelRatio 0.65 (이전 1.0). 추가 56% 픽셀 부담 감소.
+//   devicePixelRatio 3 폰: 3 → 0.65 = 23배 가벼움.
 if (_isMobileRenderer) {
-  renderer.setPixelRatio(1.0);
-  console.log('[v78.087] mobile pixelRatio = 1.0 (aggressive)');
+  renderer.setPixelRatio(0.65);
+  console.log('[v78.089] mobile pixelRatio = 0.65 (ultra-aggressive)');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
@@ -13552,7 +13553,8 @@ function _forceSplatBgFilter() {
 // 추가 안전망: setInterval 도 같이 돌림 (render loop 가 throttle 됐을 때 대비).
 setInterval(_forceSplatBgFilter, 50);
 
-const _TARGET_FRAME_MS = 1000 / 30;   // 33.33ms (30fps)
+// ✨ v78.089 — 모바일 frame cap 30 → 24fps (33% 추가 부담 감소). PC 는 그대로 30fps.
+const _TARGET_FRAME_MS = _isMobileRenderer ? (1000 / 24) : (1000 / 30);   // mobile 41.67ms, PC 33.33ms
 let _prevFrameTime = performance.now();
 (function loop() {
   requestAnimationFrame(loop);
