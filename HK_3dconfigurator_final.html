@@ -20566,6 +20566,46 @@ init();
     applyTransform();
     scene.add(splatMesh);
     window.splatMesh = splatMesh;
+    // ✨ v78.124 — splat 만 어둡게 (사용자 요청). cabinet 보호. SparkJS SplatMesh material 의 opacity / uniforms 시도.
+    //   1) material.opacity 직접 (가장 간단)
+    //   2) traverse + onBeforeCompile 으로 shader output 에 multiply 0.5 (1번 실패 시 fallback)
+    try {
+      const _applySplatDim = (mesh) => {
+        if (!mesh) return;
+        mesh.traverse(o => {
+          if (o.material) {
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            mats.forEach(m => {
+              if (!m || m._v78_124_dimmed) return;
+              m._v78_124_dimmed = true;
+              // 시도 1: opacity (모바일만)
+              if (/mobile|android|iphone|ipad/i.test(navigator.userAgent) || new URLSearchParams(location.search).get('mobile') === '1') {
+                m.transparent = true;
+                if (m.opacity != null) m.opacity = 0.5;
+                // 시도 2: onBeforeCompile 으로 shader output 0.5 multiply
+                const _origOnBeforeCompile = m.onBeforeCompile;
+                m.onBeforeCompile = (shader, renderer) => {
+                  if (_origOnBeforeCompile) _origOnBeforeCompile.call(m, shader, renderer);
+                  // fragment shader 마지막 gl_FragColor 에 0.5 곱하기.
+                  if (shader.fragmentShader && shader.fragmentShader.includes('gl_FragColor')) {
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                      /gl_FragColor\s*=\s*([^;]+);(?=[^;]*$)/m,
+                      'gl_FragColor = $1; gl_FragColor.rgb *= 0.5;'
+                    );
+                  }
+                };
+                m.needsUpdate = true;
+                console.log('[v78.124] splat material dim 적용 (mobile only):', m.name || m.type);
+              }
+            });
+          }
+        });
+      };
+      // 즉시 + 1초 후 (splat 로드 비동기 대응)
+      _applySplatDim(splatMesh);
+      setTimeout(() => _applySplatDim(splatMesh), 1000);
+      setTimeout(() => _applySplatDim(splatMesh), 3000);
+    } catch(e) { console.warn('[v78.124] splat dim 실패:', e); }
     console.log('[v77.700] Spark splat 로드 시작:', url);
   }
   const DEG = Math.PI / 180;
