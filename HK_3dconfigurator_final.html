@@ -6041,12 +6041,14 @@ console.log('[v78.088] _isMobileRenderer:', _isMobileRenderer, 'UA:', navigator.
 const msaaSamples = renderer.capabilities.isWebGL2
   ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
-// ✨ v78.103 — 모바일 해상도 MAX (사용자 요청). devicePixelRatio (cap 2.0) → 망점 사라짐.
-//   주의: 픽셀 4배 → fragment shader 비용 4배. 끊김 가능성 증가. trade-off 명시.
+// ✨ v78.110 — 모바일 해상도 cap 2.0 → 3.0 (사용자 보고: 모바일 저해상도 보임).
+//   원인: 모바일 dpr=3 인데 cap 2.0 → canvas 가 화면 native 의 2/3 → 브라우저 upsample → 블러.
+//   해결: cap 3.0 으로 올림. dpr=3 일 때 canvas = 화면 native 1:1 → 선명. dpr=2 이하 폰은 그대로.
+//   trade-off: 픽셀 2.25배 → fragment shader 부담 증가. 60fps 못 만들면 떨어질 수 있음.
 if (_isMobileRenderer) {
-  const _maxDpr = Math.min(window.devicePixelRatio || 1, 2.0);
+  const _maxDpr = Math.min(window.devicePixelRatio || 1, 3.0);
   renderer.setPixelRatio(_maxDpr);
-  console.log('[v78.103] mobile pixelRatio = MAX', _maxDpr, '(devicePixelRatio:', window.devicePixelRatio, ')');
+  console.log('[v78.110] mobile pixelRatio = MAX', _maxDpr, '(devicePixelRatio:', window.devicePixelRatio, ')');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
@@ -6063,9 +6065,18 @@ ssaoPass.kernelRadius = 0.05; ssaoPass.minDistance = 0.001; ssaoPass.maxDistance
 ssaoPass.enabled = false;  // ✅ 컨피규레이터: SSAO halo 방지를 위해 항상 OFF
 composer.addPass(ssaoPass);
 
-const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.35, 0.6, 0.85);
+// ✨ v78.110 — 모바일 bloom 가볍게 (사용자 요청). 해상도 1/3 (fillrate 1/9), strength 절반.
+//   UnrealBloomPass = 5단계 Gaussian downsample + upsample → 가장 무거운 post-processing.
+//   해상도 절반만 해도 거의 안 보이는 차이 + 비용 1/4. mobile 은 1/3 으로 더 공격적.
+const _bloomScale = _isMobileRenderer ? (1/3) : 1;
+const _bloomStrength = _isMobileRenderer ? 0.18 : 0.35;
+const bloomPass = new THREE.UnrealBloomPass(
+  new THREE.Vector2(innerWidth * _bloomScale, innerHeight * _bloomScale),
+  _bloomStrength, 0.6, 0.85
+);
 bloomPass.enabled = false;
 composer.addPass(bloomPass);
+console.log('[v78.110] bloom resolution:', Math.round(innerWidth * _bloomScale) + 'x' + Math.round(innerHeight * _bloomScale), 'strength:', _bloomStrength);
 // ✨ v77.954 — 디버그 + 슬라이더 직접 적용용 window 노출.
 window.bloomPass = bloomPass;
 
@@ -14267,41 +14278,13 @@ async function init() {
 
   // 2) 룩데브 프리셋 로드 시도
   setPresetStatus('룩데브 프리셋 검색 중...');
-  let preset = null;
-  let presetSource = '';
-  // 2-1) JSON 파일 (다운로드 suffix 가 붙은 케이스 모두 시도 — 최신 우선)
-  const presetCandidates = [
-    './lookdev-preset (5).json',
-    './lookdev-preset (4).json',
-    './lookdev-preset (3).json',
-    './lookdev-preset (2).json',
-    './lookdev-preset (1).json',
-    './lookdev-preset.json',
-  ];
-  for (const path of presetCandidates) {
-    try {
-      const res = await fetch(path + '?_=' + Date.now(), { cache: 'no-store' });
-      if (res.ok) {
-        preset = await res.json();
-        presetSource = path;
-        console.log('[Preset] JSON 파일 로드 성공:', path);
-        break;
-      }
-    } catch (e) {}
-  }
-  // 2-2) 그래도 없으면 localStorage (lookdev 자동저장)
-  if (!preset) {
-    try {
-      const raw = localStorage.getItem('lookdev:autosave');
-      if (raw) { preset = JSON.parse(raw); presetSource = 'localStorage(autosave)'; console.log('[Preset] localStorage 로드 성공'); }
-    } catch (e) {}
-  }
-  // 2-3) 최후의 수단: HTML 에 임베드된 preset 사용 (file:// 환경에서 fetch 불가 시)
-  if (!preset) {
-    preset = JSON.parse(JSON.stringify(EMBEDDED_LOOKDEV_PRESET));
-    presetSource = 'EMBEDDED';
-    console.log('[Preset] 임베디드 프리셋 사용 (fetch / localStorage 모두 실패)');
-  }
+  // ✨ v78.109 — 사용자 요청: 외부 lookdev-preset*.json 탐색 완전 제거 (느림 + 옛 envMap 박혀있어 v78.108 fix 무효화).
+  //   원인 1: 6개 fetch × 모바일 200~500ms = 최대 3초 낭비.
+  //   원인 2: 'lookdev-preset (5).json' 이 repo 에 commit 되어 있어 항상 우선 로드되는데, 그 파일의 envMapFile 은 옛 'ChatGPT...png' (없음).
+  //   해결: 무조건 EMBEDDED preset 만 사용. v78.108 envMap = HDRi.png 박힌 거 항상 적용.
+  let preset = JSON.parse(JSON.stringify(EMBEDDED_LOOKDEV_PRESET));
+  let presetSource = 'EMBEDDED (v78.109 — 외부 fetch 스킵)';
+  console.log('[v78.109] EMBEDDED preset 직접 사용 (fetch 6개 스킵 → 1~3초 단축, envMap=HDRi.png 보장)');
   if (preset) {
     await applyLookdevPreset(preset);
     setPresetStatus('✓ 룩데브 프리셋 적용됨 (' + presetSource + ')');
