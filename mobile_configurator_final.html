@@ -206,9 +206,20 @@ async function loadSplat() {
   splatMesh.scale.set(1.91, 1.91, 1.91);
   splatScene.add(splatMesh);
   window.splatMesh = splatMesh;
-  // ✨ v78.086 — splat ready 신호. _checkFadeLoading 호출해서 iframe 도 ready 면 fade.
+  // ✨ v78.086 / v78.096 — splat ready 신호. window.parent._checkFadeLoading 또는 window._checkFadeLoading 호출.
   window._splatReadyToFade = true;
-  if (typeof _checkFadeLoading === 'function') _checkFadeLoading();
+  if (typeof window._checkFadeLoading === 'function') {
+    window._checkFadeLoading();
+  } else if (window.parent && typeof window.parent._checkFadeLoading === 'function') {
+    window.parent._checkFadeLoading();
+  } else {
+    // Fallback: 직접 loading overlay hide
+    const el = document.getElementById('mobileLoading');
+    if (el && window._iframeLoaded) {
+      setTimeout(() => el.classList.add('fade'), 1000);
+    }
+    console.log('[v78.096] _checkFadeLoading 없음 — fallback fade');
+  }
 }
 loadSplat();
 
