@@ -172,14 +172,8 @@ splatScene.add(sparkRenderer);
 
 let splatMesh = null;
 const SPLAT_URL = './Immaculate Commercial Kitchen Space.spz';
-// ✨ v78.126 — 모바일에서 splat 로드 자체 스킵 (사용자 옵션 A). cyclorama 가 backdrop. fps 향상 + 메모리 절약.
-if (isMobile) {
-  console.log('[v78.126] mobile: splat 로드 스킵 → cyclorama 디오라마 backdrop 사용. _splatReadyToFade=true 즉시 신호.');
-  window._splatReadyToFade = true;
-  if (typeof window._checkFadeLoading === 'function') window._checkFadeLoading();
-} else {
-  loadSplat();
-}
+// ✨ v78.128 — v78.126 splat 스킵 revert. splat 다시 살림.
+loadSplat();
 async function loadSplat() {
   console.log('[mobile] Splat 로드 시작:', SPLAT_URL);
   try {
