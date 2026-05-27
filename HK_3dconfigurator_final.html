@@ -11469,12 +11469,12 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.146 — 사용자 요청: 더 최적화 + 진짜 푸른색.
-//   count 1300→800 (-38% JS loop), brightness 1.6→1.0 (g/b 채널 clamp 제거 → 색이 흰색으로 안 날아감),
-//   color #3aa0ff→#1e6fff (더 진한 블루, brightness 1.0 곱해도 r=0.12 g=0.43 b=1.0 → 명확한 블루).
+// ✨ v78.147 — 흰색 saturate 근본 해결: AdditiveBlending → NormalBlending 전환.
+//   원인: AdditiveBlending 은 겹침 시 RGB 합산 → (b,g,b) 가 모두 1.0 도달 = 흰색.
+//   해결: NormalBlending = uniform 색 그대로 표시. 겹침에도 색 유지. + 밝은 푸른색 + 큰 size + 진한 opacity.
 const PARTICLES = {
   count: 800,
-  size: 0.028,
+  size: 0.034,                        // 0.028 → 0.034 (가시성 강화)
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
@@ -11482,8 +11482,8 @@ const PARTICLES = {
   damping: 0.96,
   gravity: -0.31,
   brightness: 1.0,
-  opacity: 0.95,
-  color: new THREE.Color('#1e6fff'),   // 진한 블루 (이전 #3aa0ff × 1.6 = clamp 되어 흰색 → 이제 색 유지)
+  opacity: 0.98,                      // 0.95 → 0.98 (Normal blend 에서 더 또렷)
+  color: new THREE.Color('#5cb0ff'),  // 밝은 시안 블루 (Normal blend 라 색 그대로 보임)
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,
@@ -11678,16 +11678,16 @@ function createUVCParticles() {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-  // ✨ v78.146 — 캔버스 텍스처를 푸른색으로 틴트 (중심은 밝은 시안, 가장자리는 진한 블루).
-  //   AdditiveBlending 겹침에도 RGB 비율이 푸른색 유지 (이전: 흰색 그라데이션 → 누적 시 흰 화이트아웃).
+  // ✨ v78.147 — NormalBlending 에서는 흰색 alpha mask 가 베스트.
+  //   uniform color (블루) × 흰색 텍스처 = 정확한 블루 톤. 가장자리 부드러운 alpha falloff.
   const cv = document.createElement('canvas');
   cv.width = cv.height = 64;
   const ctx = cv.getContext('2d');
   const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  grad.addColorStop(0,   'rgba(150,200,255,1)');    // 중심: 밝은 하늘색 (살짝 푸른빛)
-  grad.addColorStop(0.3, 'rgba(80,140,255,0.7)');   // 중간: 진한 블루
-  grad.addColorStop(0.7, 'rgba(40,100,230,0.15)');  // 외곽: 더 진한 블루
-  grad.addColorStop(1,   'rgba(30,80,200,0)');      // 끝: 페이드 (블루 잔향)
+  grad.addColorStop(0,   'rgba(255,255,255,1)');
+  grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.25)');
+  grad.addColorStop(1,   'rgba(255,255,255,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 64, 64);
   const tex = new THREE.CanvasTexture(cv);
@@ -11700,10 +11700,11 @@ function createUVCParticles() {
     transparent: true,
     opacity: 0,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    // ✨ v78.147 — AdditiveBlending → NormalBlending. 겹침에도 RGB saturate 안 됨, 색 그대로 유지.
+    blending: THREE.NormalBlending,
     map: tex,
     alphaTest: 0.01,
-    toneMapped: false,    // ★ raw HDR 출력 → bloom 잘 잡힘 + 더 빛남
+    toneMapped: true,     // ✨ v78.147 — 정상 tonemap (Normal blend 에서 raw HDR 의미 없음)
   });
   uvcParticles = new THREE.Points(geom, mat);
   uvcParticles.frustumCulled = false;
