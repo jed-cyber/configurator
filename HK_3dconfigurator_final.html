@@ -6029,12 +6029,12 @@ console.log('[v78.088] _isMobileRenderer:', _isMobileRenderer, 'UA:', navigator.
 const msaaSamples = renderer.capabilities.isWebGL2
   ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
-// ✨ v78.087 / v78.089 / v78.094 — 모바일 pixelRatio 1.0 (이전 0.65, 화질 너무 낮음).
-//   splat 압축 + MSAA 0 + DoF/SMAA off 로 이미 충분히 가벼움 → pixelRatio 올림.
-//   devicePixelRatio 3 폰: 3 → 1.0 = 9배 가벼움 (PC 동일 화질에 가까움).
+// ✨ v78.087 / v78.089 / v78.094 / v78.095 — 모바일 pixelRatio 0.85 (균형).
+//   1.0 너무 부담, 0.65 너무 흐림 → 0.85 가 sweet spot.
+//   devicePixelRatio 3 폰: 3 → 0.85 = 12.5배 가벼움.
 if (_isMobileRenderer) {
-  renderer.setPixelRatio(1.0);
-  console.log('[v78.094] mobile pixelRatio = 1.0 (balanced quality)');
+  renderer.setPixelRatio(0.85);
+  console.log('[v78.095] mobile pixelRatio = 0.85 (quality/perf balanced)');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
