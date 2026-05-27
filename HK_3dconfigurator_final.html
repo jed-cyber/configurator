@@ -6715,9 +6715,9 @@ window.reflColorState = reflColorState;
 // envColorState 도 (v77.938 BG 패널 + future 사용 위해)
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
-// ✨ v78.114 — 모바일 전용 refl 락인 (사용자 요청: 모바일만 bri 3.00 / con 1.55, PC 는 1.28/1.20 그대로).
+// ✨ v78.114/115 — 모바일 전용 refl 락인. v78.115: brightness 3.00 → 2.45 (사용자 락인).
 window._REFL_OVERVIEW   = (typeof _isMobileRenderer !== 'undefined' && _isMobileRenderer)
-  ? { brightness: 3.00, contrast: 1.55, saturation: 0.00, tint: '#FDFBFE' }
+  ? { brightness: 2.45, contrast: 1.55, saturation: 0.00, tint: '#FDFBFE' }
   : { brightness: 1.28, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
 window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
 window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
@@ -22525,6 +22525,23 @@ init();
 })();
 </script>
 
+<!-- ✨ v78.115 — 모바일 튠 패널 완전 삭제 (사용자 요청). 모든 락인 값은 코드에 직접 박혀있음. -->
+<script>
+/* v78.112 panel removed (v78.115). Block bypass via early return. */
+(function noopV78112(){ window._v78_112_panel_removed = true; })();
+</script>
+
+<!-- 원본 v78.112 패널 블록 (style + div + script) — display:none + script 무력화. -->
+<style>
+  #mob-tune-panel { display: none !important; }
+</style>
+<!-- DEAD CODE BELOW — kept commented out for reference, no execution -->
+<script type="text/plain" data-disabled="v78.115">
+// === DISABLED v78.112 panel script (kept for reference) ===
+// (original wiring removed — see git history if needed)
+</script>
+
+<!-- ✨ v78.112 — DISABLED. -->
 <!-- ✨ v78.112 — 모바일 실시간 색보정 패널. 사용자 직접 슬라이더로 HDRI / 반사 / normal 조절. -->
 <style>
   #mob-tune-panel {
@@ -22594,28 +22611,7 @@ init();
   #mob-tune-panel .mt-reset:active { background: rgba(102,170,255,0.3); }
 </style>
 
-<div id="mob-tune-panel">
-  <div class="mt-head">
-    <span>🎛 Tune</span>
-    <span class="mt-tri">▶</span>
-  </div>
-  <div class="mt-body">
-    <!-- ✨ v78.114 — HDRI 슬라이더 제거 (사용자 요청). DIR Power 로 교체. Reflection 도 모바일에서 락인 (3.00 / 1.55) 되어 패널엔 유지. -->
-    <div class="mt-section">Reflection (캐비닛 메탈)</div>
-    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-refBri-v">3.00</span></label><input type="range" id="mt-refBri" min="0" max="5" step="0.05" value="3.00"></div>
-    <div class="mt-row"><label>Contrast <span class="mt-v" id="mt-refCon-v">1.55</span></label><input type="range" id="mt-refCon" min="0" max="3" step="0.05" value="1.55"></div>
-    <div class="mt-row"><label>Saturation <span class="mt-v" id="mt-refSat-v">0.00</span></label><input type="range" id="mt-refSat" min="0" max="2" step="0.05" value="0.00"></div>
-
-    <div class="mt-section">Metal</div>
-    <div class="mt-row"><label>Normal Intensity <span class="mt-v" id="mt-norm-v">0.50</span></label><input type="range" id="mt-norm" min="0" max="2" step="0.05" value="0.5"></div>
-    <div class="mt-row"><label>Roughness <span class="mt-v" id="mt-rough-v">0.23</span></label><input type="range" id="mt-rough" min="0" max="1" step="0.01" value="0.23"></div>
-
-    <div class="mt-section">Directional Lights</div>
-    <div class="mt-row"><label>DIR Power <span class="mt-v" id="mt-dir-v">1.00</span></label><input type="range" id="mt-dir" min="0" max="3" step="0.05" value="1.0"></div>
-
-    <button class="mt-reset" id="mt-reset">↺ Reset</button>
-  </div>
-</div>
+<!-- ✨ v78.115 — Tune 패널 div 삭제 (사용자 요청). 락인 값은 코드에 박힘 (refl 2.45/1.55). -->
 
 <script>
 (function(){
