@@ -5833,7 +5833,7 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
 dirLight.position.set(4, 6, 3);
 dirLight.castShadow = true;
 // ✨ v77.819 — shadow map 2048→1024 (4배 가벼움, 시각 거의 동일).
-dirLight.shadow.mapSize.set(1024, 1024);
+dirLight.shadow.mapSize.set(/mobile|android|iphone|ipad/i.test(navigator.userAgent) ? 512 : 1024, /mobile|android|iphone|ipad/i.test(navigator.userAgent) ? 512 : 1024);  // v78.118 모바일 main dirLight 도 512
 dirLight.shadow.bias = -0.0001;
 dirLight.shadow.normalBias = 0.05;
 dirLight.shadow.radius = 4;
@@ -6076,18 +6076,16 @@ ssaoPass.kernelRadius = 0.05; ssaoPass.minDistance = 0.001; ssaoPass.maxDistance
 ssaoPass.enabled = false;  // ✅ 컨피규레이터: SSAO halo 방지를 위해 항상 OFF
 composer.addPass(ssaoPass);
 
-// ✨ v78.110 — 모바일 bloom 가볍게 (사용자 요청). 해상도 1/3 (fillrate 1/9), strength 절반.
-//   UnrealBloomPass = 5단계 Gaussian downsample + upsample → 가장 무거운 post-processing.
-//   해상도 절반만 해도 거의 안 보이는 차이 + 비용 1/4. mobile 은 1/3 으로 더 공격적.
-const _bloomScale = _isMobileRenderer ? (1/3) : 1;
-const _bloomStrength = _isMobileRenderer ? 0.18 : 0.35;
+// ✨ v78.118 — 모바일 bloom 해상도 1/4 (1/3 → 1/4, fillrate 추가 50% 감소). chapter 에서 활성화 시 부담 최소.
+const _bloomScale = _isMobileRenderer ? 0.25 : 1;
+const _bloomStrength = _isMobileRenderer ? 0.15 : 0.35;
 const bloomPass = new THREE.UnrealBloomPass(
   new THREE.Vector2(innerWidth * _bloomScale, innerHeight * _bloomScale),
   _bloomStrength, 0.6, 0.85
 );
 bloomPass.enabled = false;
 composer.addPass(bloomPass);
-console.log('[v78.110] bloom resolution:', Math.round(innerWidth * _bloomScale) + 'x' + Math.round(innerHeight * _bloomScale), 'strength:', _bloomStrength);
+console.log('[v78.118] bloom resolution:', Math.round(innerWidth * _bloomScale) + 'x' + Math.round(innerHeight * _bloomScale), 'strength:', _bloomStrength);
 // ✨ v77.954 — 디버그 + 슬라이더 직접 적용용 window 노출.
 window.bloomPass = bloomPass;
 
@@ -6165,24 +6163,27 @@ window._ION_DIR = { intensity: 2.95 };                                          
 
 // ✨ v77.848 — Drying 챕터 BG 색보정 키프레임 (UV-C/Ionizer 와 동일 패턴, sync watchdog 가 owner).
 // ✨ v77.852 — 사용자 락인 값 (2026-05-22 스크린샷).
-window._DRY_BG = { bri: -0.40, con: -0.86, sat: -0.27, hue: 0, wbTemp: -0.06, wbTint: 0 }; // ✨ v78.004 락인
+// ✨ v78.118 — 사용자 요청: 전체 챕터 splat 배경 밝기 현재의 절반. bri 값을 (current/2 - 1) 로 락인.
+//   계산: final brightness = 1 + bri. half = (1+bri)/2 → new_bri = (bri - 1) / 2.
+window._DRY_BG = { bri: -0.70, con: -0.86, sat: -0.27, hue: 0, wbTemp: -0.06, wbTint: 0 }; // v78.118 절반 (-0.40 → -0.70)
 
 // ✨ v77.904 — UV-C 챕터 배경 (splat) 전용 BG-only 색감 키프레임.
 //   Drying 패턴 동일: composer pass 비활성 + DoF shader uBg* uniforms + uBgSplatOnly=1.
 //   사용자 요청: 캐비닛 색감은 건드리지 않고 배경(splat) 색감만 조절하는 슬라이더.
 // ✨ v77.907 — 사용자 새 락인 값 (Bright -0.38, 나머지 동일).
-window._UVC_BG_SPLAT = { bri: -0.38, con: -0.82, sat: 0.03, hue: 0, wbTemp: 0.20, wbTint: 0.05 };
+window._UVC_BG_SPLAT = { bri: -0.69, con: -0.82, sat: 0.03, hue: 0, wbTemp: 0.20, wbTint: 0.05 };  // v78.118 절반
 
 // ✨ v77.909 — Overview 챕터 배경 (splat) 전용 BG-only 색감 키프레임.
 // ✨ v77.942 — 사용자 락인값 (이미지 스크린샷 기준).
-window._OVERVIEW_BG_SPLAT = { bri: -0.04, con: -0.12, sat: 0.22, hue: 0, wbTemp: 0, wbTint: 0 };
+window._OVERVIEW_BG_SPLAT = { bri: -0.52, con: -0.12, sat: 0.22, hue: 0, wbTemp: 0, wbTint: 0 };  // v78.118 절반
 
 // ✨ v77.940 — 사용자 락인값 (각 챕터 BG-only).
-window._ION_BG_SPLAT        = { bri: -0.40, con: -0.89, sat: 0, hue: 0, wbTemp: 0.20, wbTint: 0 };
-window._PANEL_BG_SPLAT      = { bri: -0.56, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };
-window._MODULAR_BG_SPLAT    = { bri: -0.40, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };
-window._PREMIUM_BG_SPLAT    = { bri: -0.35, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };
-window._DIMENSIONS_BG_SPLAT = { bri: -0.26, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };
+// v78.118 — 전체 챕터 splat 배경 절반.
+window._ION_BG_SPLAT        = { bri: -0.70, con: -0.89, sat: 0, hue: 0, wbTemp: 0.20, wbTint: 0 };  // -0.40 → -0.70
+window._PANEL_BG_SPLAT      = { bri: -0.78, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };        // -0.56 → -0.78
+window._MODULAR_BG_SPLAT    = { bri: -0.70, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };        // -0.40 → -0.70
+window._PREMIUM_BG_SPLAT    = { bri: -0.675, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };       // -0.35 → -0.675
+window._DIMENSIONS_BG_SPLAT = { bri: -0.63, con: 0, sat: 0, hue: 0, wbTemp: 0, wbTint: 0 };        // -0.26 → -0.63
 
 // ✨ v77.927 — splat-bg (parent page DIV) 에 Overview BG-only grading 을 CSS filter 로 즉시 적용.
 //   ★ 인트로부터 챕터까지 일관된 grading 유지.
@@ -19024,8 +19025,8 @@ window.ChapterManager = (() => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // overview 외관 (upperbody #e7e7e7) 와 비슷한 밝기 + AO 축소.
-                  if (m.color) m.color.setHex(0xd0d0d0);
+                  // ✨ v78.118 — 사용자 요청: modular backwall 밝기 절반. 0xd0d0d0 (208) → 0x686868 (104).
+                  if (m.color) m.color.setHex(0x686868);
                   if ('aoMapIntensity' in m) m.aoMapIntensity = 0.04;
                   m.needsUpdate = true;
                 });
