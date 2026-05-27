@@ -19025,8 +19025,9 @@ window.ChapterManager = (() => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // ✨ v78.118 — 사용자 요청: modular backwall 밝기 절반. 0xd0d0d0 (208) → 0x686868 (104).
-                  if (m.color) m.color.setHex(0x686868);
+                  // ✨ v78.119 — v78.118 의 modular backwall 절반 revert. 사용자: splat 만 절반.
+                  // overview 외관 (upperbody #e7e7e7) 와 비슷한 밝기 + AO 축소.
+                  if (m.color) m.color.setHex(0xd0d0d0);
                   if ('aoMapIntensity' in m) m.aoMapIntensity = 0.04;
                   m.needsUpdate = true;
                 });
