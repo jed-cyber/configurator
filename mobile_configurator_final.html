@@ -20,13 +20,12 @@
   }
   /* iOS Safari full-screen */
   body { height: 100vh; height: 100dvh; }
-  /* ✨ v78.140 — !important 제거 (슬라이더 inline 값이 항상 이기게). default 값만 제공.
-       슬라이더 만지지 않은 초기 상태에선 이 default 적용됨. */
+  /* ✨ v78.141 — 사용자 락인: brightness 1.10, blur 6px, opacity 0.35. */
   #splat-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block;
-    filter: brightness(0.4) saturate(0.6) blur(8px);
-    -webkit-filter: brightness(0.4) saturate(0.6) blur(8px);
-    opacity: 0.35;
+    filter: brightness(1.10) saturate(0.6) blur(6px) !important;
+    -webkit-filter: brightness(1.10) saturate(0.6) blur(6px) !important;
+    opacity: 0.35 !important;
   }
   #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
   /* HK iframe 앞, transparent */

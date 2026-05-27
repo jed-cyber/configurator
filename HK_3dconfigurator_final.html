@@ -6732,10 +6732,8 @@ window.reflColorState = reflColorState;
 // envColorState 도 (v77.938 BG 패널 + future 사용 위해)
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
-// ✨ v78.121 — refl contrast +0.1 (사용자 요청). 모바일: 1.55 → 1.65. PC: 1.20 → 1.30.
-window._REFL_OVERVIEW   = (typeof _isMobileRenderer !== 'undefined' && _isMobileRenderer)
-  ? { brightness: 2.45, contrast: 1.65, saturation: 0.00, tint: '#FDFBFE' }
-  : { brightness: 1.28, contrast: 1.30, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
+// ✨ v78.141 — 사용자 락인 (모바일/PC 통일): brightness 1.95 / contrast 1.30 / saturation 0.
+window._REFL_OVERVIEW   = { brightness: 1.95, contrast: 1.30, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
 window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
 window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
 window._REFL_DRYING     = { brightness: 1.05, contrast: 1.15, saturation: 0.00, tint: '#FDFBFE' }; // ✨ v78.005 brightness -0.1
@@ -7669,23 +7667,23 @@ async function applyLookdevPreset(s) {
     console.log('[v78.041b] envMap reset 제거됨. delay 300ms 만으로 race condition 보완.');
   } catch(e) { console.warn('[v77.937c] final env lock 실패:', e); }
 
-  // ✨ v78.125 — backwall 전역 락 (모든 챕터 동일 밝기 fix). 0xd0d0d0 으로 영구 set.
+  // ✨ v78.141 — 사용자 락인: backwall brightness 1.08 (color = white, clamp), aoMapIntensity 1.08.
   try {
     if (typeof modelRoot !== 'undefined' && modelRoot) {
       modelRoot.traverse(o => {
         if (o.isMesh && o.name === 'backwall' && o.material) {
           const mats = Array.isArray(o.material) ? o.material : [o.material];
           mats.forEach(m => {
-            if (m.color) m.color.setHex(0xd0d0d0);
-            if ('aoMapIntensity' in m) m.aoMapIntensity = 0.04;
+            if (m.color) m.color.setRGB(1, 1, 1);   // brightness 1.08 → clamp 1.0 (color max)
+            if ('aoMapIntensity' in m) m.aoMapIntensity = 1.08;
             m._backwallLocked = true;
             m.needsUpdate = true;
           });
         }
       });
-      console.log('[v78.125] backwall 전역 락 0xd0d0d0 적용 (모든 챕터 동일)');
+      console.log('[v78.141] backwall 락인: color=white, ao=1.08');
     }
-  } catch(e) { console.warn('[v78.125] backwall 락 실패:', e); }
+  } catch(e) { console.warn('[v78.141] backwall 락 실패:', e); }
 
   // ✨ v78.111 — 사용자 요청: 모바일 캐비닛 look 을 PC 처럼 매끈하게.
   //   원인: 모바일 dpr=3 → brushed metal normal map detail 다 보임. PC dpr=1 → 자동 mip blur.
@@ -7700,8 +7698,9 @@ async function applyLookdevPreset(s) {
             mats.forEach(m => {
               if (!m || m._v78_111_patched) return;
               // brushed metal/wall material 만 (normalScale 있는 경우).
-              if (m.normalScale && (m.normalScale.x > 0.1 || m.normalScale.y > 0.1)) {
-                m.normalScale.multiplyScalar(0.5);
+              // ✨ v78.141 — 사용자 요청: 현재의 절반 추가 적용 → multiplyScalar 0.5 → 0.25.
+              if (m.normalScale && (m.normalScale.x > 0.05 || m.normalScale.y > 0.05)) {
+                m.normalScale.multiplyScalar(0.25);
                 _mobMatPatched.push(m.name + '(normal)');
               }
               // 메탈 material (metalness >= 0.8) roughness 살짝 올림.
@@ -11470,18 +11469,20 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
+// ✨ v78.142 — 사용자 요청: 파티클 좀 가볍게 + 푸른색.
+//   count 1900→1300 (-32%), size 0.018→0.015 (-17%), brightness 4.0→2.5 (blue 가시성), color purple→blue.
 const PARTICLES = {
-  count: 1900,
-  size: 0.018,
+  count: 1300,
+  size: 0.015,
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
-  turbulence: 1.45,  // ★ v77.244 — 활동반경 유지 위해 원래값으로 복원. 속도감만 dt × _particleTimeScale로 조절.
+  turbulence: 1.45,
   damping: 0.96,
   gravity: -0.31,
-  brightness: 4.0,
+  brightness: 2.5,
   opacity: 0.85,
-  color: new THREE.Color('#a066ff'),
+  color: new THREE.Color('#5da6ff'),   // 하늘 푸른색 (이전 #a066ff 보라 → 흰색으로 blow out 됨)
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,
@@ -13669,8 +13670,8 @@ function _forceLightingBaseline() {
 //   해결: 챕터 안 아닐 때 (currentChapter null) → 매 frame Overview filter 강제. 다른 코드가 풀어도 즉시 복원.
 // ✨ v78.120 — 사용자 요청: splat 절반. brightness 0.67 → 0.335 (절반). contrast/saturate/blur 유지.
 //   _BG_SPLAT 값 변경이 이 setInterval 에 의해 매 50ms 덮어씌워지던 것이 진짜 원인이었음.
-// ✨ v78.140 — window-scope 변수로 변경 (사용자 슬라이더가 직접 수정 가능). const 였을 때 슬라이더가 못 바꿔서 reset 됐음.
-window._OVERVIEW_SPLAT_CSS_FILTER = 'brightness(0.4) saturate(0.6) blur(8px)';
+// ✨ v78.141 — 사용자 락인: brightness 1.10 / blur 6px.
+window._OVERVIEW_SPLAT_CSS_FILTER = 'brightness(1.10) saturate(0.6) blur(6px)';
 function _forceSplatBgFilter() {
   if (window.currentChapter) return;   // 챕터 안 = 챕터 filter owner — skip
   try {
@@ -19055,11 +19056,10 @@ window.ChapterManager = (() => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // ✨ v78.125 — backwall 모든 챕터 동일 밝기 fix (사용자 요청). 0xd0d0d0 으로 globalLock 적용.
-                  if (m.color) m.color.setHex(0xd0d0d0);
-                  if ('aoMapIntensity' in m) m.aoMapIntensity = 0.04;
+                  // ✨ v78.141 — backwall white + ao 1.08 락인.
+                  if (m.color) m.color.setRGB(1, 1, 1);
+                  if ('aoMapIntensity' in m) m.aoMapIntensity = 1.08;
                   m.needsUpdate = true;
-                  // v78.125 — globalLock: 이후 어떤 코드도 color/aoMapIntensity 변경 못하게.
                   m._backwallLocked = true;
                 });
               }
@@ -22804,8 +22804,8 @@ init();
 </script>
 
 <style>
-  /* v78.136 — 패널 display 다시 활성 (v78.115 에서 display:none 처리한 것 revert) */
-  #mob-tune-panel { display: block !important; }
+  /* ✨ v78.141 — 사용자 락인 끝났음. Tune 패널 숨김 (모든 값 코드에 박힘). */
+  #mob-tune-panel { display: none !important; }
 </style>
 
 <script>
