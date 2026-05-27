@@ -20,8 +20,9 @@
   }
   /* iOS Safari full-screen */
   body { height: 100vh; height: 100dvh; }
-  /* splat 배경 — 모바일 hidden (DoF graded HK iframe splat 만 사용) */
-  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: none; }
+  /* ✨ v78.125 — splat-bg 활성화 (display:block) + CSS filter brightness(0.5).
+       HK iframe 의 자체 splat 은 별도로 hide. mobile_configurator splat 만 보임 → CSS filter 적용 가능 → 캐비닛 보호. */
+  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; filter: brightness(0.5); -webkit-filter: brightness(0.5); }
   #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
   /* HK iframe 앞, transparent */
   /* ✨ v78.016 — 데스크탑에서도 모바일 레이아웃 시뮬레이션을 위해 iframe 폭 강제 좁게.
