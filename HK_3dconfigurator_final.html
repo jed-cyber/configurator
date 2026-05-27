@@ -5843,17 +5843,17 @@ function addExtraLight(type) {
     light = new THREE.DirectionalLight(0xffffff, 1.5);
     light.castShadow = true;
     // ✨ v77.819 — shadow map 2048→1024 (성능 4배 향상).
-    light.shadow.mapSize.set(1024, 1024);
+    light.shadow.mapSize.set(_isMobileRenderer ? 512 : 1024, _isMobileRenderer ? 512 : 1024);  // v78.116 모바일 절반
     light.shadow.radius = 4; light.shadow.blurSamples = 16;
     light.shadow.bias = -0.0001; light.shadow.normalBias = 0.05;
     const c = light.shadow.camera; c.left=-5; c.right=5; c.top=5; c.bottom=-5; c.near=0.1; c.far=30;
   } else if (type === 'point') {
     light = new THREE.PointLight(0xffffff, 10, 20, 2);
-    light.castShadow = true; light.shadow.mapSize.set(1024, 1024);
+    light.castShadow = true; light.shadow.mapSize.set(_isMobileRenderer ? 512 : 1024, _isMobileRenderer ? 512 : 1024);  // v78.116 모바일 절반
     light.shadow.radius = 4; light.shadow.normalBias = 0.05;
   } else if (type === 'spot') {
     light = new THREE.SpotLight(0xffffff, 20, 20, Math.PI/6, 0.3, 2);
-    light.castShadow = true; light.shadow.mapSize.set(1024, 1024);
+    light.castShadow = true; light.shadow.mapSize.set(_isMobileRenderer ? 512 : 1024, _isMobileRenderer ? 512 : 1024);  // v78.116 모바일 절반
     light.shadow.radius = 4; light.shadow.normalBias = 0.05;
     scene.add(light.target);
   } else {
@@ -6041,14 +6041,13 @@ console.log('[v78.088] _isMobileRenderer:', _isMobileRenderer, 'UA:', navigator.
 const msaaSamples = renderer.capabilities.isWebGL2
   ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
-// ✨ v78.110 — 모바일 해상도 cap 2.0 → 3.0 (사용자 보고: 모바일 저해상도 보임).
-//   원인: 모바일 dpr=3 인데 cap 2.0 → canvas 가 화면 native 의 2/3 → 브라우저 upsample → 블러.
-//   해결: cap 3.0 으로 올림. dpr=3 일 때 canvas = 화면 native 1:1 → 선명. dpr=2 이하 폰은 그대로.
-//   trade-off: 픽셀 2.25배 → fragment shader 부담 증가. 60fps 못 만들면 떨어질 수 있음.
+// ✨ v78.116 — 모바일 해상도 cap 3.0 → 1.75 (사용자 챕터 lag 호소). dpr=3 폰: canvas 2/3.
+//   픽셀 수 9 → 3.06 = 66% 감소 → fragment shader fillrate 3배 가벼움.
+//   trade-off: 살짝 블러. but 챕터 fps 개선 우선.
 if (_isMobileRenderer) {
-  const _maxDpr = Math.min(window.devicePixelRatio || 1, 3.0);
+  const _maxDpr = Math.min(window.devicePixelRatio || 1, 1.75);
   renderer.setPixelRatio(_maxDpr);
-  console.log('[v78.110] mobile pixelRatio = MAX', _maxDpr, '(devicePixelRatio:', window.devicePixelRatio, ')');
+  console.log('[v78.116] mobile pixelRatio cap 1.75 (was 3.0). 실제:', _maxDpr, '(devicePixelRatio:', window.devicePixelRatio, ')');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
@@ -7165,7 +7164,8 @@ function applyEquirect(tex) {
   }
   regenerateEnvMap();
   // ✨ v77.937c — applyEquirect 첫 호출의 lock 제거. lock 은 applyLookdevPreset 끝에서.
-  if (window._dofPass) window._dofPass.enabled = true;
+  // ✨ v78.116 — 모바일에서 DoF 완전 off (depth pre-pass + color pass + blur composite = full-screen 3개 × dpr² 비용).
+  if (window._dofPass) window._dofPass.enabled = !_isMobileRenderer;
   // ✨ v77.927 — splat-bg (parent page DIV) 에 Overview BG-only grading 을 CSS filter 로 적용.
   //   ★ 진짜 원인 발견: splat(키친 배경) 은 부모 페이지의 별도 DIV 에서 렌더링됨.
   //   HK iframe 안의 DoF shader 로는 splat 을 grading 할 수 없음 (다른 WebGL context).
