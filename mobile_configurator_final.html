@@ -20,9 +20,14 @@
   }
   /* iOS Safari full-screen */
   body { height: 100vh; height: 100dvh; }
-  /* ✨ v78.129 — splat-bg display:block. mobile_configurator splat 보임 (HK iframe splat hide).
-       이렇게 하면 splat pixelRatio 를 별도로 컨트롤 가능 (cabinet 영향 0). */
-  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
+  /* ✨ v78.135 — 사용자 요청: Ionizer 의 splat 톤 (brightness 0.4 + saturate 0.6) + blur 8px + opacity 0.35
+       모든 챕터 (Overview 포함) 에 락인. !important 로 어떤 JS 도 못 덮어쓰게. */
+  #splat-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block;
+    filter: brightness(0.4) saturate(0.6) blur(8px) !important;
+    -webkit-filter: brightness(0.4) saturate(0.6) blur(8px) !important;
+    opacity: 0.35 !important;
+  }
   #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
   /* HK iframe 앞, transparent */
   /* ✨ v78.016 — 데스크탑에서도 모바일 레이아웃 시뮬레이션을 위해 iframe 폭 강제 좁게.
