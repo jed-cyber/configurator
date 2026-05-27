@@ -6032,10 +6032,12 @@ console.log('[v78.088] _isMobileRenderer:', _isMobileRenderer, 'UA:', navigator.
 const msaaSamples = renderer.capabilities.isWebGL2
   ? (_isMobileRenderer ? 0 : Math.min(8, renderer.capabilities.maxSamples || 8)) : 0;
 // ★ 중요: render target 크기를 pixelRatio 곱한 실제 픽셀 크기로 (이전 버그 — 화면 해상도가 절반이었음)
-// ✨ v78.101 — 모바일 pixelRatio 0.85 (해상도 + 부드러움 균형, 캐시 문제 해결됨).
+// ✨ v78.103 — 모바일 해상도 MAX (사용자 요청). devicePixelRatio (cap 2.0) → 망점 사라짐.
+//   주의: 픽셀 4배 → fragment shader 비용 4배. 끊김 가능성 증가. trade-off 명시.
 if (_isMobileRenderer) {
-  renderer.setPixelRatio(0.85);
-  console.log('[v78.101] mobile pixelRatio = 0.85 (balanced)');
+  const _maxDpr = Math.min(window.devicePixelRatio || 1, 2.0);
+  renderer.setPixelRatio(_maxDpr);
+  console.log('[v78.103] mobile pixelRatio = MAX', _maxDpr, '(devicePixelRatio:', window.devicePixelRatio, ')');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
