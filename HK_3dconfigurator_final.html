@@ -13667,6 +13667,8 @@ function _forceLightingBaseline() {
 //   _BG_SPLAT 값 변경이 이 setInterval 에 의해 매 50ms 덮어씌워지던 것이 진짜 원인이었음.
 const _OVERVIEW_SPLAT_CSS_FILTER = 'brightness(0.335) contrast(1.35) saturate(0.53) blur(8px)';
 function _forceSplatBgFilter() {
+  // ✨ v78.138 — 사용자가 splat 슬라이더 만지면 (window._splatSliderActive=true), 강제 reset 영구 skip.
+  if (window._splatSliderActive) return;
   if (window.currentChapter) return;   // 챕터 안 = 챕터 filter owner — skip
   try {
     if (!window.parent || window.parent === window) return;
@@ -22743,6 +22745,8 @@ init();
   let _splatBriCur = 0.40, _splatBlurCur = 8;
   function _applySplatFilter() {
     try {
+      // v78.138 — 사용자 슬라이더 활성 플래그 → _forceSplatBgFilter 의 매 50ms reset 영구 차단.
+      window._splatSliderActive = true;
       if (!window.parent || window.parent === window) return;
       const splatBg = window.parent.document.getElementById('splat-bg');
       if (!splatBg) return;
