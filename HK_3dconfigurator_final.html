@@ -22657,7 +22657,143 @@ init();
   #mob-tune-panel .mt-reset:active { background: rgba(102,170,255,0.3); }
 </style>
 
-<!-- ✨ v78.115 — Tune 패널 div 삭제 (사용자 요청). 락인 값은 코드에 박힘 (refl 2.45/1.55). -->
+<!-- ✨ v78.136 — 사용자 요청: backwall AO/밝기 + Overview Refl HDRI 슬라이더 추가. -->
+<div id="mob-tune-panel">
+  <div class="mt-head">
+    <span>🎛 Tune</span>
+    <span class="mt-tri">▶</span>
+  </div>
+  <div class="mt-body">
+    <div class="mt-section">Backwall</div>
+    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-bwBri-v">0.82</span></label><input type="range" id="mt-bwBri" min="0" max="1.5" step="0.01" value="0.82"></div>
+    <div class="mt-row"><label>AO Map <span class="mt-v" id="mt-bwAo-v">0.04</span></label><input type="range" id="mt-bwAo" min="0" max="2" step="0.01" value="0.04"></div>
+
+    <div class="mt-section">Splat 배경</div>
+    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-splatBri-v">0.40</span></label><input type="range" id="mt-splatBri" min="0" max="2" step="0.05" value="0.40"></div>
+    <div class="mt-row"><label>Blur <span class="mt-v" id="mt-splatBlur-v">8</span></label><input type="range" id="mt-splatBlur" min="0" max="30" step="1" value="8"></div>
+
+    <div class="mt-section">Overview Reflection (캐비닛)</div>
+    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-refBri-v">2.45</span></label><input type="range" id="mt-refBri" min="0" max="5" step="0.05" value="2.45"></div>
+    <div class="mt-row"><label>Contrast <span class="mt-v" id="mt-refCon-v">1.65</span></label><input type="range" id="mt-refCon" min="0" max="3" step="0.05" value="1.65"></div>
+    <div class="mt-row"><label>Saturation <span class="mt-v" id="mt-refSat-v">0.00</span></label><input type="range" id="mt-refSat" min="0" max="2" step="0.05" value="0.00"></div>
+
+    <button class="mt-reset" id="mt-reset">↺ Reset</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // v78.136 — backwall + refl 슬라이더 wire
+  const panel = document.getElementById('mob-tune-panel');
+  if (!panel) return;
+  const head = panel.querySelector('.mt-head');
+  head.addEventListener('click', () => panel.classList.toggle('open'));
+
+  function _bind(id, vid, apply) {
+    const el = document.getElementById(id);
+    const vEl = document.getElementById(vid);
+    if (!el || !vEl) return;
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      vEl.textContent = v.toFixed(2);
+      try { apply(v); } catch(e) { console.warn('[v78.136] apply 실패:', id, e); }
+    });
+  }
+
+  // Backwall material 적용 (globalLock 우회 - v78.125 backwall lock 제거)
+  function _applyBackwall(briScalar, aoVal) {
+    if (typeof modelRoot === 'undefined' || !modelRoot) return;
+    modelRoot.traverse(o => {
+      if (o.isMesh && o.name === 'backwall' && o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(m => {
+          if (briScalar != null && m.color) {
+            // brightness 0~1.5 → color value 0~255*1.5
+            const c = Math.min(1, briScalar);   // clamp 1.0 max for color
+            m.color.setRGB(c, c, c);
+          }
+          if (aoVal != null && 'aoMapIntensity' in m) m.aoMapIntensity = aoVal;
+          m.needsUpdate = true;
+          // v78.125 lock 무력화 (사용자 직접 조절 우선)
+          m._backwallLocked = false;
+        });
+      }
+    });
+  }
+
+  // PMREM 강제 재생성 (refl 값 변경 후 적용)
+  function _forceRegenEnv() {
+    if (typeof scene === 'undefined' || typeof regenerateEnvMap !== 'function') return;
+    try {
+      if (scene._envFinalLocked) {
+        Object.defineProperty(scene, 'environment', {
+          configurable: true, writable: true, value: scene.environment
+        });
+        scene._envFinalLocked = false;
+      }
+      regenerateEnvMap();
+    } catch(e) { console.warn('[v78.136] forceRegenEnv 실패:', e); }
+  }
+
+  // ===== Backwall =====
+  _bind('mt-bwBri', 'mt-bwBri-v', v => { _applyBackwall(v, null); });
+  _bind('mt-bwAo',  'mt-bwAo-v',  v => { _applyBackwall(null, v); });
+
+  // ===== Splat 배경 (parent page splat-bg DIV CSS filter) =====
+  let _splatBriCur = 0.40, _splatBlurCur = 8;
+  function _applySplatFilter() {
+    try {
+      if (!window.parent || window.parent === window) return;
+      const splatBg = window.parent.document.getElementById('splat-bg');
+      if (!splatBg) return;
+      // CSS !important 우회: setProperty 의 priority 인수 'important'
+      const filterStr = `brightness(${_splatBriCur.toFixed(2)}) saturate(0.6) blur(${_splatBlurCur}px)`;
+      splatBg.style.setProperty('filter', filterStr, 'important');
+      splatBg.style.setProperty('-webkit-filter', filterStr, 'important');
+    } catch(e) { console.warn('[v78.136] splat filter 적용 실패:', e); }
+  }
+  _bind('mt-splatBri', 'mt-splatBri-v', v => { _splatBriCur = v; _applySplatFilter(); });
+  _bind('mt-splatBlur', 'mt-splatBlur-v', v => { _splatBlurCur = v; _applySplatFilter(); });
+
+  // ===== Overview Refl =====
+  _bind('mt-refBri', 'mt-refBri-v', v => {
+    if (typeof reflColorState !== 'undefined') { reflColorState.brightness = v; }
+    if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.brightness = v;
+    _forceRegenEnv();
+  });
+  _bind('mt-refCon', 'mt-refCon-v', v => {
+    if (typeof reflColorState !== 'undefined') { reflColorState.contrast = v; }
+    if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.contrast = v;
+    _forceRegenEnv();
+  });
+  _bind('mt-refSat', 'mt-refSat-v', v => {
+    if (typeof reflColorState !== 'undefined') { reflColorState.saturation = v; }
+    if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.saturation = v;
+    _forceRegenEnv();
+  });
+
+  // Reset
+  document.getElementById('mt-reset').addEventListener('click', () => {
+    const D = { bwBri: 0.82, bwAo: 0.04, splatBri: 0.40, splatBlur: 8, refBri: 2.45, refCon: 1.65, refSat: 0.00 };
+    Object.keys(D).forEach(k => {
+      const el = document.getElementById('mt-' + k);
+      const vEl = document.getElementById('mt-' + k + '-v');
+      if (el && vEl) {
+        el.value = D[k];
+        vEl.textContent = (k === 'splatBlur') ? String(D[k]) : D[k].toFixed(2);
+        el.dispatchEvent(new Event('input'));
+      }
+    });
+  });
+
+  console.log('[v78.136] 슬라이더 wire 완료 — backwall(bri/ao) + splat(bri/blur) + refl(bri/con/sat)');
+})();
+</script>
+
+<style>
+  /* v78.136 — 패널 display 다시 활성 (v78.115 에서 display:none 처리한 것 revert) */
+  #mob-tune-panel { display: block !important; }
+</style>
 
 <script>
 (function(){
