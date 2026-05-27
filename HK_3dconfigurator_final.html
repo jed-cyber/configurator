@@ -1941,7 +1941,13 @@
 </div>
 
 <header class="top-header">
-  <div class="brand"><img src="./tex/KakaoTalk_20260428_112919025.png" alt="HK" class="brand-logo" /> <span class="light">STERILIZER</span></div>
+  <div class="brand">
+    <!-- ✨ v78.105 — img 의존성 제거 (filter brightness/invert 무효 + 파일 404 무한 black 문제 해결). inline SVG 로 직접 흰색 HK. -->
+    <svg class="brand-logo" viewBox="0 0 60 26" xmlns="http://www.w3.org/2000/svg" aria-label="HK" style="height:26px;width:auto;display:block;">
+      <text x="0" y="22" font-family="'Inter', 'Helvetica Neue', sans-serif" font-size="24" font-weight="700" fill="#ffffff" letter-spacing="1">HK</text>
+    </svg>
+    <span class="light">STERILIZER</span>
+  </div>
   <nav class="top-nav"><a>GALLERY</a><a>SPEC</a><a>≡</a></nav>
 </header>
 
@@ -7086,6 +7092,17 @@ function applyEquirect(tex) {
           reflColorState.contrast   = window._REFL_OVERVIEW.contrast;
           reflColorState.saturation = window._REFL_OVERVIEW.saturation;
           reflColorState.tint       = window._REFL_OVERVIEW.tint;
+        }
+        // ✨ v78.105 — envColorState (배경 sphere 밝기) 도 락인값 적용. 안 그러면 sphere 가 default (어두움) 로 남음.
+        if (typeof envColorState !== 'undefined') {
+          envColorState.rotationY  = 2.5830872929516078;
+          envColorState.brightness = 1.5;
+          envColorState.contrast   = 1.35;
+          envColorState.saturation = 0.55;
+          envColorState.tint       = '#FAF7FC';
+          envColorState.highlights = 0;
+          envColorState.shadows    = 0;
+          console.log('[v78.105] envColorState 락인값 적용 (배경 sphere 밝기 1.5)');
         }
         // 3) HDRI 기반 PMREM 재생성
         if (typeof regenerateEnvMap === 'function') regenerateEnvMap();
@@ -15108,6 +15125,8 @@ async function init() {
       catch(e) { console.warn('[PreWarmup] runPreWarmup 실패:', e); }
     }
     // ✨ v77.896 — sequential chapter pre-warm. (v78.097 revert: 원래대로 모바일도 실행)
+    // ✨ v78.105 — 각 챕터 진입 wait 150 → 350ms (onEnter 의 setTimeout cascade 완전 settle) + 명시적 renderer.compile.
+    //              사용자 보고: "각 챕터 이동할때 튀는게 많아. 각 챕터가 시작 되기전에 모든 로딩을 다끝내."
     window._skipDissolve = true;
     try {
       if (window._enterChapter && window._exitChapter && window._CHAPTER_CONTENT) {
@@ -15115,14 +15134,31 @@ async function init() {
         for (const ch of chList) {
           if (typeof setStatus === 'function') setStatus(`챕터 ${ch} 캐시 중...`);
           window._enterChapter(ch);
-          // 짧은 대기 — onEnter 의 setTimeout 들 진행 + 1 frame render.
-          await new Promise(r => setTimeout(r, 150));
+          // ✨ v78.105 — wait 350ms + 명시적 frame 2회 강제 render (shader variants + texture upload 보장).
+          await new Promise(r => setTimeout(r, 350));
+          try {
+            if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+              // 챕터 카메라 angle 에서 명시적 compile (모든 visible mesh 의 shader variant 강제 컴파일)
+              renderer.compile(scene, camera);
+              // 2 frame 강제 render — onEnter 의 material/light 업데이트가 GPU 에 반영되도록.
+              renderer.render(scene, camera);
+              await new Promise(r => requestAnimationFrame(r));
+              renderer.render(scene, camera);
+              await new Promise(r => requestAnimationFrame(r));
+            }
+          } catch(e) { console.warn('[v78.105] chapter ' + ch + ' render 실패:', e); }
         }
         // 모든 챕터 완료 → TOC 복귀.
         if (typeof setStatus === 'function') setStatus('Overview 복귀 중...');
         window._exitChapter();
-        await new Promise(r => setTimeout(r, 200));
-        console.log('[v77.896] Sequential chapter pre-warm 완료 — 모든 챕터 GPU 캐시 채움');
+        await new Promise(r => setTimeout(r, 300));
+        try {
+          if (typeof renderer !== 'undefined') {
+            renderer.compile(scene, camera);
+            renderer.render(scene, camera);
+          }
+        } catch(e) {}
+        console.log('[v78.105] Sequential chapter pre-warm 완료 — 7개 챕터 × 350ms + 2 frame render');
       }
     } catch(e) { console.warn('[v77.896] Sequential pre-warm 실패:', e); }
     window._skipDissolve = false;
