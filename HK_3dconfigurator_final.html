@@ -6732,8 +6732,8 @@ window.reflColorState = reflColorState;
 // envColorState 도 (v77.938 BG 패널 + future 사용 위해)
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
-// ✨ v78.141 — 사용자 락인 (모바일/PC 통일): brightness 1.95 / contrast 1.30 / saturation 0.
-window._REFL_OVERVIEW   = { brightness: 1.95, contrast: 1.30, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
+// ✨ v78.144 — 사용자 락인 업데이트: brightness 2.05 / contrast 3.00 / saturation 0.
+window._REFL_OVERVIEW   = { brightness: 2.05, contrast: 3.00, saturation: 0.00, tint: '#FDFBFE' };
 window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
 window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
 window._REFL_DRYING     = { brightness: 1.05, contrast: 1.15, saturation: 0.00, tint: '#FDFBFE' }; // ✨ v78.005 brightness -0.1
@@ -7667,23 +7667,23 @@ async function applyLookdevPreset(s) {
     console.log('[v78.041b] envMap reset 제거됨. delay 300ms 만으로 race condition 보완.');
   } catch(e) { console.warn('[v77.937c] final env lock 실패:', e); }
 
-  // ✨ v78.141 — 사용자 락인: backwall brightness 1.08 (color = white, clamp), aoMapIntensity 1.08.
+  // ✨ v78.144 — 사용자 락인: backwall brightness 1.09 (color = white, clamp), aoMapIntensity 1.87.
   try {
     if (typeof modelRoot !== 'undefined' && modelRoot) {
       modelRoot.traverse(o => {
         if (o.isMesh && o.name === 'backwall' && o.material) {
           const mats = Array.isArray(o.material) ? o.material : [o.material];
           mats.forEach(m => {
-            if (m.color) m.color.setRGB(1, 1, 1);   // brightness 1.08 → clamp 1.0 (color max)
-            if ('aoMapIntensity' in m) m.aoMapIntensity = 1.08;
+            if (m.color) m.color.setRGB(1, 1, 1);   // brightness 1.09 → clamp 1.0 (color max)
+            if ('aoMapIntensity' in m) m.aoMapIntensity = 1.87;
             m._backwallLocked = true;
             m.needsUpdate = true;
           });
         }
       });
-      console.log('[v78.141] backwall 락인: color=white, ao=1.08');
+      console.log('[v78.144] backwall 락인: color=white, ao=1.87');
     }
-  } catch(e) { console.warn('[v78.141] backwall 락 실패:', e); }
+  } catch(e) { console.warn('[v78.144] backwall 락 실패:', e); }
 
   // ✨ v78.111 — 사용자 요청: 모바일 캐비닛 look 을 PC 처럼 매끈하게.
   //   원인: 모바일 dpr=3 → brushed metal normal map detail 다 보임. PC dpr=1 → 자동 mip blur.
@@ -13671,7 +13671,7 @@ function _forceLightingBaseline() {
 // ✨ v78.120 — 사용자 요청: splat 절반. brightness 0.67 → 0.335 (절반). contrast/saturate/blur 유지.
 //   _BG_SPLAT 값 변경이 이 setInterval 에 의해 매 50ms 덮어씌워지던 것이 진짜 원인이었음.
 // ✨ v78.141 — 사용자 락인: brightness 1.10 / blur 6px.
-window._OVERVIEW_SPLAT_CSS_FILTER = 'brightness(1.10) saturate(0.6) blur(6px)';
+window._OVERVIEW_SPLAT_CSS_FILTER = 'brightness(1.20) saturate(0.6) blur(4px)';
 function _forceSplatBgFilter() {
   if (window.currentChapter) return;   // 챕터 안 = 챕터 filter owner — skip
   try {
@@ -19056,9 +19056,9 @@ window.ChapterManager = (() => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // ✨ v78.141 — backwall white + ao 1.08 락인.
+                  // ✨ v78.144 — backwall white + ao 1.87 락인.
                   if (m.color) m.color.setRGB(1, 1, 1);
-                  if ('aoMapIntensity' in m) m.aoMapIntensity = 1.08;
+                  if ('aoMapIntensity' in m) m.aoMapIntensity = 1.87;
                   m.needsUpdate = true;
                   m._backwallLocked = true;
                 });
@@ -19109,22 +19109,24 @@ window.ChapterManager = (() => {
         }
         // ✨ v77.858 — onEnter 가 backwall 안 건드리므로 복원도 불필요.
         // ✨ v78.037 — onEnter 에서 brighten 한 backwall 복원 (다른 챕터 영향 X).
+        // ✨ v78.144 — 사용자 락 유지: white + AO 1.87.
         try {
           if (window._modelRoot) {
             window._modelRoot.traverse(o => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // overview default 복원: color #a2a2a2, AO 0.16
-                  if (m.color) m.color.setHex(0xa2a2a2);
-                  if ('aoMapIntensity' in m) m.aoMapIntensity = 0.16;
+                  // v78.144 — 락 유지 (white, AO 1.87)
+                  if (m.color) m.color.setRGB(1, 1, 1);
+                  if ('aoMapIntensity' in m) m.aoMapIntensity = 1.87;
+                  m._backwallLocked = true;
                   m.needsUpdate = true;
                 });
               }
             });
-            console.log('[v78.037] Modular onExit — backwall 복원 (#a2a2a2, AO 0.16)');
+            console.log('[v78.144] Modular onExit — backwall lock 유지 (white, AO 1.87)');
           }
-        } catch(e) { console.warn('[v78.037] modular backwall 복원 실패', e); }
+        } catch(e) { console.warn('[v78.144] modular backwall 락 유지 실패', e); }
         // ✨ v77.523-4 — idle timer 정리
         if (window._modularIdleTimer) { clearTimeout(window._modularIdleTimer); window._modularIdleTimer = null; }
         // ✨ v78.031 — modular → 다른 챕터 직접 이동 시 doors 강제 close
@@ -22804,7 +22806,7 @@ init();
 </script>
 
 <style>
-  /* ✨ v78.141 — 사용자 락인 끝났음. Tune 패널 숨김 (모든 값 코드에 박힘). */
+  /* ✨ v78.144 — 모든 값 코드에 락인 완료. Tune 패널 완전히 숨김. */
   #mob-tune-panel { display: none !important; }
 </style>
 
