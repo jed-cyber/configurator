@@ -36,6 +36,10 @@
     /* iOS notch 대응 */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     box-sizing: border-box;
+    /* ✨ v78.123 — splat 배경 어둡게: iframe 자체 brightness 0.5 (사용자 요청). cabinet 도 같이 어두워지지만
+       refl PMREM 자체는 그대로 (contrast +0.1 적용 상태) 라 메탈 질감 유지. */
+    filter: brightness(0.5);
+    -webkit-filter: brightness(0.5);
   }
   /* 데스크탑에서 좌우 빈 공간 dark backdrop (모바일 frame 효과) */
   body::before {
