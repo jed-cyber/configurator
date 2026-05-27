@@ -60,7 +60,10 @@
   .top-header > * { pointer-events: auto; }
   /* ✨ v77.521-10 — HK STERILIZER 로고 텍스트 흰색 (사용자 요청). 밝은 bg 위 가독성 위해 text-shadow */
   .brand { font-size: 16px; font-weight: 400; letter-spacing: 2px; color: #ffffff; display: flex; align-items: center; gap: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.50), 0 0 8px rgba(0,0,0,0.30); }
-  .brand .brand-logo { height: 26px; width: auto; display: block; filter: brightness(0) invert(1); }
+  /* ✨ v78.102 — !important 로 어떤 후속 룰도 filter 못 끄게 락인 (모바일/배포 안전). */
+  .brand .brand-logo,
+  .brand img.brand-logo,
+  header.top-header .brand .brand-logo { height: 26px !important; width: auto !important; display: block !important; filter: brightness(0) invert(1) !important; -webkit-filter: brightness(0) invert(1) !important; }
   .brand .light { font-weight: 300; color: #ffffff; letter-spacing: 2.5px; opacity: 0.90; }
   .top-nav { display: flex; gap: 32px; font-size: 11px; letter-spacing: 2.5px; }
   .top-nav a { color: #1a1a1f; text-decoration: none; cursor: pointer; font-weight: 400; }
@@ -14266,11 +14269,14 @@ async function init() {
   window._hdriCustomLoaded = false;   // tex/ 의 HDRI 를 한 번 로드했는지 플래그
   //   ✨ v77.533/558/559/561 — HDRI.png (대문자, 6.3MB panorama) 우선. ver2 는 backup.
   //   ✨ v78.090 reverted — HDRI 압축으로 사이즈 줄이고 모바일/PC 모두 사용. (HDRI fetch 살림)
+  //   ✨ v78.102 — case sensitivity fix: 실제 파일명 'HDRi.png' (소문자 i) 누락 → GitHub Pages (Linux 케이스 민감) 에서 fetch 실패 → HDRI 없음 → 메탈 반사 없음.
+  //               모든 케이스 variant 추가 + 'HDRi.png' 를 첫 번째에 우선.
   window._hdriCandidates = [
-    'HDRI.png', 'hdri.png', 'Hdri.png',
-    'hdri ver2.png', 'HDRI ver2.png', 'hdri_ver2.png', 'HDRI_ver2.png',
-    'hdri.jpg', 'HDRI.jpg', 'hdri.jpeg', 'hdri.webp',
-    'hdri.exr', 'HDRI.exr', 'hdri.hdr', 'HDRI.hdr',
+    'HDRi.png',                                    // ✨ v78.102 — 실제 파일명 (소문자 i)
+    'HDRI.png', 'hdri.png', 'Hdri.png', 'hDRI.png',
+    'hdri ver2.png', 'HDRI ver2.png', 'HDRi ver2.png', 'hdri_ver2.png', 'HDRI_ver2.png',
+    'hdri.jpg', 'HDRI.jpg', 'HDRi.jpg', 'hdri.jpeg', 'hdri.webp',
+    'hdri.exr', 'HDRI.exr', 'HDRi.exr', 'hdri.hdr', 'HDRI.hdr', 'HDRi.hdr',
   ];
   // ✨ v77.534 — HDRI 컨트롤 슬라이더 wire (한 번만)
   if (!window._hdriCtrlWired) {
