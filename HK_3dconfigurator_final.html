@@ -22796,8 +22796,11 @@ init();
 </style>
 
 <script>
+// ✨ v78.137 — v78.112 의 옛 wire script 비활성화. v78.136 의 새 wire 가 .mt-head 클릭 처리.
+//   이전 문제: 옛/새 script 둘 다 click 에서 toggle('open') → 같은 클릭에 add+remove = 변화 없음.
+(function(){ return; })();
+/* DISABLED OLD SCRIPT — kept structure to not break line counts
 (function(){
-  // v78.112 — 모바일 실시간 튠 패널 wire.
   const panel = document.getElementById('mob-tune-panel');
   if (!panel) return;
   const head = panel.querySelector('.mt-head');
@@ -22936,6 +22939,7 @@ init();
 
   console.log('[v78.112] 모바일 튠 패널 wire 완료');
 })();
+*/
 </script>
 
 </body>
