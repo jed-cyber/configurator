@@ -11469,20 +11469,21 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.145 — 사용자 요청: 파티클 더 크고 색감 강화.
-//   size 0.015→0.026 (+73%), brightness 2.5→1.6 (washout 줄여 색감 살림), color 더 진한 시안 블루.
+// ✨ v78.146 — 사용자 요청: 더 최적화 + 진짜 푸른색.
+//   count 1300→800 (-38% JS loop), brightness 1.6→1.0 (g/b 채널 clamp 제거 → 색이 흰색으로 안 날아감),
+//   color #3aa0ff→#1e6fff (더 진한 블루, brightness 1.0 곱해도 r=0.12 g=0.43 b=1.0 → 명확한 블루).
 const PARTICLES = {
-  count: 1300,
-  size: 0.026,
+  count: 800,
+  size: 0.028,
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
   turbulence: 1.45,
   damping: 0.96,
   gravity: -0.31,
-  brightness: 1.6,
-  opacity: 0.92,
-  color: new THREE.Color('#3aa0ff'),   // 더 진한 시안 블루 (이전 #5da6ff → 색감 강화)
+  brightness: 1.0,
+  opacity: 0.95,
+  color: new THREE.Color('#1e6fff'),   // 진한 블루 (이전 #3aa0ff × 1.6 = clamp 되어 흰색 → 이제 색 유지)
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,
@@ -11677,15 +11678,16 @@ function createUVCParticles() {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-  // 부드러운 글로우 텍스처
+  // ✨ v78.146 — 캔버스 텍스처를 푸른색으로 틴트 (중심은 밝은 시안, 가장자리는 진한 블루).
+  //   AdditiveBlending 겹침에도 RGB 비율이 푸른색 유지 (이전: 흰색 그라데이션 → 누적 시 흰 화이트아웃).
   const cv = document.createElement('canvas');
   cv.width = cv.height = 64;
   const ctx = cv.getContext('2d');
   const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  grad.addColorStop(0,   'rgba(255,255,255,1)');
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.7)');
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.15)');
-  grad.addColorStop(1,   'rgba(255,255,255,0)');
+  grad.addColorStop(0,   'rgba(150,200,255,1)');    // 중심: 밝은 하늘색 (살짝 푸른빛)
+  grad.addColorStop(0.3, 'rgba(80,140,255,0.7)');   // 중간: 진한 블루
+  grad.addColorStop(0.7, 'rgba(40,100,230,0.15)');  // 외곽: 더 진한 블루
+  grad.addColorStop(1,   'rgba(30,80,200,0)');      // 끝: 페이드 (블루 잔향)
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 64, 64);
   const tex = new THREE.CanvasTexture(cv);
