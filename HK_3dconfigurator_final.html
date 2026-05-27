@@ -14709,8 +14709,10 @@ async function init() {
   }
   window._useHdriAsBackground = async function() {
     try {
-      // (a) cyclorama 강제 숨김 (이미 hidden 이어도 idempotent)
-      if (typeof cyclorama !== 'undefined' && cyclorama) {
+      // ✨ v78.126 — 모바일에선 cyclorama 살려둠 (사용자 옵션 A: splat 제거하고 디오라마 backdrop).
+      const _isMobBg = /mobile|android|iphone|ipad/i.test(navigator.userAgent) || new URLSearchParams(location.search).get('mobile') === '1';
+      // (a) cyclorama 강제 숨김 (PC 만). 모바일은 디오라마 사용.
+      if (typeof cyclorama !== 'undefined' && cyclorama && !_isMobBg) {
         cyclorama.visible = false;
       }
       // ✨ v77.771 — HDRI race condition 완전 해결. rawEquirect 도 체크해서 preset 이 이미 로드 시작했으면 skip.
@@ -14901,7 +14903,9 @@ async function init() {
           const _bgEnforce = () => {
             const want = window._currentBgTex || (typeof envRT !== 'undefined' && envRT ? envRT.texture : null);
             if (want && scene.background !== want) scene.background = want;
-            if (typeof cyclorama !== 'undefined' && cyclorama && cyclorama.visible) {
+            // ✨ v78.126 — 모바일은 cyclorama 살려둠 (디오라마 backdrop). PC 만 hide.
+            const _isMobRaf = /mobile|android|iphone|ipad/i.test(navigator.userAgent) || new URLSearchParams(location.search).get('mobile') === '1';
+            if (typeof cyclorama !== 'undefined' && cyclorama && cyclorama.visible && !_isMobRaf) {
               cyclorama.visible = false;
             }
             window._bgEnforceRaf = requestAnimationFrame(_bgEnforce);
@@ -14978,8 +14982,9 @@ async function init() {
           window._hdriPosOffsetZ = 0;
           window._hdriLockToCamera = false;   // ✨ v77.567 — world 고정 (floor 와 같이 회전)
           sphere.onBeforeRender = function(renderer, scene, camera) {
-            // ✨ v77.560 — cyclorama 매 frame 강제 hide
-            if (typeof cyclorama !== 'undefined' && cyclorama) {
+            // ✨ v78.126 — 모바일은 cyclorama 살림 (디오라마 backdrop). PC 만 hide.
+            const _isMobOnBeforeRender = /mobile|android|iphone|ipad/i.test(navigator.userAgent) || new URLSearchParams(location.search).get('mobile') === '1';
+            if (typeof cyclorama !== 'undefined' && cyclorama && !_isMobOnBeforeRender) {
               cyclorama.visible = false;
             }
             // ✨ v77.589 — scene.background = null 다시 활성.

@@ -20,9 +20,8 @@
   }
   /* iOS Safari full-screen */
   body { height: 100vh; height: 100dvh; }
-  /* ✨ v78.125 — splat-bg 활성화 (display:block) + CSS filter brightness(0.5).
-       HK iframe 의 자체 splat 은 별도로 hide. mobile_configurator splat 만 보임 → CSS filter 적용 가능 → 캐비닛 보호. */
-  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; filter: brightness(0.5); -webkit-filter: brightness(0.5); }
+  /* ✨ v78.126 — splat-bg 다시 display:none (사용자 옵션 A: splat 완전 제거). cyclorama 가 backdrop 역할. */
+  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: none; }
   #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
   /* HK iframe 앞, transparent */
   /* ✨ v78.016 — 데스크탑에서도 모바일 레이아웃 시뮬레이션을 위해 iframe 폭 강제 좁게.
@@ -173,8 +172,14 @@ splatScene.add(sparkRenderer);
 
 let splatMesh = null;
 const SPLAT_URL = './Immaculate Commercial Kitchen Space.spz';
-// ✨ v78.092 — splat 압축 완료 (60MB → 16MB, 4.32M → 1.08M points). 모바일에서도 splat 살림.
-loadSplat();
+// ✨ v78.126 — 모바일에서 splat 로드 자체 스킵 (사용자 옵션 A). cyclorama 가 backdrop. fps 향상 + 메모리 절약.
+if (isMobile) {
+  console.log('[v78.126] mobile: splat 로드 스킵 → cyclorama 디오라마 backdrop 사용. _splatReadyToFade=true 즉시 신호.');
+  window._splatReadyToFade = true;
+  if (typeof window._checkFadeLoading === 'function') window._checkFadeLoading();
+} else {
+  loadSplat();
+}
 async function loadSplat() {
   console.log('[mobile] Splat 로드 시작:', SPLAT_URL);
   try {
