@@ -158,8 +158,8 @@ const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 const splatScene = new THREE.Scene();
 const splatCamera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 0.05, 200);
 const splatRenderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'low-power' });
-// ✨ v78.087 / v78.089 — 모바일 splat pixelRatio 0.65 (이전 1.0). 추가 56% 부담 감소.
-//   splat 화질 약간 더 거칠어지지만 부드러운 인터랙션 우선.
+// ✨ v78.089 / v78.094 — 모바일 splat pixelRatio 0.65 유지 (splat 은 의도된 DoF 블러 — 사용자 확인).
+//   HK iframe (캐비닛) 만 1.0으로 올림. splat 은 가볍게 유지.
 splatRenderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 0.65 : 2));
 splatRenderer.setSize(innerWidth, innerHeight);
 splatRenderer.outputColorSpace = THREE.SRGBColorSpace;
