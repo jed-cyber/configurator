@@ -6715,7 +6715,10 @@ window.reflColorState = reflColorState;
 // envColorState 도 (v77.938 BG 패널 + future 사용 위해)
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
-window._REFL_OVERVIEW   = { brightness: 1.28, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
+// ✨ v78.114 — 모바일 전용 refl 락인 (사용자 요청: 모바일만 bri 3.00 / con 1.55, PC 는 1.28/1.20 그대로).
+window._REFL_OVERVIEW   = (typeof _isMobileRenderer !== 'undefined' && _isMobileRenderer)
+  ? { brightness: 3.00, contrast: 1.55, saturation: 0.00, tint: '#FDFBFE' }
+  : { brightness: 1.28, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
 window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
 window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
 window._REFL_DRYING     = { brightness: 1.05, contrast: 1.15, saturation: 0.00, tint: '#FDFBFE' }; // ✨ v78.005 brightness -0.1
@@ -22597,14 +22600,10 @@ init();
     <span class="mt-tri">▶</span>
   </div>
   <div class="mt-body">
-    <div class="mt-section">HDRI (배경)</div>
-    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-envBri-v">1.50</span></label><input type="range" id="mt-envBri" min="0" max="3" step="0.05" value="1.5"></div>
-    <div class="mt-row"><label>Contrast <span class="mt-v" id="mt-envCon-v">1.35</span></label><input type="range" id="mt-envCon" min="0" max="3" step="0.05" value="1.35"></div>
-    <div class="mt-row"><label>Saturation <span class="mt-v" id="mt-envSat-v">0.55</span></label><input type="range" id="mt-envSat" min="0" max="2" step="0.05" value="0.55"></div>
-
+    <!-- ✨ v78.114 — HDRI 슬라이더 제거 (사용자 요청). DIR Power 로 교체. Reflection 도 모바일에서 락인 (3.00 / 1.55) 되어 패널엔 유지. -->
     <div class="mt-section">Reflection (캐비닛 메탈)</div>
-    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-refBri-v">1.28</span></label><input type="range" id="mt-refBri" min="0" max="3" step="0.05" value="1.28"></div>
-    <div class="mt-row"><label>Contrast <span class="mt-v" id="mt-refCon-v">1.20</span></label><input type="range" id="mt-refCon" min="0" max="3" step="0.05" value="1.20"></div>
+    <div class="mt-row"><label>Brightness <span class="mt-v" id="mt-refBri-v">3.00</span></label><input type="range" id="mt-refBri" min="0" max="5" step="0.05" value="3.00"></div>
+    <div class="mt-row"><label>Contrast <span class="mt-v" id="mt-refCon-v">1.55</span></label><input type="range" id="mt-refCon" min="0" max="3" step="0.05" value="1.55"></div>
     <div class="mt-row"><label>Saturation <span class="mt-v" id="mt-refSat-v">0.00</span></label><input type="range" id="mt-refSat" min="0" max="2" step="0.05" value="0.00"></div>
 
     <div class="mt-section">Metal</div>
@@ -22612,7 +22611,7 @@ init();
     <div class="mt-row"><label>Roughness <span class="mt-v" id="mt-rough-v">0.23</span></label><input type="range" id="mt-rough" min="0" max="1" step="0.01" value="0.23"></div>
 
     <div class="mt-section">Directional Lights</div>
-    <div class="mt-row"><label>DIR Brightness <span class="mt-v" id="mt-dir-v">1.00</span></label><input type="range" id="mt-dir" min="0" max="3" step="0.05" value="1.0"></div>
+    <div class="mt-row"><label>DIR Power <span class="mt-v" id="mt-dir-v">1.00</span></label><input type="range" id="mt-dir" min="0" max="3" step="0.05" value="1.0"></div>
 
     <button class="mt-reset" id="mt-reset">↺ Reset</button>
   </div>
@@ -22686,10 +22685,7 @@ init();
     });
   }
 
-  // HDRI envColorState
-  _bind('mt-envBri', 'mt-envBri-v', v => { if (typeof envColorState !== 'undefined') { envColorState.brightness = v; _forceRegenEnv(); } });
-  _bind('mt-envCon', 'mt-envCon-v', v => { if (typeof envColorState !== 'undefined') { envColorState.contrast = v; _forceRegenEnv(); } });
-  _bind('mt-envSat', 'mt-envSat-v', v => { if (typeof envColorState !== 'undefined') { envColorState.saturation = v; _forceRegenEnv(); } });
+  // v78.114 — HDRI envColorState 슬라이더 제거 (사용자 요청).
   // Refl reflColorState
   _bind('mt-refBri', 'mt-refBri-v', v => { if (typeof reflColorState !== 'undefined') { reflColorState.brightness = v; if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.brightness = v; _forceRegenEnv(); } });
   _bind('mt-refCon', 'mt-refCon-v', v => { if (typeof reflColorState !== 'undefined') { reflColorState.contrast = v; if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.contrast = v; _forceRegenEnv(); } });
@@ -22748,7 +22744,8 @@ init();
 
   // Reset 버튼
   document.getElementById('mt-reset').addEventListener('click', () => {
-    const D = { envBri: 1.50, envCon: 1.35, envSat: 0.55, refBri: 1.28, refCon: 1.20, refSat: 0.00, norm: 0.5, rough: 0.23, dir: 1.0 };
+    // v78.114 — HDRI 슬라이더 제거. 모바일 refl default 3.00/1.55 락인값으로.
+    const D = { refBri: 3.00, refCon: 1.55, refSat: 0.00, norm: 0.5, rough: 0.23, dir: 1.0 };
     Object.keys(D).forEach(k => {
       const el = document.getElementById('mt-' + k);
       const vEl = document.getElementById('mt-' + k + '-v');

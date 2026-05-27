@@ -209,7 +209,8 @@ async function loadSplat() {
   window._splatReadyToFade = true;
   if (typeof _checkFadeLoading === 'function') _checkFadeLoading();
 }
-loadSplat();
+// ✨ v78.114 — loadSplat() 중복 호출 제거 (이전: line 175 + 여기 line 212 두 번 호출 → 16MB fetch 2배 + SplatMesh 2개 race condition).
+//              사용자 보고: "모바일에서 랜덤 무한로딩/흰화면/정상 = 랜덤" → 이 race condition 이 원인.
 
 // ─── HK iframe 카메라 sync ───
 const hkFrame = document.getElementById('hk-frame');
