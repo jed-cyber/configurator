@@ -15098,27 +15098,24 @@ async function init() {
       try { window._runPreWarmup(); }
       catch(e) { console.warn('[PreWarmup] runPreWarmup 실패:', e); }
     }
-    // ✨ v77.896 / v78.097 — sequential chapter pre-warm. 모바일 skip (GPU 한계로 무한 hang).
-    //   모바일에서 chapter pre-warm 은 init 무한 로딩의 원인. 첫 chapter 진입 시 약간 stall 있지만 OK.
+    // ✨ v77.896 — sequential chapter pre-warm. (v78.097 revert: 원래대로 모바일도 실행)
     window._skipDissolve = true;
-    if (!_isMobileRenderer) {
-      try {
-        if (window._enterChapter && window._exitChapter && window._CHAPTER_CONTENT) {
-          const chList = Object.keys(window._CHAPTER_CONTENT);
-          for (const ch of chList) {
-            if (typeof setStatus === 'function') setStatus(`챕터 ${ch} 캐시 중...`);
-            window._enterChapter(ch);
-            await new Promise(r => setTimeout(r, 150));
-          }
-          if (typeof setStatus === 'function') setStatus('Overview 복귀 중...');
-          window._exitChapter();
-          await new Promise(r => setTimeout(r, 200));
-          console.log('[v77.896] Sequential chapter pre-warm 완료');
+    try {
+      if (window._enterChapter && window._exitChapter && window._CHAPTER_CONTENT) {
+        const chList = Object.keys(window._CHAPTER_CONTENT);
+        for (const ch of chList) {
+          if (typeof setStatus === 'function') setStatus(`챕터 ${ch} 캐시 중...`);
+          window._enterChapter(ch);
+          // 짧은 대기 — onEnter 의 setTimeout 들 진행 + 1 frame render.
+          await new Promise(r => setTimeout(r, 150));
         }
-      } catch(e) { console.warn('[v77.896] Sequential pre-warm 실패:', e); }
-    } else {
-      console.log('[v78.097] mobile: sequential chapter pre-warm SKIP (GPU 한계)');
-    }
+        // 모든 챕터 완료 → TOC 복귀.
+        if (typeof setStatus === 'function') setStatus('Overview 복귀 중...');
+        window._exitChapter();
+        await new Promise(r => setTimeout(r, 200));
+        console.log('[v77.896] Sequential chapter pre-warm 완료 — 모든 챕터 GPU 캐시 채움');
+      }
+    } catch(e) { console.warn('[v77.896] Sequential pre-warm 실패:', e); }
     window._skipDissolve = false;
     requestAnimationFrame(() => {
       // ✨ v77.882 — 로딩 hide 직전 DoF blur 1 frame 강제 render (사용자가 처음 보는 화면 = 이미 blur 적용).
