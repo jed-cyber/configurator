@@ -13644,7 +13644,9 @@ function _forceLightingBaseline() {
 // ✨ v77.931 — splat-bg filter 매 frame 강제 적용 (사용자 보고: 로딩 중 풀렸다 다시 적용).
 //   원인: 챕터 onExit 들이 splatBg.style.filter = '' 로 풀어버림. pre-warm 동안 모든 챕터 cycle = 계속 풀림.
 //   해결: 챕터 안 아닐 때 (currentChapter null) → 매 frame Overview filter 강제. 다른 코드가 풀어도 즉시 복원.
-const _OVERVIEW_SPLAT_CSS_FILTER = 'brightness(0.67) contrast(1.35) saturate(0.53) blur(8px)';
+// ✨ v78.120 — 사용자 요청: splat 절반. brightness 0.67 → 0.335 (절반). contrast/saturate/blur 유지.
+//   _BG_SPLAT 값 변경이 이 setInterval 에 의해 매 50ms 덮어씌워지던 것이 진짜 원인이었음.
+const _OVERVIEW_SPLAT_CSS_FILTER = 'brightness(0.335) contrast(1.35) saturate(0.53) blur(8px)';
 function _forceSplatBgFilter() {
   if (window.currentChapter) return;   // 챕터 안 = 챕터 filter owner — skip
   try {
