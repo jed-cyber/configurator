@@ -11469,20 +11469,20 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.142 — 사용자 요청: 파티클 좀 가볍게 + 푸른색.
-//   count 1900→1300 (-32%), size 0.018→0.015 (-17%), brightness 4.0→2.5 (blue 가시성), color purple→blue.
+// ✨ v78.145 — 사용자 요청: 파티클 더 크고 색감 강화.
+//   size 0.015→0.026 (+73%), brightness 2.5→1.6 (washout 줄여 색감 살림), color 더 진한 시안 블루.
 const PARTICLES = {
   count: 1300,
-  size: 0.015,
+  size: 0.026,
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
   turbulence: 1.45,
   damping: 0.96,
   gravity: -0.31,
-  brightness: 2.5,
-  opacity: 0.85,
-  color: new THREE.Color('#5da6ff'),   // 하늘 푸른색 (이전 #a066ff 보라 → 흰색으로 blow out 됨)
+  brightness: 1.6,
+  opacity: 0.92,
+  color: new THREE.Color('#3aa0ff'),   // 더 진한 시안 블루 (이전 #5da6ff → 색감 강화)
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,

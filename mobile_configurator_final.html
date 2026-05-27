@@ -288,9 +288,17 @@ function _splatSetDpr(target) {
   splatRenderer.setPixelRatio(target);
   splatRenderer.setSize(innerWidth, innerHeight);
 }
+// ✨ v78.145 — 모바일에서 parent splat loop 30fps cap. iframe 30fps 와 동기화.
+//   이전: parent 60fps + iframe 30fps → GPU 경쟁 + 잔렉. now: 둘 다 30fps.
+const _SPLAT_TARGET_FRAME_MS = isMobile ? (1000 / 30) : (1000 / 60);
+let _splatPrevFrameTime = performance.now();
 function animate() {
   requestAnimationFrame(animate);
+  if (document.hidden) return;
   const now = performance.now();
+  // ✨ v78.145 — frame cap (모바일 30fps)
+  if (now - _splatPrevFrameTime < _SPLAT_TARGET_FRAME_MS - 1) return;
+  _splatPrevFrameTime = now;
   // === FPS 측정 (1초 단위) ===
   _splatFrameCounter++;
   if (now - _splatFrameLastSampleT >= 1000) {
