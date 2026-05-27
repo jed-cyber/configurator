@@ -174,7 +174,8 @@ const sparkRenderer = new SparkRenderer({ renderer: splatRenderer });
 splatScene.add(sparkRenderer);
 
 let splatMesh = null;
-const SPLAT_URL = './Immaculate Commercial Kitchen Space.spz';
+// ✨ v78.134 — 모바일 전용 1MB splat (PC 는 7MB .spz 유지). 별도 파일로 분리.
+const SPLAT_URL = './Immaculate Commercial Kitchen Space.mobile.spz';
 // ✨ v78.128 — v78.126 splat 스킵 revert. splat 다시 살림.
 loadSplat();
 async function loadSplat() {
