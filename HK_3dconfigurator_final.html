@@ -7211,6 +7211,9 @@ async function applyLookdevPreset(s) {
     envColorState.shadows    = s.env.shadows    != null ? s.env.shadows    : 0.04;
     if (s.env.tint != null) envColorState.tint = s.env.tint;
     // envMapFile 이 있으면 IDB 에서 자동 로드 (loadEnvFromBlob → applyEquirect → regenerateEnvMap)
+    // ✨ v78.107 — preset envMapFile fetch 실패 시 _hdriCandidates 의 실제 파일로 fallback.
+    //              원인: preset 에 'ChatGPT Image 2026년 4월 25일 ...png' 박혀있는데 disk 에 없음 → preset envMap 없이 lock → 모바일에서 v78.083 unlock/regen 분기 GPU 정밀도 문제로 어두움.
+    //              해결: preset 단계에서 미리 HDRi.png 로 fallback → lock 전에 정상 envMap set → v78.083 path 자체 미실행.
     if (s.env.envMapFile) {
       let blob = await idbGet(s.env.envMapFile);
       // ✅ IDB 에 없으면 ./tex/ 폴더에서 fetch
@@ -7224,15 +7227,36 @@ async function applyLookdevPreset(s) {
           }
         } catch(e) {}
       }
+      // ✨ v78.107 — preset envMapFile 못 찾았으면 HDRI 후보 리스트로 fallback (HDRi.png 등).
+      //              window._hdriCandidates 는 init 후반에 정의되므로 여기선 inline list 사용.
+      let _loadedFname = s.env.envMapFile;
+      const _earlyCandidates = ['HDRi.png','HDRI.png','hdri.png','Hdri.png','HDRi.jpg','HDRI.jpg','hdri.jpg','HDRi.jpeg','hdri.webp','HDRi.hdr','HDRI.hdr','hdri.hdr','HDRi.exr','HDRI.exr'];
+      if (!blob) {
+        console.warn('[Preset] envMapFile 누락 → HDRI 후보 fallback 시도:', s.env.envMapFile);
+        for (const fname of _earlyCandidates) {
+          try {
+            const res = await fetch('./tex/' + encodeURIComponent(fname), { cache: 'no-store' });
+            if (!res.ok) continue;
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('text/html')) continue;
+            const b = await res.blob();
+            if (b.size < 1024) continue;
+            blob = b;
+            _loadedFname = fname;
+            console.log('[v78.107] preset envMap fallback 성공:', fname, '(' + b.size + ' bytes)');
+            break;
+          } catch(e) {}
+        }
+      }
       if (blob) {
         try {
-          await loadEnvFromBlob(blob, s.env.envMapFile);
-          console.log('[Preset] HDR/EXR 자동 로드 + 색보정 적용:', s.env.envMapFile);
+          await loadEnvFromBlob(blob, _loadedFname);
+          console.log('[Preset] HDR/EXR 자동 로드 + 색보정 적용:', _loadedFname);
           // ✨ v77.770 — preset HDRI 로드 성공 시 _hdriCustomLoaded 플래그 set. _useHdriAsBackground 의 fallback HDRI 로드 skip → cabinet 등장 후 scene.environment 두 번째 swap 방지.
           window._hdriCustomLoaded = true;
         } catch (e) { console.warn('[Preset] env load fail:', e); }
       } else {
-        console.warn('[Preset] envMapFile IDB / ./tex/ 둘 다 없음:', s.env.envMapFile);
+        console.warn('[Preset] envMapFile + _hdriCandidates fallback 둘 다 실패:', s.env.envMapFile);
       }
     } else if (rawEquirect) {
       // env 파일 없이 색보정만 변경된 경우 — 기존 raw 로 재생성
