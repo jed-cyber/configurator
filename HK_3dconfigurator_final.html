@@ -20588,7 +20588,15 @@ init();
     applyTransform();
     scene.add(splatMesh);
     window.splatMesh = splatMesh;
-    // ✨ v78.128 — v78.125 splat hide revert. splat 다시 살림 (사용자 요청).
+    // ✨ v78.129 — 모바일에선 HK iframe splat hide. mobile_configurator splat-bg DIV 가 splat 담당 (동적 pixelRatio 컨트롤 위해).
+    //   PC: HK iframe splat 그대로 사용. 모바일: 별도 캔버스 + 동적 품질.
+    try {
+      const _isMob = /mobile|android|iphone|ipad/i.test(navigator.userAgent) || new URLSearchParams(location.search).get('mobile') === '1';
+      if (_isMob && splatMesh) {
+        splatMesh.visible = false;
+        console.log('[v78.129] HK iframe splat hidden on mobile (mobile_configurator splat-bg 가 동적 품질 컨트롤로 대체)');
+      }
+    } catch(e) { console.warn('[v78.129] splat hide 실패:', e); }
     console.log('[v77.700] Spark splat 로드 시작:', url);
   }
   const DEG = Math.PI / 180;

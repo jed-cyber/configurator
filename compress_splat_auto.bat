@@ -62,16 +62,21 @@ if errorlevel 1 (
 
 echo [4/5] Splat 압축 중... >> "%LOG%"
 echo [4/5] Splat 압축 중 (수십 초)...
-REM splat-transform 옵션: SH 0 (색만), iterations 20 (더 강한 압축)
-call "%NODE_DIR%\splat-transform.cmd" "Immaculate Commercial Kitchen Space.spz.original" "Immaculate Commercial Kitchen Space.compressed.spz" -sh 0 -i 20 >> "%LOG%" 2>&1
+REM v78.130 — 매우 공격적 압축 (사용자: 6MB 보다 더 줄여).
+REM -sh 0 (색만), -i 20 (iterations), -d 0.2 (decimation 20% 유지 = 1.08M → ~216K, ~3MB 목표), -spz-version 3 (Spark 호환)
+call "%NODE_DIR%\splat-transform.cmd" "Immaculate Commercial Kitchen Space.spz.original" "Immaculate Commercial Kitchen Space.compressed.spz" -sh 0 -i 20 -d 0.2 --spz-version 3 >> "%LOG%" 2>&1
 if errorlevel 1 (
-    echo [WARN] -sh -i 옵션 실패. default 옵션으로 재시도... >> "%LOG%"
-    call "%NODE_DIR%\splat-transform.cmd" "Immaculate Commercial Kitchen Space.spz.original" "Immaculate Commercial Kitchen Space.compressed.spz" >> "%LOG%" 2>&1
+    echo [WARN] -d 0.2 옵션 실패. -d 0.3 재시도... >> "%LOG%"
+    call "%NODE_DIR%\splat-transform.cmd" "Immaculate Commercial Kitchen Space.spz.original" "Immaculate Commercial Kitchen Space.compressed.spz" -sh 0 -i 20 -d 0.3 --spz-version 3 >> "%LOG%" 2>&1
     if errorlevel 1 (
-        echo [ERROR] splat-transform 실행 실패. >> "%LOG%"
-        echo [ERROR] 압축 실패. log 확인.
-        pause
-        exit /b 1
+        echo [WARN] -d 옵션 실패. -sh -i 만 시도... >> "%LOG%"
+        call "%NODE_DIR%\splat-transform.cmd" "Immaculate Commercial Kitchen Space.spz.original" "Immaculate Commercial Kitchen Space.compressed.spz" -sh 0 -i 20 --spz-version 3 >> "%LOG%" 2>&1
+        if errorlevel 1 (
+            echo [ERROR] splat-transform 실행 실패. >> "%LOG%"
+            echo [ERROR] 압축 실패. log 확인.
+            pause
+            exit /b 1
+        )
     )
 )
 

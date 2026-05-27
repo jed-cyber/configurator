@@ -20,8 +20,9 @@
   }
   /* iOS Safari full-screen */
   body { height: 100vh; height: 100dvh; }
-  /* ✨ v78.126 — splat-bg 다시 display:none (사용자 옵션 A: splat 완전 제거). cyclorama 가 backdrop 역할. */
-  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: none; }
+  /* ✨ v78.129 — splat-bg display:block. mobile_configurator splat 보임 (HK iframe splat hide).
+       이렇게 하면 splat pixelRatio 를 별도로 컨트롤 가능 (cabinet 영향 0). */
+  #splat-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
   #splat-bg canvas { display: block; width: 100% !important; height: 100% !important; }
   /* HK iframe 앞, transparent */
   /* ✨ v78.016 — 데스크탑에서도 모바일 레이아웃 시뮬레이션을 위해 iframe 폭 강제 좁게.
@@ -159,8 +160,10 @@ const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 const splatScene = new THREE.Scene();
 const splatCamera = new THREE.PerspectiveCamera(35, innerWidth/innerHeight, 0.05, 200);
 const splatRenderer = new THREE.WebGLRenderer({ antialias: !isMobile, powerPreference: 'low-power' });
-// ✨ v78.103 — 모바일 splat pixelRatio MAX (사용자 요청). DoF 블러 의도 → 0.65 였지만 사용자 max 요청.
-splatRenderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+// ✨ v78.129 — 모바일 splat pixelRatio 0.5 (사용자 요청). DoF 블러 의도와 부합 (배경은 어차피 blur).
+//   fillrate: dpr 1.5 → 0.5 = 9배 가벼움. 카메라 움직임 시 추가로 0.25 로 동적 감소.
+splatRenderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 0.5 : 2));
+window._splatRenderer = splatRenderer;   // 동적 컨트롤용 노출
 splatRenderer.setSize(innerWidth, innerHeight);
 splatRenderer.outputColorSpace = THREE.SRGBColorSpace;
 splatRenderer.toneMapping = THREE.NoToneMapping;
@@ -261,13 +264,57 @@ window.addEventListener('resize', () => {
   splatRenderer.setSize(innerWidth, innerHeight);
 });
 
-// ─── Splat 자체 RAF ───
+// ─── Splat 자체 RAF + v78.129 동적 품질 컨트롤 ───
+//   1) 카메라 움직임 시 pixelRatio 0.25 (절반의 절반), 정지 300ms 후 0.5 복원
+//   2) FPS < 25 면 0.25 영구 락 / FPS > 45 면 0.5 복원 (어댑티브)
+const _SPLAT_DPR_IDLE   = isMobile ? 0.5  : 1.0;
+const _SPLAT_DPR_MOVING = isMobile ? 0.25 : 0.75;
+const _SPLAT_DPR_LOW    = isMobile ? 0.25 : 0.5;
+let _splatLastMoveT = 0;
+let _splatLastPos = new THREE.Vector3();
+let _splatLastFps = 60;
+let _splatFrameCounter = 0;
+let _splatFrameLastSampleT = performance.now();
+let _splatCurDpr = _SPLAT_DPR_IDLE;
+let _splatAdaptiveLowLock = false;   // FPS 매우 낮으면 영구 low
+function _splatSetDpr(target) {
+  if (Math.abs(_splatCurDpr - target) < 0.001) return;
+  _splatCurDpr = target;
+  splatRenderer.setPixelRatio(target);
+  splatRenderer.setSize(innerWidth, innerHeight);
+}
 function animate() {
   requestAnimationFrame(animate);
+  const now = performance.now();
+  // === FPS 측정 (1초 단위) ===
+  _splatFrameCounter++;
+  if (now - _splatFrameLastSampleT >= 1000) {
+    _splatLastFps = (_splatFrameCounter * 1000) / (now - _splatFrameLastSampleT);
+    _splatFrameCounter = 0;
+    _splatFrameLastSampleT = now;
+    // 어댑티브 락: FPS 너무 낮으면 영구 low, 회복되면 풀기
+    if (_splatLastFps < 25 && !_splatAdaptiveLowLock) {
+      _splatAdaptiveLowLock = true;
+      console.log('[v78.129] splat FPS 낮음 (' + _splatLastFps.toFixed(1) + ') → 영구 low pixelRatio 락');
+    } else if (_splatLastFps > 45 && _splatAdaptiveLowLock) {
+      _splatAdaptiveLowLock = false;
+      console.log('[v78.129] splat FPS 회복 (' + _splatLastFps.toFixed(1) + ') → 일반 모드 복귀');
+    }
+  }
   try {
     const hk = hkFrame.contentWindow;
     if (hk && hk.camera) {
       const hc = hk.camera;
+      // === 카메라 움직임 감지 (위치 거리) ===
+      const _moved = _splatLastPos.distanceToSquared(hc.position) > 0.00001;
+      if (_moved) { _splatLastMoveT = now; _splatLastPos.copy(hc.position); }
+      const _isMoving = (now - _splatLastMoveT) < 300;
+      // === pixelRatio 결정: low lock > moving > idle ===
+      const _targetDpr = _splatAdaptiveLowLock ? _SPLAT_DPR_LOW
+                       : _isMoving ? _SPLAT_DPR_MOVING
+                       : _SPLAT_DPR_IDLE;
+      _splatSetDpr(_targetDpr);
+
       splatCamera.position.copy(hc.position);
       splatCamera.quaternion.copy(hc.quaternion);
       splatCamera.fov = hc.fov;
@@ -280,7 +327,7 @@ function animate() {
   splatRenderer.render(splatScene, splatCamera);
 }
 animate();
-console.log('[mobile] Splat 렌더 루프 시작');
+console.log('[v78.129] Splat 렌더 루프 시작 (동적 품질: idle=' + _SPLAT_DPR_IDLE + ', moving=' + _SPLAT_DPR_MOVING + ', low=' + _SPLAT_DPR_LOW + ')');
 
 window.splatScene = splatScene;
 window.splatCamera = splatCamera;
