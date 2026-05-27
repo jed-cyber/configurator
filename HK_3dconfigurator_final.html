@@ -6699,9 +6699,10 @@ let reflRT = null;
 //   첫 render 부터 saturation **0** (full gray HDRI) → 주황 warm region 완전 제거.
 //   3초 후 부드럽게 사용자 락인 0.55 로 lerp (시각적 컬러 복원).
 // ✨ v77.796 — 사용자 락인값. HDRI (envColorState) = 배경+envRT 색감.
+// ✨ v78.121 — 사용자 요청: HDRI sphere (배경) 밝기 절반. 1.5 → 0.75. cabinet refl 은 reflColorState 별도 → 영향 없음.
 const envColorState = {
   rotationY: 2.5830872929516078,   // 148°
-  brightness: 1.5,
+  brightness: 0.75,                 // v78.121: 1.5 → 0.75
   contrast: 1.35,
   saturation: 0.55,
   tint: '#FAF7FC',                 // R250 G247 B252 (사용자 지정)
@@ -6727,10 +6728,10 @@ window.reflColorState = reflColorState;
 // envColorState 도 (v77.938 BG 패널 + future 사용 위해)
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
-// ✨ v78.114/115 — 모바일 전용 refl 락인. v78.115: brightness 3.00 → 2.45 (사용자 락인).
+// ✨ v78.121 — refl contrast +0.1 (사용자 요청). 모바일: 1.55 → 1.65. PC: 1.20 → 1.30.
 window._REFL_OVERVIEW   = (typeof _isMobileRenderer !== 'undefined' && _isMobileRenderer)
-  ? { brightness: 2.45, contrast: 1.55, saturation: 0.00, tint: '#FDFBFE' }
-  : { brightness: 1.28, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
+  ? { brightness: 2.45, contrast: 1.65, saturation: 0.00, tint: '#FDFBFE' }
+  : { brightness: 1.28, contrast: 1.30, saturation: 0.00, tint: '#FDFBFE' };   // ✨ v78.082 — brightness -20% (1.60 → 1.28). 사용자 요청: refl HDRI 너무 밝음.
 window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
 window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
 window._REFL_DRYING     = { brightness: 1.05, contrast: 1.15, saturation: 0.00, tint: '#FDFBFE' }; // ✨ v78.005 brightness -0.1
@@ -7122,10 +7123,10 @@ function applyEquirect(tex) {
           reflColorState.saturation = window._REFL_OVERVIEW.saturation;
           reflColorState.tint       = window._REFL_OVERVIEW.tint;
         }
-        // ✨ v78.105 — envColorState (배경 sphere 밝기) 도 락인값 적용. 안 그러면 sphere 가 default (어두움) 로 남음.
+        // ✨ v78.105 — envColorState (배경 sphere 밝기) 도 락인값 적용. v78.121: brightness 0.75 절반.
         if (typeof envColorState !== 'undefined') {
           envColorState.rotationY  = 2.5830872929516078;
-          envColorState.brightness = 1.5;
+          envColorState.brightness = 0.75;   // v78.121: 1.5 → 0.75
           envColorState.contrast   = 1.35;
           envColorState.saturation = 0.55;
           envColorState.tint       = '#FAF7FC';
@@ -7165,10 +7166,10 @@ function applyEquirect(tex) {
     reflColorState.saturation = window._REFL_OVERVIEW.saturation;
     reflColorState.tint       = window._REFL_OVERVIEW.tint;
   }
-  // ✨ v77.937c — envColorState 도 락인값 강제.
+  // ✨ v77.937c — envColorState 도 락인값 강제. v78.121: brightness 0.75 절반.
   if (typeof envColorState !== 'undefined') {
     envColorState.rotationY  = 2.5830872929516078;
-    envColorState.brightness = 1.5;
+    envColorState.brightness = 0.75;   // v78.121: 1.5 → 0.75
     envColorState.contrast   = 1.35;
     envColorState.saturation = 0.55;
     envColorState.tint       = '#FAF7FC';
@@ -7616,7 +7617,7 @@ async function applyLookdevPreset(s) {
   try {
     if (typeof envColorState !== 'undefined') {
       envColorState.rotationY  = 2.5830872929516078;
-      envColorState.brightness = 1.5;
+      envColorState.brightness = 0.75;   // v78.121: 1.5 → 0.75
       envColorState.contrast   = 1.35;
       envColorState.saturation = 0.55;
       envColorState.tint       = '#FAF7FC';
