@@ -7647,6 +7647,38 @@ async function applyLookdevPreset(s) {
     //   race condition 해결은 startIntro delay (line 14918 의 300ms) 에 의존.
     console.log('[v78.041b] envMap reset 제거됨. delay 300ms 만으로 race condition 보완.');
   } catch(e) { console.warn('[v77.937c] final env lock 실패:', e); }
+
+  // ✨ v78.111 — 사용자 요청: 모바일 캐비닛 look 을 PC 처럼 매끈하게.
+  //   원인: 모바일 dpr=3 → brushed metal normal map detail 다 보임. PC dpr=1 → 자동 mip blur.
+  //   해결: 모바일에서만 normalScale 50% 감소 + roughness +0.05 → 디테일 부드러워짐 + 메탈 매끈.
+  if (typeof _isMobileRenderer !== 'undefined' && _isMobileRenderer) {
+    try {
+      const _mobMatPatched = [];
+      if (typeof modelRoot !== 'undefined' && modelRoot) {
+        modelRoot.traverse(o => {
+          if (o.isMesh && o.material) {
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            mats.forEach(m => {
+              if (!m || m._v78_111_patched) return;
+              // brushed metal/wall material 만 (normalScale 있는 경우).
+              if (m.normalScale && (m.normalScale.x > 0.1 || m.normalScale.y > 0.1)) {
+                m.normalScale.multiplyScalar(0.5);
+                _mobMatPatched.push(m.name + '(normal)');
+              }
+              // 메탈 material (metalness >= 0.8) roughness 살짝 올림.
+              if (m.metalness != null && m.metalness >= 0.8 && m.roughness != null && m.roughness < 0.3) {
+                m.roughness = Math.min(m.roughness + 0.08, 0.35);
+                _mobMatPatched.push(m.name + '(rough+0.08)');
+              }
+              m._v78_111_patched = true;
+              m.needsUpdate = true;
+            });
+          }
+        });
+      }
+      console.log('[v78.111] 모바일 매끈 메탈 패치 적용:', _mobMatPatched.length + '개 mat', _mobMatPatched);
+    } catch(e) { console.warn('[v78.111] 모바일 메탈 패치 실패:', e); }
+  }
 }
 
 /* --- Standard → Physical 승격 --- */
