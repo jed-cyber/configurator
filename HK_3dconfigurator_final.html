@@ -17913,7 +17913,8 @@ window.ChapterManager = (() => {
             const m = uvcParticles.material;
             if (!window._ionSavedParticleColor) window._ionSavedParticleColor = m.color.clone();
             if (window._ionSavedBlending == null) window._ionSavedBlending = m.blending;
-            m.blending = THREE.AdditiveBlending;  // emissive 자체 발광 효과
+            // ✨ v78.148 — AdditiveBlending 강제 제거 (사용자 요청: 흰색 saturate 없이 푸른색 유지).
+            //   m.blending = THREE.AdditiveBlending;  // ← DISABLED
             m.needsUpdate = true;
           }
           // ★ v77.233 — 파티클을 main scene으로 이동 (composer bloom 적용 받음). onExit에서 particleScene 복귀.
@@ -18012,17 +18013,12 @@ window.ChapterManager = (() => {
             // ★ v77.239 — Hue + Saturation 슬라이더 추가. (Power × HSL → RGB) 조합으로 컬러 조절.
             //   default Hue 280° (보라), Sat 0.55, Power 3.0 → 부드러운 보라 톤.
             window._applyIonParticleColor = () => {
+              // ✨ v78.148 — 옛 보라색 HSL × power 시스템 비활성화. PARTICLES.color (블루) 락 유지.
+              //   이전: 매 frame setHSL(280°, 0.55, 0.7) × 3.0 → 흰색 saturate.
+              //   현재: createUVCParticles 에서 설정한 PARTICLES.color × PARTICLES.brightness 그대로 유지.
               if (typeof uvcParticles === 'undefined' || !uvcParticles || !uvcParticles.material) return;
-              // ✨ v77.820 — 키프레임 시스템의 lerp 값 (_ionParticlePowerLerp) 우선 사용. 디졸브 진행 중 부드럽게 변경.
-              //   slider 직접 input 시 _ION_KF.emissive 갱신 → 다음 frame sync watchdog 가 _ionParticlePowerLerp approach → 즉시 반영.
-              const power = (typeof window._ionParticlePowerLerp === 'number') ? window._ionParticlePowerLerp : parseFloat(document.getElementById('ionParticlePower')?.value || '3.0');
-              const hue = parseFloat(document.getElementById('ionParticleHue')?.value || '280');
-              const sat = parseFloat(document.getElementById('ionParticleSat')?.value || '0.55');
-              // HSL → RGB로 base color 계산. lightness 0.7 (밝은 톤). power로 스케일.
-              const c = new THREE.Color().setHSL(hue / 360, sat, 0.7);
-              const k = power;
-              uvcParticles.material.color.setRGB(c.r * k, c.g * k, c.b * k);
-              // ✨ v77.833 (A) — needsUpdate=true 제거. color 변경은 uniform 만 바뀌어 shader 재컴파일 불필요. 매 frame 호출 lag fix.
+              const base = PARTICLES.color.clone().multiplyScalar(PARTICLES.brightness);
+              uvcParticles.material.color.copy(base);
             };
             window._applyIonParticlePower = () => window._applyIonParticleColor();
             const ppow = document.getElementById('ionParticlePower');
