@@ -9165,19 +9165,22 @@ async function loadGLBFromBuffer(buffer, filename) {
             }
           }
         } catch (e) { console.warn('[UV-C Lights] pre-warmup 실패:', e); }
-        // ✨ v77.859 — Drying 화살표 pre-warmup (Drying 챕터 첫 진입 lag 제거).
-        //   createDryingArrows = mesh 30+개 + 텍스처 + buffer geometry alloc. 첫 호출 시 비쌈.
-        //   미리 생성 후 invisible. 사용자가 Drying 챕터 들어가면 setDryingActive(true) 가 visible 만 토글.
-        try {
-          if (typeof createDryingArrows === 'function' && typeof _dryingArrows !== 'undefined' && !_dryingArrows) {
-            createDryingArrows();
-            if (_dryingArrows) {
-              if (_dryingArrows.pivot) _dryingArrows.pivot.visible = false;
-              if (_dryingArrows.rightPivot) _dryingArrows.rightPivot.visible = false;
-              console.log('[Drying Arrows] pre-warmup 완료 (첫 챕터 진입 lag 제거)');
+        // ✨ v78.151 — Drying 화살표 pre-warm 을 인트로 후 idle 로 defer (로딩 단축).
+        //   원래는 여기서 createDryingArrows() 호출 → 텍스처 + buffer geometry alloc 으로 ~100~300ms 소요.
+        //   현재: 인트로 시작 후 2초 idle 에 requestIdleCallback (or setTimeout) 으로 backgroound load.
+        //   Drying 챕터 진입 (보통 5초+ 후) 까지 완료될 시간 충분.
+        window._deferredDryingPrewarm = () => {
+          try {
+            if (typeof createDryingArrows === 'function' && typeof _dryingArrows !== 'undefined' && !_dryingArrows) {
+              createDryingArrows();
+              if (_dryingArrows) {
+                if (_dryingArrows.pivot) _dryingArrows.pivot.visible = false;
+                if (_dryingArrows.rightPivot) _dryingArrows.rightPivot.visible = false;
+                console.log('[v78.151] Drying Arrows deferred pre-warm 완료');
+              }
             }
-          }
-        } catch (e) { console.warn('[Drying Arrows] pre-warmup 실패:', e); }
+          } catch (e) { console.warn('[v78.151] Drying Arrows deferred pre-warm 실패:', e); }
+        };
         // ✨ v77.860 — PMREM 큐브맵 미리 1회 생성 (첫 챕터 reflection lerp 시 stall 제거).
         //   _lerpReflColor 첫 호출 시 regenerateEnvMap 가 GPU 큐브맵 render → reflRT render → blur chain.
         //   미리 호출하면 envRT/reflRT 메모리 alloc + texture 생성 완료. 챕터 진입 시 cached 상태로 시작.
@@ -9221,24 +9224,23 @@ async function loadGLBFromBuffer(buffer, filename) {
                 _dryingArrows.rightPivot.visible = true;
               }
             }
-            // (4) UV-C wave beams 미리 생성 + compile.
-            //     window._uvcWavesEnable 가 beam 생성. 한 번 호출하면 beam mesh + texture 캐시.
-            // ✨ v77.872 — 사용자 보고: Drying 챕터에서 UV-C 빔 보임 (다른 챕터에도).
-            //   해결: _uvcWaveGroup.visible = false 로 영구 숨김. UV-C 챕터 진입 시만 visible = true 토글.
-            try {
-              if (typeof window._uvcWavesEnable === 'function' && (!window._uvcWaves || !window._uvcWaves.enabled)) {
-                window._uvcWavesEnable();
-                if (window._uvcBeams && window._uvcBeams.length) {
-                  window._uvcBeams.forEach(b => { if (b.mesh) b.mesh.material.opacity = 0; });
+            // ✨ v78.151 — UV-C wave beams pre-warm 을 인트로 후 idle 로 defer (로딩 단축).
+            window._deferredUvcWavePrewarm = () => {
+              try {
+                if (typeof window._uvcWavesEnable === 'function' && (!window._uvcWaves || !window._uvcWaves.enabled)) {
+                  window._uvcWavesEnable();
+                  if (window._uvcBeams && window._uvcBeams.length) {
+                    window._uvcBeams.forEach(b => { if (b.mesh) b.mesh.material.opacity = 0; });
+                  }
+                  const _wgroup = typeof scene !== 'undefined' && scene ? scene.getObjectByName('_uvcWaveGroup') : null;
+                  if (_wgroup) {
+                    _wgroup.visible = false;
+                    window._uvcWaveGroup = _wgroup;
+                  }
+                  console.log('[v78.151] UV-C wave beams deferred pre-warm 완료');
                 }
-                // _uvcWaveGroup 자체 숨김. UV-C 챕터 onEnter 의 _uvcWavesEnable() (재호출) 가 enabled 가드로 skip 되므로 visible 토글이 필요.
-                const _wgroup = typeof scene !== 'undefined' && scene ? scene.getObjectByName('_uvcWaveGroup') : null;
-                if (_wgroup) {
-                  _wgroup.visible = false;
-                  window._uvcWaveGroup = _wgroup;
-                }
-              }
-            } catch(e) { console.warn('[v77.868] _uvcWavesEnable pre-warm 실패:', e); }
+              } catch(e) { console.warn('[v78.151] UV-C wave deferred pre-warm 실패:', e); }
+            };
             // compile 호출 — 모든 visible mesh + 현재 material 의 셰이더 GPU 컴파일.
             renderer.compile(scene, camera);
             // 원상 복구.
@@ -13698,12 +13700,23 @@ setInterval(_forceSplatBgFilter, 500);
 //   60fps 못 만들면 들쭉날쭉 = thermal throttling 빨리 시작. 30fps 일관성 = 부드러움 체감 우선.
 const _TARGET_FRAME_MS = _isMobileRenderer ? (1000 / 30) : (1000 / 60);
 let _prevFrameTime = performance.now();
+// ✨ v78.151 — FPS counter (parent FPS HUD 가 window._hkFps 읽음).
+let _hkFrameCounter = 0;
+let _hkFpsSampleT = performance.now();
+window._hkFps = 0;
 (function loop() {
   requestAnimationFrame(loop);
   if (document.hidden) return;          // 탭 숨김 → 완전 스킵
   const now = performance.now();
   const elapsed = now - _prevFrameTime;
   if (elapsed < _TARGET_FRAME_MS - 1) return;   // -1ms 여유: rAF jitter 대응
+  // ✨ v78.151 — FPS 측정 (frame cap 통과 후 = 실제 render frame rate).
+  _hkFrameCounter++;
+  if (now - _hkFpsSampleT >= 1000) {
+    window._hkFps = (_hkFrameCounter * 1000) / (now - _hkFpsSampleT);
+    _hkFrameCounter = 0;
+    _hkFpsSampleT = now;
+  }
   // ✨ v77.929 — 라이팅 baseline 강제 적용 (매 frame).
   _forceLightingBaseline();
   // ✨ v77.931 — splat-bg filter 강제 적용 (매 frame).
@@ -15309,6 +15322,12 @@ async function init() {
           setTimeout(() => {
             try {
               ChapterManager.startIntro();
+              // ✨ v78.151 — 인트로 시작 후 1.5초 뒤 deferred pre-warm (UV-C waves + drying arrows).
+              //   사용자가 챕터 들어가기 전에 background load 완료. 로딩 화면 시간은 단축.
+              setTimeout(() => {
+                if (typeof window._deferredDryingPrewarm === 'function') window._deferredDryingPrewarm();
+                if (typeof window._deferredUvcWavePrewarm === 'function') window._deferredUvcWavePrewarm();
+              }, 1500);
             } catch (err) {
               console.error('[Init] ChapterManager.startIntro 실패 — 기존 패널로 폴백:', err);
               showFallbackPanels();

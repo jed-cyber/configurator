@@ -62,7 +62,8 @@
     position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
     background: linear-gradient(135deg, #0a0c14 0%, #1a1f2e 100%); color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px; letter-spacing: 1px; opacity: 1; transition: opacity 0.6s ease-out;
+    /* ✨ v78.151 — fade 0.6s → 0.3s (로딩 시간 체감 단축). */
+    font-size: 14px; letter-spacing: 1px; opacity: 1; transition: opacity 0.3s ease-out;
   }
   #mobileLoading.fade { opacity: 0; pointer-events: none; }
   #mobileLoading .dot {
@@ -73,6 +74,18 @@
   #mobileLoading .dot:nth-child(3) { animation-delay: 0.4s; }
   @keyframes dotPulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.0); } }
   #mobileLoading .label { display: block; text-align: center; margin-top: 16px; opacity: 0.85; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+  /* ✨ v78.151 — FPS HUD (좌상단 작은 표시, 사용자 확인용). */
+  #fpsHud {
+    position: fixed; top: 8px; left: 8px; z-index: 99999;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font: 600 11px/1.2 monospace, -apple-system, sans-serif;
+    padding: 5px 8px; border-radius: 6px;
+    border: 1px solid rgba(102,170,255,0.35);
+    pointer-events: none;
+    letter-spacing: 0.3px;
+  }
+  #fpsHud .lbl { opacity: 0.55; font-weight: 400; }
+  #fpsHud .v { color: #7ab8ff; }
 </style>
 </head>
 <body>
@@ -90,6 +103,8 @@
 
 <div id="splat-bg"></div>
 <iframe id="hk-frame" src="" allow="fullscreen"></iframe>
+<!-- ✨ v78.151 — FPS HUD. splat (parent) + iframe (cabinet) 둘 다 표시. -->
+<div id="fpsHud"><span class="lbl">FPS</span> <span class="v" id="fpsSplat">--</span> · <span class="lbl">cab</span> <span class="v" id="fpsCab">--</span></div>
 
 <script>
 // ✨ Mobile 진입점 — HK iframe 으로 mobile=1 query 전달
@@ -306,6 +321,15 @@ function animate() {
     _splatLastFps = (_splatFrameCounter * 1000) / (now - _splatFrameLastSampleT);
     _splatFrameCounter = 0;
     _splatFrameLastSampleT = now;
+    // ✨ v78.151 — FPS HUD 업데이트.
+    try {
+      const sEl = document.getElementById('fpsSplat');
+      if (sEl) sEl.textContent = _splatLastFps.toFixed(0);
+      // iframe 의 _hkFps (HK_3dconfigurator 가 노출) 도 같이 표시.
+      const cEl = document.getElementById('fpsCab');
+      const hkFps = hkFrame.contentWindow && hkFrame.contentWindow._hkFps;
+      if (cEl) cEl.textContent = (typeof hkFps === 'number' && hkFps > 0) ? hkFps.toFixed(0) : '--';
+    } catch(e) {}
     // 어댑티브 락: FPS 너무 낮으면 영구 low, 회복되면 풀기
     if (_splatLastFps < 25 && !_splatAdaptiveLowLock) {
       _splatAdaptiveLowLock = true;
