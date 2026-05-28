@@ -11451,12 +11451,11 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.147 — 흰색 saturate 근본 해결: AdditiveBlending → NormalBlending 전환.
-//   원인: AdditiveBlending 은 겹침 시 RGB 합산 → (b,g,b) 가 모두 1.0 도달 = 흰색.
-//   해결: NormalBlending = uniform 색 그대로 표시. 겹침에도 색 유지. + 밝은 푸른색 + 큰 size + 진한 opacity.
+// ✨ v78.155 — bloom 없이 빛나는 느낌: texture hot-white center + uniform 흰색.
+//   texture 가 색 정보 (흰색 코어 + 블루 halo) 다 담고, uniform 은 흰색 → multiplicative 영향 없음.
 const PARTICLES = {
   count: 800,
-  size: 0.034,                        // 0.028 → 0.034 (가시성 강화)
+  size: 0.040,                        // 0.034 → 0.040 (halo 영역 보이게 약간 더 큼)
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
@@ -11464,8 +11463,8 @@ const PARTICLES = {
   damping: 0.96,
   gravity: -0.31,
   brightness: 1.0,
-  opacity: 0.98,                      // 0.95 → 0.98 (Normal blend 에서 더 또렷)
-  color: new THREE.Color('#5cb0ff'),  // 밝은 시안 블루 (Normal blend 라 색 그대로 보임)
+  opacity: 1.0,                       // 0.98 → 1.0 (최대 밝기 — hot center 살아남)
+  color: new THREE.Color('#ffffff'),  // 흰색 (texture 가 색 정보 전부 담음, uniform 은 multiplier 만 = 1)
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,
@@ -11660,18 +11659,20 @@ function createUVCParticles() {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-  // ✨ v78.147 — NormalBlending 에서는 흰색 alpha mask 가 베스트.
-  //   uniform color (블루) × 흰색 텍스처 = 정확한 블루 톤. 가장자리 부드러운 alpha falloff.
+  // ✨ v78.155 — 빛나는 느낌 (bloom 없이): hot-white 중심 + 시안 블루 halo + 부드러운 fade.
+  //   중심이 흰색 (HDR-like) → 사용자 눈에 self-illuminating 효과. 외곽은 진한 시안 블루 글로우.
   const cv = document.createElement('canvas');
-  cv.width = cv.height = 64;
+  cv.width = cv.height = 128;   // 64 → 128 (그라데이션 부드러워짐 + halo 디테일)
   const ctx = cv.getContext('2d');
-  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  grad.addColorStop(0,   'rgba(255,255,255,1)');
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
-  grad.addColorStop(0.7, 'rgba(255,255,255,0.25)');
-  grad.addColorStop(1,   'rgba(255,255,255,0)');
+  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0,    'rgba(255,255,255,1)');     // 중심: 순수 흰색 (hot center)
+  grad.addColorStop(0.12, 'rgba(220,235,255,0.98)');  // 약간 푸른빛
+  grad.addColorStop(0.3,  'rgba(140,190,255,0.85)');  // 시안 블루
+  grad.addColorStop(0.55, 'rgba(90,150,255,0.45)');   // halo 영역
+  grad.addColorStop(0.8,  'rgba(60,120,230,0.15)');   // 외곽 글로우
+  grad.addColorStop(1,    'rgba(40,90,200,0)');       // 완전 페이드
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 64, 64);
+  ctx.fillRect(0, 0, 128, 128);
   const tex = new THREE.CanvasTexture(cv);
 
   const baseColor = PARTICLES.color.clone().multiplyScalar(PARTICLES.brightness);
@@ -13699,37 +13700,51 @@ window._hkFps = 0;
   _forceLightingBaseline();
   // ✨ v77.931 — splat-bg filter 강제 적용 (매 frame).
   _forceSplatBgFilter();
-  // ✨ v78.153 — backwall 무조건 매 frame 강제 (사용자 재요청: 어떤 코드든 무시).
-  //   diff 체크 제거 → 다른 코드가 같은 frame 안에 바꿔도 final write 가 이 값.
-  // ✨ v78.154 — normalScale 락 추가. init 후 3초 시점 값을 snapshot → 이후 모든 변경 차단.
+  // ✨ v78.155 — backwall + normalScale 락 캐싱 최적화.
+  //   이전: 매 frame modelRoot.traverse(수백 mesh) — 모바일 CPU 부담.
+  //   현재: 첫 호출 시 backwall mat 들 + normalScale 있는 mat 들을 배열로 캐싱 → 이후 배열만 순회.
   if (window._modelRoot) {
-    if (!window._normalScaleLock) window._normalScaleLock = new Map();
-    const _nsLockReady = performance.now() > 3500;   // 3.5초 후 모든 patch (v78.149 + v77.340) settle
-    window._modelRoot.traverse(o => {
-      if (o.isMesh && o.material) {
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach(m => {
-          // backwall lock
-          if (o.name === 'backwall') {
-            if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
-            if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
-          }
-          // normalScale lock — 첫 캡쳐 후 매 frame 복원.
-          if (m && m.normalScale && (m.normalScale.x > 0.001 || m.normalScale.y > 0.001)) {
-            const saved = window._normalScaleLock.get(m.uuid);
-            if (!saved) {
-              if (_nsLockReady) {
-                window._normalScaleLock.set(m.uuid, { x: m.normalScale.x, y: m.normalScale.y });
-              }
-            } else {
-              if (Math.abs(m.normalScale.x - saved.x) > 0.0001 || Math.abs(m.normalScale.y - saved.y) > 0.0001) {
-                m.normalScale.set(saved.x, saved.y);
-              }
+    if (!window._bwLockMats) {
+      // 첫 호출: traverse 한 번만, 캐싱.
+      window._bwLockMats = [];
+      window._nsLockEntries = [];
+      window._modelRoot.traverse(o => {
+        if (o.isMesh && o.material) {
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(m => {
+            if (!m) return;
+            if (o.name === 'backwall') window._bwLockMats.push(m);
+            if (m.normalScale && (m.normalScale.x > 0.001 || m.normalScale.y > 0.001)) {
+              window._nsLockEntries.push({ mat: m, snapped: false, x: 0, y: 0 });
             }
+          });
+        }
+      });
+      console.log('[v78.155] RAF 락 캐싱: backwall', window._bwLockMats.length, 'mat, normalScale', window._nsLockEntries.length, 'mat');
+    }
+    // backwall lock (캐싱된 배열만 순회)
+    for (let i = 0; i < window._bwLockMats.length; i++) {
+      const m = window._bwLockMats[i];
+      if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
+      if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
+    }
+    // normalScale lock (3.5초 후 snapshot, 이후 매 frame 복원)
+    const _nsLockReady = performance.now() > 3500;
+    if (_nsLockReady) {
+      for (let i = 0; i < window._nsLockEntries.length; i++) {
+        const e = window._nsLockEntries[i];
+        const m = e.mat;
+        if (!e.snapped) {
+          e.x = m.normalScale.x;
+          e.y = m.normalScale.y;
+          e.snapped = true;
+        } else {
+          if (Math.abs(m.normalScale.x - e.x) > 0.0001 || Math.abs(m.normalScale.y - e.y) > 0.0001) {
+            m.normalScale.set(e.x, e.y);
           }
-        });
+        }
       }
-    });
+    }
   }
   const dt = Math.min(0.05, elapsed / 1000);    // 최대 50ms (폭주 방지)
   _prevFrameTime = now;
