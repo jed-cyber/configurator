@@ -312,6 +312,9 @@
     transition: opacity 0.5s;
   }
   #loadingOverlay.hide { opacity: 0; pointer-events: none; }
+  /* ✨ v78.154 — 모바일 (parent mobile_configurator 의 iframe) 에서는 이중 로딩창 방지: iframe 의 loadingOverlay 즉시 숨김.
+     parent 의 mobileLoading 이 splat + iframe 둘 다 ready 까지 유지. */
+  html.mobile-frame #loadingOverlay { display: none !important; }
   #loadingOverlay .icon { font-size: 56px; margin-bottom: 14px; opacity: 0.6; }
   #loadingOverlay h2 { font-weight: 300; font-size: 22px; margin: 0 0 6px; color: #1a1a1f; }
   #loadingOverlay p { color: #6a7280; font-size: 13px; margin: 4px 0; }
@@ -1928,6 +1931,13 @@
     }
   }
 </style>
+<script>
+  // ✨ v78.154 — 모바일 wrapper (?mobile=1) 에서는 iframe 의 loadingOverlay 숨김 (이중 로딩창 방지).
+  //   parent 의 mobileLoading 만 표시.
+  if (new URLSearchParams(location.search).get('mobile') === '1') {
+    document.documentElement.classList.add('mobile-frame');
+  }
+</script>
 </head>
 <body>
 
@@ -13691,13 +13701,32 @@ window._hkFps = 0;
   _forceSplatBgFilter();
   // ✨ v78.153 — backwall 무조건 매 frame 강제 (사용자 재요청: 어떤 코드든 무시).
   //   diff 체크 제거 → 다른 코드가 같은 frame 안에 바꿔도 final write 가 이 값.
+  // ✨ v78.154 — normalScale 락 추가. init 후 3초 시점 값을 snapshot → 이후 모든 변경 차단.
   if (window._modelRoot) {
+    if (!window._normalScaleLock) window._normalScaleLock = new Map();
+    const _nsLockReady = performance.now() > 3500;   // 3.5초 후 모든 patch (v78.149 + v77.340) settle
     window._modelRoot.traverse(o => {
-      if (o.isMesh && o.name === 'backwall' && o.material) {
+      if (o.isMesh && o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         mats.forEach(m => {
-          if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
-          if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
+          // backwall lock
+          if (o.name === 'backwall') {
+            if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
+            if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
+          }
+          // normalScale lock — 첫 캡쳐 후 매 frame 복원.
+          if (m && m.normalScale && (m.normalScale.x > 0.001 || m.normalScale.y > 0.001)) {
+            const saved = window._normalScaleLock.get(m.uuid);
+            if (!saved) {
+              if (_nsLockReady) {
+                window._normalScaleLock.set(m.uuid, { x: m.normalScale.x, y: m.normalScale.y });
+              }
+            } else {
+              if (Math.abs(m.normalScale.x - saved.x) > 0.0001 || Math.abs(m.normalScale.y - saved.y) > 0.0001) {
+                m.normalScale.set(saved.x, saved.y);
+              }
+            }
+          }
         });
       }
     });
@@ -22858,17 +22887,8 @@ init();
   _bind('mt-refCon', 'mt-refCon-v', v => { if (typeof reflColorState !== 'undefined') { reflColorState.contrast = v; if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.contrast = v; _forceRegenEnv(); } });
   _bind('mt-refSat', 'mt-refSat-v', v => { if (typeof reflColorState !== 'undefined') { reflColorState.saturation = v; if (window._REFL_OVERVIEW) window._REFL_OVERVIEW.saturation = v; _forceRegenEnv(); } });
 
-  // Metal normal scale (모든 메탈/벽 material — normalScale 있는 것)
-  _bind('mt-norm', 'mt-norm-v', v => {
-    const orig = _snapshotMats();
-    orig.forEach(s => {
-      if (s.mat && s.mat.normalScale && s.normalScaleX != null) {
-        // 슬라이더 v 가 원본 대비 스케일 (1.0 = 원본). 하지만 사용자는 0~2 직접 입력 → 원본 대신 v 자체.
-        s.mat.normalScale.set(v, v);
-        s.mat.needsUpdate = true;
-      }
-    });
-  });
+  // ✨ v78.154 — metal normal scale 슬라이더 무력화 (RAF 락이 fix).
+  _bind('mt-norm', 'mt-norm-v', v => { /* no-op (v78.154) */ });
   _bind('mt-rough', 'mt-rough-v', v => {
     const orig = _snapshotMats();
     orig.forEach(s => {
