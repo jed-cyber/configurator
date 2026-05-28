@@ -10950,7 +10950,8 @@ function setupPanelVideo() {
   }
   // <video> 엘리먼트
   panelVideo = document.createElement('video');
-  panelVideo.src = './tex/panel_video.mp4';
+  // ✨ v78.165 — panel_video → panel_video2 교체.
+  panelVideo.src = './tex/panel_video2.mp4';
   panelVideo.loop = false;
   panelVideo.muted = true;
   panelVideo.playsInline = true;
@@ -10967,7 +10968,7 @@ function setupPanelVideo() {
   panelVideo.addEventListener('error', () => {
     const err = panelVideo.error;
     console.error('[Panel] 영상 로드 에러:', err ? `code=${err.code} msg=${err.message}` : err);
-    toast('panel_video.mp4 로드 실패');
+    toast('panel_video2.mp4 로드 실패');
   });
 
   // VideoTexture
