@@ -23074,24 +23074,25 @@ init();
   <div class="usp-body">
     <div class="usp-section">Position</div>
     <div class="usp-row"><label>X <span class="usp-v" id="usp-px-v">0.00</span></label><input type="range" id="usp-px" min="-3" max="3" step="0.01" value="0"></div>
-    <div class="usp-row"><label>Y <span class="usp-v" id="usp-py-v">2.50</span></label><input type="range" id="usp-py" min="0" max="5" step="0.01" value="2.5"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-py-v">1.85</span></label><input type="range" id="usp-py" min="0" max="5" step="0.01" value="1.85"></div>
     <div class="usp-row"><label>Z <span class="usp-v" id="usp-pz-v">0.00</span></label><input type="range" id="usp-pz" min="-3" max="3" step="0.01" value="0"></div>
     <div class="usp-section">Target</div>
-    <div class="usp-row"><label>X <span class="usp-v" id="usp-tx-v">-0.06</span></label><input type="range" id="usp-tx" min="-3" max="3" step="0.01" value="-0.06"></div>
-    <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">1.52</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="1.52"></div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-tx-v">0.00</span></label><input type="range" id="usp-tx" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">0.30</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="0.3"></div>
     <div class="usp-row"><label>Z <span class="usp-v" id="usp-tz-v">0.00</span></label><input type="range" id="usp-tz" min="-3" max="3" step="0.01" value="0"></div>
     <div class="usp-section">Light</div>
-    <div class="usp-row"><label>Power <span class="usp-v" id="usp-pow-v">80</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="80"></div>
-    <div class="usp-row"><label>Cone ° <span class="usp-v" id="usp-cone-v">45</span></label><input type="range" id="usp-cone" min="5" max="90" step="1" value="45"></div>
-    <div class="usp-row"><label>Distance <span class="usp-v" id="usp-dist-v">3.0</span></label><input type="range" id="usp-dist" min="1" max="20" step="0.5" value="3"></div>
-    <div class="usp-row"><label>Color <span class="usp-v" id="usp-col-v">#0000ff</span></label><input type="color" id="usp-col" value="#0000ff"></div>
+    <div class="usp-row"><label>Power <span class="usp-v" id="usp-pow-v">45</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="45"></div>
+    <div class="usp-row"><label>Cone ° <span class="usp-v" id="usp-cone-v">85</span></label><input type="range" id="usp-cone" min="5" max="120" step="1" value="85"></div>
+    <div class="usp-row"><label>Distance <span class="usp-v" id="usp-dist-v">5.0</span></label><input type="range" id="usp-dist" min="1" max="20" step="0.5" value="5"></div>
+    <div class="usp-row"><label>Color <span class="usp-v" id="usp-col-v">#3060ff</span></label><input type="color" id="usp-col" value="#3060ff"></div>
   </div>
 </div>
 
 <script>
 (function(){
-  // 락인 값 (사용자 슬라이더 변경 가능)
-  const state = { px: 0, py: 2.5, pz: 0, tx: -0.06, ty: 1.52, tz: 0, pow: 80, cone: 45, dist: 3, col: 0x0000ff };
+  // ✨ v78.170 — 캐비닛 내부 균일 조명을 위한 새 기본값.
+  //   position: 캐비닛 상단 (내부 천장 근처). target: 캐비닛 바닥 중앙. cone 85° 광범위 (~ point light 처럼 spread).
+  const state = { px: 0, py: 1.85, pz: 0, tx: 0, ty: 0.3, tz: 0, pow: 45, cone: 85, dist: 5, col: 0x3060ff };
 
   function _ensureSpot() {
     if (window._uvcUserSpot) return window._uvcUserSpot;
