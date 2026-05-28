@@ -3734,19 +3734,8 @@
     // ★ v77.221 — 글로벌 backwall 밝기 슬라이더 wire (모든 챕터에 적용)
     const bwSl = document.getElementById('backwallBright');
     const bwSlV = document.getElementById('backwallBrightV');
-    const applyBwBright = (v) => {
-      if (window._modelRoot) {
-        window._modelRoot.traverse(o => {
-          if (o.isMesh && o.name === 'backwall' && o.material) {
-            const mats = Array.isArray(o.material) ? o.material : [o.material];
-            mats.forEach(m => {
-              if (m.color) m.color.setRGB(v, v, v);
-              m.needsUpdate = true;
-            });
-          }
-        });
-      }
-    };
+    // ✨ v78.153 — backwall 변경 시스템 완전 비활성화. RAF 락이 0.7/2.8 고정.
+    const applyBwBright = (v) => { /* no-op */ };
     if (bwSl) {
       bwSl.addEventListener('input', () => {
         const v = parseFloat(bwSl.value);
@@ -6419,29 +6408,8 @@ window._ionKeyframeSyncTick = function() {
 
 // ✨ v77.828 — backwall AO 키프레임 sync watchdog. Ionizer 챕터에서만 활성.
 //   Overview / 다른 챕터에선 _bwAoActiveTarget = null → 글로벌 슬라이더 (aoIntensity) 가 owner.
-window._bwAoSyncTick = function() {
-  const t = window._bwAoActiveTarget;
-  if (!t) return;
-  let destInt = t.intensity;
-  // intensity 가 null 이면 글로벌 슬라이더 값 (Overview baseline 복원용).
-  if (destInt == null) {
-    const slider = document.getElementById('aoIntensity');
-    destInt = slider ? parseFloat(slider.value) : 0.5;
-  }
-  // ✨ v77.908 — 1-frame snap.
-  if (window._aoMaterialsBackwall) {
-    window._aoMaterialsBackwall.forEach(m => {
-      if (m && 'aoMapIntensity' in m) m.aoMapIntensity = destInt;
-    });
-  }
-  // ✨ v77.834 — Overview 복원 target 도달 시만 activeTarget=null. Ionizer target 유지.
-  if (t === window._OVERVIEW_BW_AO_RESTORE && window._aoMaterialsBackwall && window._aoMaterialsBackwall[0]) {
-    if (Math.abs(window._aoMaterialsBackwall[0].aoMapIntensity - destInt) < 0.005) {
-      window._bwAoActiveTarget = null;
-      window._bwAoLastTickT = null;
-    }
-  }
-};
+// ✨ v78.153 — backwall AO sync watchdog 완전 비활성. RAF 락이 2.8 고정.
+window._bwAoSyncTick = function() { /* no-op (v78.153) */ };
 
 // ✨ v77.840 — Lwall / Rwall AO sync watchdog (Backwall 과 동일 패턴).
 window._lwAoSyncTick = function() {
@@ -13721,18 +13689,15 @@ window._hkFps = 0;
   _forceLightingBaseline();
   // ✨ v77.931 — splat-bg filter 강제 적용 (매 frame).
   _forceSplatBgFilter();
-  // ✨ v78.152 — backwall 재질 영구 락. 사용자 요청: brightness -30% (1.0→0.7), AO +50% (1.87→2.8).
-  if (window._bwLockEnabled !== false && window._modelRoot) {
+  // ✨ v78.153 — backwall 무조건 매 frame 강제 (사용자 재요청: 어떤 코드든 무시).
+  //   diff 체크 제거 → 다른 코드가 같은 frame 안에 바꿔도 final write 가 이 값.
+  if (window._modelRoot) {
     window._modelRoot.traverse(o => {
       if (o.isMesh && o.name === 'backwall' && o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         mats.forEach(m => {
-          if (m.color && (Math.abs(m.color.r - 0.7) > 0.01 || Math.abs(m.color.g - 0.7) > 0.01 || Math.abs(m.color.b - 0.7) > 0.01)) {
-            m.color.setRGB(0.7, 0.7, 0.7);
-          }
-          if ('aoMapIntensity' in m && Math.abs(m.aoMapIntensity - 2.8) > 0.01) {
-            m.aoMapIntensity = 2.8;
-          }
+          if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
+          if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
         });
       }
     });
@@ -14340,6 +14305,25 @@ async function loadFromUrl(url) {
 async function init() {
   // ✨ v77.869 — 측정 함수는 module scope 으로 이동 (window._mark / window.dumpTimings) — 콘솔에서 항상 호출 가능.
   window._mark('init_start');
+  // ✨ v78.153 — HDRI fetch 를 GLB 와 병렬화 (시간 단축). preset 단계에서 idbGet 이 hit → fetch 스킵.
+  window._hdriPrefetchPromise = (async () => {
+    try {
+      // IDB 에 이미 있는지 먼저 확인 (캐시 hit 시 즉시 종료)
+      const cached = await idbGet('HDRi.png');
+      if (cached && cached.size > 1024) {
+        console.log('[v78.153] HDRi.png IDB 캐시 hit (prefetch skip)');
+        return;
+      }
+      const res = await fetch('./tex/HDRi.png');
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.size > 1024) {
+          try { await idbPut('HDRi.png', blob); } catch(e) {}
+          console.log('[v78.153] HDRi.png prefetch + IDB 저장 완료 (' + blob.size + ' bytes)');
+        }
+      }
+    } catch(e) { console.warn('[v78.153] HDRi prefetch 실패:', e); }
+  })();
   // 1) GLB 로드 시도 — 여러 경로 후보 순서대로
   setStatus('GLB 로딩 중...');
   let glbBuffer = null;
@@ -14385,18 +14369,14 @@ async function init() {
   setStatus('GLB 파싱 중...');
   await loadGLBFromBuffer(glbBuffer, 'hk_mainmodeling_assemble.glb');
 
-  // 2) 룩데브 프리셋 로드 시도
-  setPresetStatus('룩데브 프리셋 검색 중...');
-  // ✨ v78.109 — 사용자 요청: 외부 lookdev-preset*.json 탐색 완전 제거 (느림 + 옛 envMap 박혀있어 v78.108 fix 무효화).
-  //   원인 1: 6개 fetch × 모바일 200~500ms = 최대 3초 낭비.
-  //   원인 2: 'lookdev-preset (5).json' 이 repo 에 commit 되어 있어 항상 우선 로드되는데, 그 파일의 envMapFile 은 옛 'ChatGPT...png' (없음).
-  //   해결: 무조건 EMBEDDED preset 만 사용. v78.108 envMap = HDRi.png 박힌 거 항상 적용.
+  // 2) 룩데브 프리셋 적용 (외부 fetch 없음, EMBEDDED 직접 사용)
+  setPresetStatus('HDRI 적용 중...');
+  // ✨ v78.153 — 메시지 정확화 + HDRI prefetch 완료 대기 (GLB 와 병렬 진행했으므로 거의 즉시 resolve).
+  try { await window._hdriPrefetchPromise; } catch(e) {}
   let preset = JSON.parse(JSON.stringify(EMBEDDED_LOOKDEV_PRESET));
-  let presetSource = 'EMBEDDED (v78.109 — 외부 fetch 스킵)';
-  console.log('[v78.109] EMBEDDED preset 직접 사용 (fetch 6개 스킵 → 1~3초 단축, envMap=HDRi.png 보장)');
   if (preset) {
     await applyLookdevPreset(preset);
-    setPresetStatus('✓ 룩데브 프리셋 적용됨 (' + presetSource + ')');
+    setPresetStatus('✓ HDRI 적용됨');
   } else {
     setPresetStatus('프리셋 없음 — 기본 셋업 사용');
   }
@@ -16841,18 +16821,7 @@ window.ChapterManager = (() => {
                 }
               });
             }
-            // 🔒 backwall color = #b0b0b0 (lock — 슬라이더 dim, multiplyScalar 덮어쓰기 차단)
-            if (window._modelRoot) {
-              window._modelRoot.traverse(o => {
-                if (o.isMesh && o.name === 'backwall' && o.material) {
-                  const mat = Array.isArray(o.material) ? o.material[0] : o.material;
-                  if (mat && mat.color) {
-                    mat.color.setHex(UVC_LOCKED.WALL_COLOR);
-                    // ✨ v77.802 — needsUpdate=true 제거. color 변경엔 shader 재컴파일 불필요.
-                  }
-                }
-              });
-            }
+            // ✨ v78.153 — UVC_LOCKED.WALL_COLOR 적용 비활성. RAF 락이 0.7 고정.
             // 🔒 UV-C lamp emissive (lock)
             if (typeof uvcMeshSwaps !== 'undefined' && uvcMeshSwaps && uvcMeshSwaps.length) {
               uvcMeshSwaps.forEach(s => {
@@ -17353,35 +17322,7 @@ window.ChapterManager = (() => {
         //   원인: instant multiplyScalar 시점 + needsUpdate=true → 한 프레임 stall = 사용자 보고 "walls 툭 튀어 사라졌다가 생김".
         //   해결: orig → orig*bwBri 키프레임 lerp. UV-C 진입 카메라/색감과 동기 (4000ms).
         //   needsUpdate=true 제거 (color 변경만으로 Three.js 가 인식, shader 재컴파일 불필요).
-        setTimeout(() => {
-          if (!window._bwMatCache && typeof modelRoot !== 'undefined' && modelRoot) {
-            window._bwMatCache = [];
-            modelRoot.traverse(o => {
-              if (o.isMesh && o.name === 'backwall' && o.material) {
-                const mats = Array.isArray(o.material) ? o.material : [o.material];
-                mats.forEach(m => { if (m && m.color) window._bwMatCache.push(m); });
-              }
-            });
-          }
-          if (!window._bwMatCache || !window._bwMatCache.length) return;
-          if (!window._uvcBwOrig) {
-            window._uvcBwOrig = window._bwMatCache.map(m => ({ mat: m, color: m.color.clone() }));
-          }
-          const bwBri = parseFloat(document.getElementById('bwBri')?.value || '0.64');
-          const _bwStart = performance.now();
-          const _bwDur = window._UVC_BG_ENTRY_MS || 4000;
-          const _bwFroms = window._uvcBwOrig.map(s => s.mat.color.clone());
-          const _bwTos   = window._uvcBwOrig.map(s => s.color.clone().multiplyScalar(bwBri));
-          (function bwLerpIn() {
-            if (currentChapter !== 'uvc') return;   // 이탈 시 중단
-            const t = Math.min(1, (performance.now() - _bwStart) / _bwDur);
-            const e = 1 - Math.pow(1 - t, 3);
-            window._uvcBwOrig.forEach((s, i) => {
-              s.mat.color.copy(_bwFroms[i]).lerp(_bwTos[i], e);
-            });
-            if (t < 1) requestAnimationFrame(bwLerpIn);
-          })();
-        }, 0);
+        // ✨ v78.153 — UV-C backwall color lerp 비활성. RAF 락이 0.7 고정.
       },
       onExit:  () => {
         // ✨ v77.797 — reflColorState 를 Overview 챕터 값으로 부드럽게 lerp (~2s)
@@ -17394,12 +17335,7 @@ window.ChapterManager = (() => {
         window._uvcActiveValue = 0;
         // ✨ v77.799 — backwall color 원본 복원 (UV-C 진입 시 multiplyScalar(bwBri≈0.64) 로 어두워진 상태 → 원본으로 dissolve)
         //   사용자: Overview 복귀 후 캐비닛 어둡고 푸르스름. 원인: backwall mat.color 가 0.64x 로 남아서 캐비닛 메탈 반사가 어둡게 보임.
-        // ✨ v77.900 — backwall color RAF 2500ms 제거. 즉시 원본 복원 (1-frame snap).
-        if (window._uvcBwOrig && window._uvcBwOrig.length) {
-          window._uvcBwOrig.forEach((s) => {
-            s.mat.color.copy(s.color);
-          });
-        }
+        // ✨ v78.153 — backwall 원본 복원 비활성. RAF 락이 0.7 고정.
         // ✨ v77.792 — UV-C HDRI 컨트롤 hide + Overview HDRI 컨트롤 show (dissolve).
         const _uvcHdriExit = document.getElementById('uvcHdriCtrl');
         if (_uvcHdriExit) {
@@ -17701,27 +17637,7 @@ window.ChapterManager = (() => {
         // ✨ v77.843 — exposure 키프레임 활성 (UV-C 와 동일 어두운 노출 → cabinet 보라빛 illumination 강해짐).
         //   sync watchdog 가 매 frame approach. UV-C 챕터 owner 와 충돌 없게 sync watchdog 안에 currentChapter==='uvc' skip 가드 있음.
         window._exposureActiveTarget = window._ION_EXPOSURE;
-        // ✨ v77.900 — Ionizer backwall color 즉시 적용 (setTimeout/RAF 제거 → 1-frame snap).
-        (() => {
-          if (window.currentChapter !== 'ionizer') return;
-          if (!window._bwMatCache && typeof modelRoot !== 'undefined' && modelRoot) {
-            window._bwMatCache = [];
-            modelRoot.traverse(o => {
-              if (o.isMesh && o.name === 'backwall' && o.material) {
-                const mats = Array.isArray(o.material) ? o.material : [o.material];
-                mats.forEach(m => { if (m && m.color) window._bwMatCache.push(m); });
-              }
-            });
-          }
-          if (!window._bwMatCache || !window._bwMatCache.length) return;
-          if (!window._uvcBwOrig) {
-            window._uvcBwOrig = window._bwMatCache.map(m => ({ mat: m, color: m.color.clone() }));
-          }
-          const bwBri = parseFloat(document.getElementById('bwBri')?.value || '0.64');
-          window._uvcBwOrig.forEach((s) => {
-            s.mat.color.copy(s.color).multiplyScalar(bwBri);
-          });
-        })();
+        // ✨ v78.153 — Ionizer backwall multiply 비활성. RAF 락이 0.7 고정.
         // ✨ v77.820 — Ionizer 키프레임 시스템 활성. UV-C PointLight prewarm (없으면 생성).
         try {
           if (!window._uvcPointLight && typeof captureUVCMaterials === 'function') {
@@ -21713,27 +21629,14 @@ init();
     plumeVal.textContent = _userPlumeMul.toFixed(2);
     window._DRY_PLUME_MUL = _userPlumeMul;
   });
-  // RAF: 매 frame backwall AO + brightness + plume opacity 강제 (다른 시스템 덮어쓰기 차단).
-  (function _dryLockRaf() {
+  // ✨ v78.153 — Drying chapter backwall lock RAF 비활성. RAF 락이 0.7/2.8 고정.
+  //   Plume opacity 부분만 유지.
+  (function _dryPlumeRaf() {
     if (window.currentChapter === 'drying') {
-      // Backwall AO
-      if (window._aoMaterialsBackwall) {
-        window._aoMaterialsBackwall.forEach(m => {
-          if (m && 'aoMapIntensity' in m) m.aoMapIntensity = _userBwAo;
-          // Backwall brightness — material.color 의 r/g/b 를 base × _userBwBri 로
-          if (m && m.color) {
-            if (!m.userData._bwBaseColor) m.userData._bwBaseColor = { r: m.color.r, g: m.color.g, b: m.color.b };
-            const b = m.userData._bwBaseColor;
-            m.color.setRGB(b.r * _userBwBri, b.g * _userBwBri, b.b * _userBwBri);
-          }
-        });
-      }
-      // Plume sprite opacity multiplier (i 2-11 의 #5f4a2f sprite)
       if (window.scene) {
         window.scene.traverse(o => {
           if (o.isSprite && o.parent && o.parent.name === '_dryingArrowsPivot' && o.material && o.material.color) {
             const c = o.material.color;
-            // plume = brown color (#5f4a2f)
             if (c.r < 0.5 && c.g < 0.4 && c.b < 0.3) {
               if (!o.userData._baseOpacity) o.userData._baseOpacity = o.material.opacity || 0.3;
               o.material.opacity = o.userData._baseOpacity * _userPlumeMul;
@@ -21742,7 +21645,7 @@ init();
         });
       }
     }
-    requestAnimationFrame(_dryLockRaf);
+    requestAnimationFrame(_dryPlumeRaf);
   })();
   document.getElementById('dryPanelLog').addEventListener('click', () => {
     console.log('[v77.968] Drying: bloom=' + _dryUserBloom.toFixed(3) + ', backwallAo=' + _userBwAo.toFixed(3) + ', bwBri=' + _userBwBri.toFixed(3) + ', plume=' + _userPlumeMul.toFixed(3));
