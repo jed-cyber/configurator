@@ -13794,6 +13794,11 @@ window._hkFps = 0;
   // ✨ v77.899 — 도어 lerp 방향별 처리:
   //   열림 (|target| > |current|): 부드러운 lerp (factor 0.08).
   //   닫힘 (|target| < |current|): 부드러운 lerp (factor 0.07, 약간 천천히). v78.034 — 사용자 요청: 닫힘도 회전 애니메이션.
+  // ✨ v78.156 — Panel(LED Display) 챕터에선 doors target 강제 0 → 항상 닫힘.
+  if (window.currentChapter === 'panel') {
+    lDoorAnim.target = 0;
+    rDoorAnim.target = 0;
+  }
   if (lDoorPivot) {
     const lDelta = lDoorAnim.target - lDoorAnim.current;
     if (Math.abs(lDelta) > 1e-4) {
@@ -22961,6 +22966,120 @@ init();
   console.log('[v78.112] 모바일 튠 패널 wire 완료');
 })();
 */
+</script>
+
+<!-- ✨ v78.156 — UV-C 챕터 전용 SpotLight 슬라이더 패널 (모바일). -->
+<style>
+  #uvc-spot-panel {
+    position: fixed; top: 70px; right: 8px; z-index: 99998;
+    background: rgba(15,20,30,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(140,80,255,0.4); border-radius: 10px;
+    padding: 0; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px; width: 240px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    user-select: none; pointer-events: auto;
+    transition: max-height 0.25s ease-out;
+    overflow: hidden;
+    max-height: 32px;
+    display: none;   /* 기본 숨김 — UV-C 챕터에서만 표시 */
+  }
+  /* UV-C 챕터일 때만 표시 (currentChapter='uvc' → html data-chapter='uvc') */
+  html[data-chapter="uvc"] #uvc-spot-panel { display: block; }
+  #uvc-spot-panel.open { max-height: 720px; }
+  #uvc-spot-panel .usp-head { height: 32px; line-height: 32px; padding: 0 12px; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; background: rgba(140,80,255,0.18); display: flex; align-items: center; justify-content: space-between; }
+  #uvc-spot-panel .usp-tri { transition: transform 0.2s; }
+  #uvc-spot-panel.open .usp-tri { transform: rotate(90deg); }
+  #uvc-spot-panel .usp-body { padding: 8px 12px 12px; }
+  #uvc-spot-panel .usp-row { margin: 6px 0; }
+  #uvc-spot-panel .usp-row label { display: flex; justify-content: space-between; align-items: center; font-size: 10px; opacity: 0.85; margin-bottom: 3px; }
+  #uvc-spot-panel .usp-row label .usp-v { font-family: monospace; opacity: 1; font-weight: 600; color: #c8a5ff; font-size: 10px; }
+  #uvc-spot-panel .usp-row input[type=range] { width: 100%; height: 18px; -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.08); border-radius: 9px; outline: none; padding: 0; margin: 0; }
+  #uvc-spot-panel .usp-row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #8c50ff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+  #uvc-spot-panel .usp-row input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #8c50ff; border: 2px solid #fff; }
+  #uvc-spot-panel .usp-row input[type=color] { width: 100%; height: 28px; border: none; background: transparent; cursor: pointer; padding: 0; }
+  #uvc-spot-panel .usp-section { font-size: 9px; letter-spacing: 1.5px; opacity: 0.55; margin: 10px 0 4px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px; }
+  #uvc-spot-panel .usp-section:first-child { margin-top: 0; }
+</style>
+
+<div id="uvc-spot-panel">
+  <div class="usp-head"><span>💡 UV-C SpotLight</span><span class="usp-tri">▶</span></div>
+  <div class="usp-body">
+    <div class="usp-section">Position</div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-px-v">0.00</span></label><input type="range" id="usp-px" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-py-v">2.50</span></label><input type="range" id="usp-py" min="0" max="5" step="0.01" value="2.5"></div>
+    <div class="usp-row"><label>Z <span class="usp-v" id="usp-pz-v">0.00</span></label><input type="range" id="usp-pz" min="-3" max="3" step="0.01" value="0"></div>
+
+    <div class="usp-section">Target</div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-tx-v">0.00</span></label><input type="range" id="usp-tx" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">0.50</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="0.5"></div>
+    <div class="usp-row"><label>Z <span class="usp-v" id="usp-tz-v">0.00</span></label><input type="range" id="usp-tz" min="-3" max="3" step="0.01" value="0"></div>
+
+    <div class="usp-section">Light</div>
+    <div class="usp-row"><label>Power <span class="usp-v" id="usp-pow-v">15.0</span></label><input type="range" id="usp-pow" min="0" max="80" step="0.5" value="15"></div>
+    <div class="usp-row"><label>Color <span class="usp-v" id="usp-col-v">#a37dff</span></label><input type="color" id="usp-col" value="#a37dff"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const panel = document.getElementById('uvc-spot-panel');
+  if (!panel) return;
+  panel.querySelector('.usp-head').addEventListener('click', () => panel.classList.toggle('open'));
+
+  // ✨ v78.156 — chapter 변경 시 html[data-chapter] 설정 → CSS 가 panel display 토글.
+  //   매 frame 가벼운 check (currentChapter 변경 감지).
+  let _lastCh = null;
+  setInterval(() => {
+    const cur = window.currentChapter || '';
+    if (cur !== _lastCh) {
+      _lastCh = cur;
+      document.documentElement.setAttribute('data-chapter', cur);
+    }
+  }, 200);
+
+  // SpotLight 생성/갱신
+  function _ensureSpot() {
+    if (window._uvcUserSpot) return window._uvcUserSpot;
+    if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null;
+    const spot = new THREE.SpotLight(0xa37dff, 15, 12, Math.PI / 4, 0.5, 1.5);
+    spot.position.set(0, 2.5, 0);
+    spot.castShadow = false;   // 모바일 부하 최소
+    scene.add(spot);
+    scene.add(spot.target);
+    spot.target.position.set(0, 0.5, 0);
+    spot.target.updateMatrixWorld();
+    spot.visible = (window.currentChapter === 'uvc');
+    window._uvcUserSpot = spot;
+    return spot;
+  }
+  // UV-C 챕터 진입/이탈 시 visible 토글
+  setInterval(() => {
+    if (!window._uvcUserSpot) return;
+    window._uvcUserSpot.visible = (window.currentChapter === 'uvc');
+  }, 300);
+
+  function _bind(id, vid, apply, fmt) {
+    const el = document.getElementById(id);
+    const vEl = document.getElementById(vid);
+    if (!el || !vEl) return;
+    el.addEventListener('input', () => {
+      const v = el.type === 'color' ? el.value : parseFloat(el.value);
+      vEl.textContent = fmt ? fmt(v) : (typeof v === 'number' ? v.toFixed(2) : v);
+      try { apply(v); } catch(e) { console.warn('[v78.156] uvc-spot apply 실패:', id, e); }
+    });
+  }
+  _bind('usp-px', 'usp-px-v', v => { const s = _ensureSpot(); if (s) s.position.x = v; });
+  _bind('usp-py', 'usp-py-v', v => { const s = _ensureSpot(); if (s) s.position.y = v; });
+  _bind('usp-pz', 'usp-pz-v', v => { const s = _ensureSpot(); if (s) s.position.z = v; });
+  _bind('usp-tx', 'usp-tx-v', v => { const s = _ensureSpot(); if (s) { s.target.position.x = v; s.target.updateMatrixWorld(); } });
+  _bind('usp-ty', 'usp-ty-v', v => { const s = _ensureSpot(); if (s) { s.target.position.y = v; s.target.updateMatrixWorld(); } });
+  _bind('usp-tz', 'usp-tz-v', v => { const s = _ensureSpot(); if (s) { s.target.position.z = v; s.target.updateMatrixWorld(); } });
+  _bind('usp-pow', 'usp-pow-v', v => { const s = _ensureSpot(); if (s) s.intensity = v; }, v => v.toFixed(1));
+  _bind('usp-col', 'usp-col-v', v => { const s = _ensureSpot(); if (s) s.color.set(v); }, v => v);
+
+  console.log('[v78.156] UV-C SpotLight 슬라이더 wire 완료');
+})();
 </script>
 
 </body>
