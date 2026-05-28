@@ -11451,11 +11451,11 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.155 — bloom 없이 빛나는 느낌: texture hot-white center + uniform 흰색.
-//   texture 가 색 정보 (흰색 코어 + 블루 halo) 다 담고, uniform 은 흰색 → multiplicative 영향 없음.
+// ✨ v78.159 — Ionizer 파티클 최적화 + 밝은 푸른 글로우.
+//   count 800→500 (CPU 부담 감소), size +37%, opacity 1.0, color #c8e0ff (밝은 시안)
 const PARTICLES = {
-  count: 800,
-  size: 0.040,                        // 0.034 → 0.040 (halo 영역 보이게 약간 더 큼)
+  count: 500,                         // 800 → 500 (CPU 38% 감소)
+  size: 0.055,                        // 0.040 → 0.055 (글로우 영역 확대)
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
@@ -11463,8 +11463,8 @@ const PARTICLES = {
   damping: 0.96,
   gravity: -0.31,
   brightness: 1.0,
-  opacity: 1.0,                       // 0.98 → 1.0 (최대 밝기 — hot center 살아남)
-  color: new THREE.Color('#ffffff'),  // 흰색 (texture 가 색 정보 전부 담음, uniform 은 multiplier 만 = 1)
+  opacity: 1.0,
+  color: new THREE.Color('#c8e0ff'),  // ✨ v78.159 — 밝은 시안 (uniform 자체에 푸른빛) → texture × color = 더 푸르게
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,
@@ -11659,18 +11659,19 @@ function createUVCParticles() {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-  // ✨ v78.155 — 빛나는 느낌 (bloom 없이): hot-white 중심 + 시안 블루 halo + 부드러운 fade.
-  //   중심이 흰색 (HDR-like) → 사용자 눈에 self-illuminating 효과. 외곽은 진한 시안 블루 글로우.
+  // ✨ v78.159 — bloom 없이 더 밝게 빛나는 느낌: 흰색 hot core 영역 확대 + halo 도 알파 유지.
+  //   사용자 보고: 이전 너무 어둑어둑. 해결: center solid 영역 0%→35% 까지 흰색 유지 (큰 hot core),
+  //   halo 영역도 알파 0.7~0.4 로 강화 → bloom 없이도 self-illuminating 시각효과.
   const cv = document.createElement('canvas');
-  cv.width = cv.height = 128;   // 64 → 128 (그라데이션 부드러워짐 + halo 디테일)
+  cv.width = cv.height = 128;
   const ctx = cv.getContext('2d');
   const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  grad.addColorStop(0,    'rgba(255,255,255,1)');     // 중심: 순수 흰색 (hot center)
-  grad.addColorStop(0.12, 'rgba(220,235,255,0.98)');  // 약간 푸른빛
-  grad.addColorStop(0.3,  'rgba(140,190,255,0.85)');  // 시안 블루
-  grad.addColorStop(0.55, 'rgba(90,150,255,0.45)');   // halo 영역
-  grad.addColorStop(0.8,  'rgba(60,120,230,0.15)');   // 외곽 글로우
-  grad.addColorStop(1,    'rgba(40,90,200,0)');       // 완전 페이드
+  grad.addColorStop(0,    'rgba(255,255,255,1)');     // 중심: 순수 흰색
+  grad.addColorStop(0.25, 'rgba(245,250,255,1)');     // ✨ v78.159 — 25%까지 거의 흰색 유지 (hot core 확대)
+  grad.addColorStop(0.45, 'rgba(180,215,255,0.9)');   // 밝은 시안 영역
+  grad.addColorStop(0.65, 'rgba(120,180,255,0.65)');  // halo (이전 0.45 → 0.65)
+  grad.addColorStop(0.85, 'rgba(80,150,255,0.3)');    // 외곽 글로우 (이전 0.15 → 0.3)
+  grad.addColorStop(1,    'rgba(60,120,230,0)');      // 완전 페이드
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 128, 128);
   const tex = new THREE.CanvasTexture(cv);
@@ -11720,7 +11721,8 @@ function updateUVCParticles(dt) {
   const N = PARTICLES.count;
   // ★ v77.244 — 시뮬레이션 시간 배율. 0.5 = 모든 물리(난류/감쇠/이동)가 절반 속도 → 활동반경은 유지되고 움직임만 느려짐.
   //   (turbulence 자체를 줄이면 random walk 분산도 작아져 활동반경이 줄어듦. dt 배율은 시간만 느려짐.)
-  const tScale = (typeof window._particleTimeScale === 'number') ? window._particleTimeScale : 0.5;
+  // ✨ v78.159 — 사용자 요청: Ionizer 파티클 속도 1.5배 (0.5 → 0.75).
+  const tScale = (typeof window._particleTimeScale === 'number') ? window._particleTimeScale : 0.75;
   dt = dt * tScale;
   // 프레임율 보정된 damping (60fps 기준 PARTICLES.damping 값을 그대로 적용)
   const dampFrame = Math.pow(PARTICLES.damping, dt * 60);
@@ -17962,22 +17964,16 @@ window.ChapterManager = (() => {
             //   m.blending = THREE.AdditiveBlending;  // ← DISABLED
             m.needsUpdate = true;
           }
-          // ★ v77.233 — 파티클을 main scene으로 이동 (composer bloom 적용 받음). onExit에서 particleScene 복귀.
-          if (typeof uvcParticles !== 'undefined' && uvcParticles && typeof particleScene !== 'undefined') {
-            if (uvcParticles.parent === particleScene) {
-              particleScene.remove(uvcParticles);
-              scene.add(uvcParticles);
-              window._ionParticleInMainScene = true;
-            }
-          }
+          // ✨ v78.159 — bloom OFF 이므로 파티클 main scene 이동 불필요 (불필요 render pass 절약).
+          //   particleScene 에 그대로 두고 별도 pass 로 렌더 (depth pre-pass 없이 가벼움).
           // ★ v77.232 — 슬라이더 값으로 emissive power + 색감 적용 (기본 3.0)
           if (window._applyIonParticleColor) window._applyIonParticleColor();
           // ★ v77.248 — bloom 락 활성화 (UV-C 진동 tick이 매 프레임 덮어쓰기 못하게). 슬라이더 값 고정.
           window._ionizerBloomLock = true;
-          // ✨ v78.149 — Ionizer 만 bloom 약하게 (사용자 요청). 기본 1.5 → 0.4.
-          const pblm = document.getElementById('ionParticleBloom');
-          const bloom = pblm ? parseFloat(pblm.value) : 0.4;
-          if (window._applyIonParticleBloom) window._applyIonParticleBloom(bloom);
+          // ✨ v78.159 — Ionizer bloom 완전 OFF (사용자 요청 + 모바일 부하 감소).
+          //   파티클 자체 texture 의 hot core 가 glow 시각효과 담당.
+          if (window._applyIonParticleBloom) window._applyIonParticleBloom(0);
+          if (typeof bloomPass !== 'undefined' && bloomPass) bloomPass.enabled = false;
           // ★ v77.233 — stagger 값 동기화
           const pstg = document.getElementById('ionParticleStagger');
           if (pstg) window._ionParticleStagger = parseFloat(pstg.value);
