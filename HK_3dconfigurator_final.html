@@ -6712,14 +6712,16 @@ window.reflColorState = reflColorState;
 if (typeof envColorState !== 'undefined') window.envColorState = envColorState;
 // ✨ v77.940 — 사용자 락인값 (각 챕터 reflection HDRI).
 // ✨ v78.144 — 사용자 락인 업데이트: brightness 2.05 / contrast 3.00 / saturation 0.
+// ✨ v78.169 — 사용자 요청: REFL HDRI 전 챕터 OVERVIEW 값으로 통일.
+//   모든 챕터가 동일 reflection 톤 사용 → _lerpReflColor 가 호출돼도 시각 변화 없음 (no-op transition).
 window._REFL_OVERVIEW   = { brightness: 2.05, contrast: 3.00, saturation: 0.00, tint: '#FDFBFE' };
-window._REFL_UVC        = { brightness: 1.00, contrast: 1.55, saturation: 0.00, tint: '#fbfaff' };
-window._REFL_ION        = { brightness: 1.15, contrast: 1.55, saturation: 0.00, tint: '#e6e6ff' };
-window._REFL_DRYING     = { brightness: 1.05, contrast: 1.15, saturation: 0.00, tint: '#FDFBFE' }; // ✨ v78.005 brightness -0.1
-window._REFL_PANEL      = { brightness: 1.50, contrast: 2.00, saturation: 0.00, tint: '#FDFBFE' };
-window._REFL_MODULAR    = { brightness: 1.50, contrast: 1.20, saturation: 0.00, tint: '#FDFBFE' };
-window._REFL_PREMIUM    = { brightness: 1.15, contrast: 1.05, saturation: 0.00, tint: '#FDFBFE' };
-window._REFL_DIMENSIONS = { brightness: 1.50, contrast: 1.10, saturation: 0.00, tint: '#FDFBFE' };
+window._REFL_UVC        = window._REFL_OVERVIEW;
+window._REFL_ION        = window._REFL_OVERVIEW;
+window._REFL_DRYING     = window._REFL_OVERVIEW;
+window._REFL_PANEL      = window._REFL_OVERVIEW;
+window._REFL_MODULAR    = window._REFL_OVERVIEW;
+window._REFL_PREMIUM    = window._REFL_OVERVIEW;
+window._REFL_DIMENSIONS = window._REFL_OVERVIEW;
 // ✨ v77.797 — reflColorState 부드러운 dissolve lerp.
 //   target = {brightness, contrast, saturation, tint(hex)}, duration ms.
 //   매 프레임 regenerateEnvMap 호출 → 캐비닛 메탈 점진적 변색.
