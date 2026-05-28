@@ -15384,6 +15384,13 @@ async function init() {
           setTimeout(() => {
             try {
               ChapterManager.startIntro();
+              // ✨ v78.166 — intro 시작 신호 → parent 가 mobileLoading 페이드 (검은 화면 제거).
+              window._introStarted = true;
+              try {
+                if (window.parent && window.parent !== window && typeof window.parent._checkFadeLoading === 'function') {
+                  window.parent._checkFadeLoading();
+                }
+              } catch(e) {}
               // ✨ v78.151 — 인트로 시작 후 1.5초 뒤 deferred pre-warm (UV-C waves + drying arrows).
               //   사용자가 챕터 들어가기 전에 background load 완료. 로딩 화면 시간은 단축.
               setTimeout(() => {
