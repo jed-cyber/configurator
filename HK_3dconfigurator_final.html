@@ -11459,11 +11459,11 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.162 — 파티클 진짜 빛나게 (Additive 복귀 + 어두운 base color).
-//   NormalBlending 으론 발광 효과 없음 → AdditiveBlending 으로 변경. 색은 어두운 블루 → 겹쳐도 blue 우세 유지.
+// ✨ v78.168 — Ionizer 파티클 추가 최적화 (사용자 보고: 여전히 버벅임).
+//   count 500 → 300 (-40% CPU + draw call), size 0.055 → 0.062 (적은 수 보강).
 const PARTICLES = {
-  count: 500,
-  size: 0.055,
+  count: 300,
+  size: 0.062,
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
@@ -13850,12 +13850,12 @@ window._hkFps = 0;
   //   각 함수 내부에 가드 있긴 하지만 함수 호출 + early-return 도 누적 부담. 챕터 일치할 때만 호출.
   const _cur = window.currentChapter;
   // UV-C particles: UV-C/Ionizer 챕터에서만.
-  // ✨ v78.161 — 모바일에선 2 frame 마다 1번 update (500 particle CPU loop 50% ↓). dt 도 2배로 보정.
+  // ✨ v78.168 — 모바일에선 3 frame 마다 1번 update (300 particle × 1/3 frame = 100/frame 수준).
   if (_cur === 'uvc' || _cur === 'ionizer') {
     if (_isMobileRenderer) {
       window._particleFrameSkip = (window._particleFrameSkip || 0) + 1;
-      if (window._particleFrameSkip >= 2) {
-        updateUVCParticles(dt * 2);   // dt 2배 보정 → 속도 유지
+      if (window._particleFrameSkip >= 3) {
+        updateUVCParticles(dt * 3);
         window._particleFrameSkip = 0;
       }
     } else {
@@ -23034,50 +23034,130 @@ init();
 */
 </script>
 
-<!-- ✨ v78.157 — UV-C / Ionizer 챕터 SpotLight 락인 (사용자 확정값). 슬라이더 패널 삭제. -->
+<!-- ✨ v78.168 — UV-C / Ionizer SpotLight + 슬라이더 패널 (cone 추가). -->
+<style>
+  #uvc-spot-panel {
+    position: fixed; top: 70px; right: 8px; z-index: 99998;
+    background: rgba(15,20,30,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(80,130,255,0.4); border-radius: 10px;
+    padding: 0; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11px; width: 240px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    user-select: none; pointer-events: auto;
+    transition: max-height 0.25s ease-out;
+    overflow: hidden;
+    max-height: 32px;
+    display: none;
+  }
+  html[data-chapter="uvc"] #uvc-spot-panel, html[data-chapter="ionizer"] #uvc-spot-panel { display: block; }
+  #uvc-spot-panel.open { max-height: 760px; }
+  #uvc-spot-panel .usp-head { height: 32px; line-height: 32px; padding: 0 12px; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; background: rgba(80,130,255,0.2); display: flex; align-items: center; justify-content: space-between; }
+  #uvc-spot-panel .usp-tri { transition: transform 0.2s; }
+  #uvc-spot-panel.open .usp-tri { transform: rotate(90deg); }
+  #uvc-spot-panel .usp-body { padding: 8px 12px 12px; }
+  #uvc-spot-panel .usp-row { margin: 6px 0; }
+  #uvc-spot-panel .usp-row label { display: flex; justify-content: space-between; align-items: center; font-size: 10px; opacity: 0.85; margin-bottom: 3px; }
+  #uvc-spot-panel .usp-row label .usp-v { font-family: monospace; opacity: 1; font-weight: 600; color: #7ab8ff; font-size: 10px; }
+  #uvc-spot-panel .usp-row input[type=range] { width: 100%; height: 18px; -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.08); border-radius: 9px; outline: none; padding: 0; margin: 0; }
+  #uvc-spot-panel .usp-row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #5080ff; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+  #uvc-spot-panel .usp-row input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #5080ff; border: 2px solid #fff; }
+  #uvc-spot-panel .usp-row input[type=color] { width: 100%; height: 28px; border: none; background: transparent; cursor: pointer; padding: 0; }
+  #uvc-spot-panel .usp-section { font-size: 9px; letter-spacing: 1.5px; opacity: 0.55; margin: 10px 0 4px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px; }
+  #uvc-spot-panel .usp-section:first-child { margin-top: 0; }
+</style>
+
+<div id="uvc-spot-panel">
+  <div class="usp-head"><span>💡 UV-C / Ion SpotLight</span><span class="usp-tri">▶</span></div>
+  <div class="usp-body">
+    <div class="usp-section">Position</div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-px-v">0.00</span></label><input type="range" id="usp-px" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-py-v">2.50</span></label><input type="range" id="usp-py" min="0" max="5" step="0.01" value="2.5"></div>
+    <div class="usp-row"><label>Z <span class="usp-v" id="usp-pz-v">0.00</span></label><input type="range" id="usp-pz" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-section">Target</div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-tx-v">-0.06</span></label><input type="range" id="usp-tx" min="-3" max="3" step="0.01" value="-0.06"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">1.52</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="1.52"></div>
+    <div class="usp-row"><label>Z <span class="usp-v" id="usp-tz-v">0.00</span></label><input type="range" id="usp-tz" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-section">Light</div>
+    <div class="usp-row"><label>Power <span class="usp-v" id="usp-pow-v">80</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="80"></div>
+    <div class="usp-row"><label>Cone ° <span class="usp-v" id="usp-cone-v">45</span></label><input type="range" id="usp-cone" min="5" max="90" step="1" value="45"></div>
+    <div class="usp-row"><label>Distance <span class="usp-v" id="usp-dist-v">3.0</span></label><input type="range" id="usp-dist" min="1" max="20" step="0.5" value="3"></div>
+    <div class="usp-row"><label>Color <span class="usp-v" id="usp-col-v">#0000ff</span></label><input type="color" id="usp-col" value="#0000ff"></div>
+  </div>
+</div>
+
 <script>
 (function(){
-  // 락인 값
-  const SPOT_POS    = { x: 0,     y: 2.5,  z: 0 };
-  const SPOT_TARGET = { x: -0.06, y: 1.52, z: 0 };
-  const SPOT_POWER  = 80;
-  const SPOT_COLOR  = 0x0000FF;
+  // 락인 값 (사용자 슬라이더 변경 가능)
+  const state = { px: 0, py: 2.5, pz: 0, tx: -0.06, ty: 1.52, tz: 0, pow: 80, cone: 45, dist: 3, col: 0x0000ff };
 
   function _ensureSpot() {
     if (window._uvcUserSpot) return window._uvcUserSpot;
     if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null;
-    // ✨ v78.160 — distance 12 → 3 (영향 받는 픽셀 영역 75% 감소 = fragment shader 부담 감소).
-    const spot = new THREE.SpotLight(SPOT_COLOR, SPOT_POWER, 3, Math.PI / 4, 0.5, 1.5);
-    spot.position.set(SPOT_POS.x, SPOT_POS.y, SPOT_POS.z);
+    const spot = new THREE.SpotLight(state.col, state.pow, state.dist, state.cone * Math.PI / 360, 0.5, 1.5);
+    spot.position.set(state.px, state.py, state.pz);
     spot.castShadow = false;
     scene.add(spot);
     scene.add(spot.target);
-    spot.target.position.set(SPOT_TARGET.x, SPOT_TARGET.y, SPOT_TARGET.z);
+    spot.target.position.set(state.tx, state.ty, state.tz);
     spot.target.updateMatrixWorld();
     spot.visible = false;
     window._uvcUserSpot = spot;
-    console.log('[v78.157] UV-C/Ionizer SpotLight 생성 락인');
     return spot;
   }
+  function _applyAll() {
+    const s = _ensureSpot();
+    if (!s) return;
+    s.position.set(state.px, state.py, state.pz);
+    s.target.position.set(state.tx, state.ty, state.tz);
+    s.target.updateMatrixWorld();
+    s.intensity = state.pow;
+    s.distance = state.dist;
+    s.angle = state.cone * Math.PI / 360;   // cone 도 (degree) → 반각 (rad)
+    s.color.setHex(state.col);
+  }
 
-  // UV-C 또는 Ionizer 챕터일 때만 visible
+  // chapter 변경 감지 + visible 토글
+  let _lastCh = null;
   setInterval(() => {
-    const cur = window.currentChapter;
+    const cur = window.currentChapter || '';
+    if (cur !== _lastCh) {
+      _lastCh = cur;
+      document.documentElement.setAttribute('data-chapter', cur);
+    }
     const shouldShow = (cur === 'uvc' || cur === 'ionizer');
     if (shouldShow) {
       const s = _ensureSpot();
-      if (!s) return;
-      s.visible = true;
-      // 락 (다른 코드 변경 차단)
-      s.position.set(SPOT_POS.x, SPOT_POS.y, SPOT_POS.z);
-      s.target.position.set(SPOT_TARGET.x, SPOT_TARGET.y, SPOT_TARGET.z);
-      s.target.updateMatrixWorld();
-      s.intensity = SPOT_POWER;
-      s.color.setHex(SPOT_COLOR);
+      if (s) { s.visible = true; _applyAll(); }
     } else if (window._uvcUserSpot) {
       window._uvcUserSpot.visible = false;
     }
   }, 300);
+
+  // 슬라이더 wire
+  const panel = document.getElementById('uvc-spot-panel');
+  if (panel) panel.querySelector('.usp-head').addEventListener('click', () => panel.classList.toggle('open'));
+  function _bind(id, vid, key, isColor, fmt) {
+    const el = document.getElementById(id);
+    const vEl = document.getElementById(vid);
+    if (!el || !vEl) return;
+    el.addEventListener('input', () => {
+      const v = isColor ? parseInt(el.value.replace('#',''), 16) : parseFloat(el.value);
+      state[key] = v;
+      vEl.textContent = fmt ? fmt(v) : (isColor ? el.value : (typeof v === 'number' ? v.toFixed(2) : v));
+      _applyAll();
+    });
+  }
+  _bind('usp-px', 'usp-px-v', 'px');
+  _bind('usp-py', 'usp-py-v', 'py');
+  _bind('usp-pz', 'usp-pz-v', 'pz');
+  _bind('usp-tx', 'usp-tx-v', 'tx');
+  _bind('usp-ty', 'usp-ty-v', 'ty');
+  _bind('usp-tz', 'usp-tz-v', 'tz');
+  _bind('usp-pow', 'usp-pow-v', 'pow', false, v => v.toFixed(0));
+  _bind('usp-cone', 'usp-cone-v', 'cone', false, v => v.toFixed(0));
+  _bind('usp-dist', 'usp-dist-v', 'dist', false, v => v.toFixed(1));
+  _bind('usp-col', 'usp-col-v', 'col', true);
 })();
 </script>
 
