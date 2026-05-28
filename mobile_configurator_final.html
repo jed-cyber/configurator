@@ -57,23 +57,73 @@
     height: 100vh; height: 100dvh;
     z-index: 0; pointer-events: none;
   }
-  /* 로딩 hint */
+  /* ✨ v78.164 — 로딩창 재디자인 + 제품 특징 carousel. */
   #mobileLoading {
-    position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #0a0c14 0%, #1a1f2e 100%); color: #fff;
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #0f1626 0%, #050810 80%);
+    color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    /* ✨ v78.151 — fade 0.6s → 0.3s (로딩 시간 체감 단축). */
-    font-size: 14px; letter-spacing: 1px; opacity: 1; transition: opacity 0.3s ease-out;
+    opacity: 1; transition: opacity 0.5s ease-out;
+    padding: 0 32px; text-align: center;
   }
   #mobileLoading.fade { opacity: 0; pointer-events: none; }
-  #mobileLoading .dot {
-    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    background: #5476E3; margin: 0 4px; animation: dotPulse 1.4s infinite ease-in-out;
+  /* 브랜드 */
+  #mobileLoading .brand {
+    font-size: 13px; letter-spacing: 4px; opacity: 0.55; margin-bottom: 8px;
+    text-transform: uppercase; font-weight: 500;
   }
-  #mobileLoading .dot:nth-child(2) { animation-delay: 0.2s; }
-  #mobileLoading .dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes dotPulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.0); } }
-  #mobileLoading .label { display: block; text-align: center; margin-top: 16px; opacity: 0.85; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+  #mobileLoading .product {
+    font-size: 28px; font-weight: 700; letter-spacing: 1px;
+    background: linear-gradient(135deg, #ffffff 0%, #7ab8ff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 36px;
+  }
+  /* 특징 carousel */
+  #mobileLoading .feature-stage {
+    width: 100%; max-width: 320px;
+    height: 92px; position: relative;
+    margin-bottom: 28px;
+  }
+  #mobileLoading .feature {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  }
+  #mobileLoading .feature.active { opacity: 1; transform: translateY(0); }
+  #mobileLoading .feature-icon {
+    width: 36px; height: 36px; margin-bottom: 10px;
+    fill: none; stroke: #7ab8ff; stroke-width: 1.5;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  #mobileLoading .feature-title {
+    font-size: 15px; font-weight: 600; letter-spacing: 0.5px; color: #e8eef7;
+    margin-bottom: 4px;
+  }
+  #mobileLoading .feature-desc {
+    font-size: 11px; opacity: 0.6; letter-spacing: 0.3px; line-height: 1.4;
+    max-width: 280px;
+  }
+  /* 진행 dots */
+  #mobileLoading .progress-dots {
+    display: flex; gap: 5px; margin-bottom: 10px;
+  }
+  #mobileLoading .pdot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(122,184,255,0.25);
+    transition: background 0.3s ease, transform 0.3s ease;
+  }
+  #mobileLoading .pdot.on {
+    background: #7ab8ff;
+    transform: scale(1.3);
+  }
+  /* loading 텍스트 (작게) */
+  #mobileLoading .loading-label {
+    font-size: 10px; letter-spacing: 2.5px; opacity: 0.4;
+    text-transform: uppercase; font-weight: 500;
+  }
   /* ✨ v78.151 — FPS HUD (좌상단 작은 표시, 사용자 확인용). */
   #fpsHud {
     position: fixed; top: 8px; left: 8px; z-index: 99999;
@@ -91,15 +141,61 @@
 <body>
 
 <div id="mobileLoading">
-  <div style="text-align:center;">
-    <div>
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
-    </div>
-    <div class="label">HK NEO+ STERILIZER<br>Loading...</div>
+  <div class="brand">HK</div>
+  <div class="product">NEO+ Sterilizer</div>
+  <div class="feature-stage" id="mlFeatureStage">
+    <!-- features injected by JS -->
   </div>
+  <div class="progress-dots" id="mlProgressDots"></div>
+  <div class="loading-label">Loading</div>
 </div>
+<script>
+// ✨ v78.164 — 로딩창 제품 특징 carousel.
+(function(){
+  const FEATURES = [
+    { title: 'UV-C Sterilization', desc: '강력한 UV-C 살균으로 세균 99.9% 제거',
+      svg: '<svg class="feature-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><path d="M16 7v4M16 21v4M7 16h4M21 16h4M10 10l2.5 2.5M19.5 19.5L22 22M10 22l2.5-2.5M19.5 12.5L22 10"/></svg>' },
+    { title: 'Ion Generator', desc: '+/− 이온 분사로 공기 중 유해물질 분해',
+      svg: '<svg class="feature-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="3"/><circle cx="16" cy="16" r="9"/><circle cx="16" cy="16" r="13"/><path d="M11 16h2M19 16h2M16 11v2M16 19v2"/></svg>' },
+    { title: 'LED Display', desc: '실시간 살균 상태 + 시스템 정보 표시',
+      svg: '<svg class="feature-icon" viewBox="0 0 32 32"><rect x="5" y="7" width="22" height="14" rx="2"/><path d="M11 26h10M16 21v5"/><circle cx="11" cy="14" r="1.5"/><path d="M16 11h7"/></svg>' },
+    { title: 'Drying System', desc: '살균 후 자동 건조로 위생 완성',
+      svg: '<svg class="feature-icon" viewBox="0 0 32 32"><path d="M8 14c0-3 2-5 4-5s2 2 4 2 4-3 6-3"/><path d="M8 20c0-3 2-5 4-5s2 2 4 2 4-3 6-3"/><path d="M8 26c0-3 2-5 4-5s2 2 4 2 4-3 6-3"/></svg>' },
+    { title: 'Modular Design', desc: '확장 가능한 모듈식 구조로 맞춤 설정',
+      svg: '<svg class="feature-icon" viewBox="0 0 32 32"><rect x="5" y="5" width="9" height="9" rx="1"/><rect x="18" y="5" width="9" height="9" rx="1"/><rect x="5" y="18" width="9" height="9" rx="1"/><rect x="18" y="18" width="9" height="9" rx="1"/></svg>' },
+    { title: 'Premium Stainless', desc: 'SUS 304 스테인리스 — 내식성과 위생성',
+      svg: '<svg class="feature-icon" viewBox="0 0 32 32"><path d="M16 3l11 5v6c0 7-5 12-11 13-6-1-11-6-11-13V8z"/><path d="M12 16l3 3 6-6"/></svg>' },
+  ];
+
+  const stage = document.getElementById('mlFeatureStage');
+  const dotsBox = document.getElementById('mlProgressDots');
+  if (!stage || !dotsBox) return;
+
+  FEATURES.forEach((f, i) => {
+    const el = document.createElement('div');
+    el.className = 'feature' + (i === 0 ? ' active' : '');
+    el.innerHTML = f.svg
+      + '<div class="feature-title">' + f.title + '</div>'
+      + '<div class="feature-desc">' + f.desc + '</div>';
+    stage.appendChild(el);
+
+    const d = document.createElement('div');
+    d.className = 'pdot' + (i === 0 ? ' on' : '');
+    dotsBox.appendChild(d);
+  });
+
+  const els = stage.querySelectorAll('.feature');
+  const dots = dotsBox.querySelectorAll('.pdot');
+  let idx = 0;
+  setInterval(() => {
+    els[idx].classList.remove('active');
+    dots[idx].classList.remove('on');
+    idx = (idx + 1) % FEATURES.length;
+    els[idx].classList.add('active');
+    dots[idx].classList.add('on');
+  }, 1800);
+})();
+</script>
 
 <div id="splat-bg"></div>
 <iframe id="hk-frame" src="" allow="fullscreen"></iframe>
@@ -114,14 +210,18 @@ document.getElementById('hk-frame').src = './HK_3dconfigurator_final.html?splat=
 //   이유: splat 60MB 다운로드가 인트로 시작 후에 진행되어 사용자가 검은 배경에서 splat 점진적 등장을 봄.
 //   해결: splat 100% 다운로드 완료 → loading fade. window._splatReadyToFade 가 신호.
 window._splatReadyToFade = false;
+// ✨ v78.164 — 최소 노출 시간 2초 (제품 특징 carousel 한 사이클 보장).
+window._mobileLoadingStartT = performance.now();
 window._checkFadeLoading = function() {
   const _ifrLoaded = window._iframeLoaded === true;
   if (window._splatReadyToFade && _ifrLoaded) {
-    // ✨ v78.150 — 1초 대기 → 200ms (로딩 시간 단축). 인트로 안정화는 iframe 의 startIntro delay 가 담당.
+    const elapsed = performance.now() - (window._mobileLoadingStartT || 0);
+    const MIN_SHOW = 2000;   // 최소 2초 노출
+    const remain = Math.max(200, MIN_SHOW - elapsed);
     setTimeout(() => {
       const el = document.getElementById('mobileLoading');
       if (el) el.classList.add('fade');
-    }, 200);
+    }, remain);
   }
 };
 // 안전망: 15초 안에 fade 가 발동되지 않으면 강제 fade (splat fetch 실패 시).
