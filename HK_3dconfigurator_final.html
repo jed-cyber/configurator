@@ -17964,8 +17964,18 @@ window.ChapterManager = (() => {
             //   m.blending = THREE.AdditiveBlending;  // ← DISABLED
             m.needsUpdate = true;
           }
-          // ✨ v78.159 — bloom OFF 이므로 파티클 main scene 이동 불필요 (불필요 render pass 절약).
-          //   particleScene 에 그대로 두고 별도 pass 로 렌더 (depth pre-pass 없이 가벼움).
+          // ✨ v78.160 — Ionizer 렉 fix: 파티클 main scene 통합.
+          //   v78.159 의 "particleScene 유지" 판단이 잘못됨 — particleScene 분리는 매 frame "depth pre-pass + particle pass" = 2 render pass 추가.
+          //   main scene 으로 옮기면 기존 단일 render 에 포함 → render pass 0 추가. renderOrder=10 으로 transparent 마지막 렌더.
+          if (typeof uvcParticles !== 'undefined' && uvcParticles && typeof particleScene !== 'undefined') {
+            if (uvcParticles.parent === particleScene) {
+              particleScene.remove(uvcParticles);
+              scene.add(uvcParticles);
+              uvcParticles.renderOrder = 10;
+              window._ionParticleInMainScene = true;
+              console.log('[v78.160] uvcParticles → main scene (extra render pass 제거)');
+            }
+          }
           // ★ v77.232 — 슬라이더 값으로 emissive power + 색감 적용 (기본 3.0)
           if (window._applyIonParticleColor) window._applyIonParticleColor();
           // ★ v77.248 — bloom 락 활성화 (UV-C 진동 tick이 매 프레임 덮어쓰기 못하게). 슬라이더 값 고정.
@@ -18938,6 +18948,11 @@ window.ChapterManager = (() => {
         if (typeof toggleIonizer === 'function' && ionOn) toggleIonizer();
         if (typeof toggleUVC === 'function' && uvcOn) toggleUVC();
         if (typeof animateCycloramaDim === 'function') animateCycloramaDim(0, 1000);
+        // ✨ v78.160 — LED Panel: 문 즉시 닫힌 상태로 강제 (사용자 요청: lerp 없이 시작부터 닫힘).
+        if (typeof lDoorAnim !== 'undefined' && lDoorAnim) { lDoorAnim.target = 0; lDoorAnim.current = 0; }
+        if (typeof rDoorAnim !== 'undefined' && rDoorAnim) { rDoorAnim.target = 0; rDoorAnim.current = 0; }
+        if (typeof lDoorPivot !== 'undefined' && lDoorPivot) lDoorPivot.rotation.y = lDoorPivot.userData.baseRotationY || 0;
+        if (typeof rDoorPivot !== 'undefined' && rDoorPivot) rDoorPivot.rotation.y = rDoorPivot.userData.baseRotationY || 0;
         // ★ v77.211 — orbit 속도 더 느리게 (0.10 → 0.04)
         if (typeof controls !== 'undefined' && controls) {
           window._panelSavedRotateSpeed = controls.rotateSpeed;
@@ -22989,7 +23004,8 @@ init();
   function _ensureSpot() {
     if (window._uvcUserSpot) return window._uvcUserSpot;
     if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null;
-    const spot = new THREE.SpotLight(SPOT_COLOR, SPOT_POWER, 12, Math.PI / 4, 0.5, 1.5);
+    // ✨ v78.160 — distance 12 → 3 (영향 받는 픽셀 영역 75% 감소 = fragment shader 부담 감소).
+    const spot = new THREE.SpotLight(SPOT_COLOR, SPOT_POWER, 3, Math.PI / 4, 0.5, 1.5);
     spot.position.set(SPOT_POS.x, SPOT_POS.y, SPOT_POS.z);
     spot.castShadow = false;
     scene.add(spot);
