@@ -288,9 +288,10 @@ window.addEventListener('resize', () => {
 // ─── Splat 자체 RAF + v78.129 동적 품질 컨트롤 ───
 //   1) 카메라 움직임 시 pixelRatio 0.25 (절반의 절반), 정지 300ms 후 0.5 복원
 //   2) FPS < 25 면 0.25 영구 락 / FPS > 45 면 0.5 복원 (어댑티브)
-const _SPLAT_DPR_IDLE   = isMobile ? 0.5  : 1.0;
-const _SPLAT_DPR_MOVING = isMobile ? 0.25 : 0.75;
-const _SPLAT_DPR_LOW    = isMobile ? 0.25 : 0.5;
+// ✨ v78.162 — 사용자 6fps 보고 → splat dpr 0.25 영구 (mobile). GPU 부하 추가 절반.
+const _SPLAT_DPR_IDLE   = isMobile ? 0.25 : 1.0;
+const _SPLAT_DPR_MOVING = isMobile ? 0.18 : 0.75;
+const _SPLAT_DPR_LOW    = isMobile ? 0.18 : 0.5;
 let _splatLastMoveT = 0;
 let _splatLastPos = new THREE.Vector3();
 let _splatLastFps = 60;

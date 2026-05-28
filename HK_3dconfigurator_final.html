@@ -5833,7 +5833,7 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
 dirLight.position.set(4, 6, 3);
 dirLight.castShadow = true;
 // ✨ v77.819 — shadow map 2048→1024 (4배 가벼움, 시각 거의 동일).
-dirLight.shadow.mapSize.set(/mobile|android|iphone|ipad/i.test(navigator.userAgent) ? 512 : 1024, /mobile|android|iphone|ipad/i.test(navigator.userAgent) ? 512 : 1024);  // v78.118 모바일 main dirLight 도 512
+dirLight.shadow.mapSize.set(/mobile|android|iphone|ipad/i.test(navigator.userAgent) ? 256 : 1024, /mobile|android|iphone|ipad/i.test(navigator.userAgent) ? 256 : 1024);  // ✨ v78.162 모바일 main dirLight 256
 dirLight.shadow.bias = -0.0001;
 dirLight.shadow.normalBias = 0.05;
 dirLight.shadow.radius = 4;
@@ -5855,17 +5855,17 @@ function addExtraLight(type) {
     light = new THREE.DirectionalLight(0xffffff, 1.5);
     light.castShadow = true;
     // ✨ v77.819 — shadow map 2048→1024 (성능 4배 향상).
-    light.shadow.mapSize.set(_isMobileRenderer ? 512 : 1024, _isMobileRenderer ? 512 : 1024);  // v78.116 모바일 절반
+    light.shadow.mapSize.set(_isMobileRenderer ? 256 : 1024, _isMobileRenderer ? 256 : 1024);  // v78.116 모바일 절반
     light.shadow.radius = 4; light.shadow.blurSamples = 16;
     light.shadow.bias = -0.0001; light.shadow.normalBias = 0.05;
     const c = light.shadow.camera; c.left=-5; c.right=5; c.top=5; c.bottom=-5; c.near=0.1; c.far=30;
   } else if (type === 'point') {
     light = new THREE.PointLight(0xffffff, 10, 20, 2);
-    light.castShadow = true; light.shadow.mapSize.set(_isMobileRenderer ? 512 : 1024, _isMobileRenderer ? 512 : 1024);  // v78.116 모바일 절반
+    light.castShadow = true; light.shadow.mapSize.set(_isMobileRenderer ? 256 : 1024, _isMobileRenderer ? 256 : 1024);  // v78.116 모바일 절반
     light.shadow.radius = 4; light.shadow.normalBias = 0.05;
   } else if (type === 'spot') {
     light = new THREE.SpotLight(0xffffff, 20, 20, Math.PI/6, 0.3, 2);
-    light.castShadow = true; light.shadow.mapSize.set(_isMobileRenderer ? 512 : 1024, _isMobileRenderer ? 512 : 1024);  // v78.116 모바일 절반
+    light.castShadow = true; light.shadow.mapSize.set(_isMobileRenderer ? 256 : 1024, _isMobileRenderer ? 256 : 1024);  // v78.116 모바일 절반
     light.shadow.radius = 4; light.shadow.normalBias = 0.05;
     scene.add(light.target);
   } else {
@@ -6057,9 +6057,9 @@ const msaaSamples = renderer.capabilities.isWebGL2
 //   픽셀 수 9 → 3.06 = 66% 감소 → fragment shader fillrate 3배 가벼움.
 //   trade-off: 살짝 블러. but 챕터 fps 개선 우선.
 if (_isMobileRenderer) {
-  const _maxDpr = Math.min(window.devicePixelRatio || 1, 1.75);
-  renderer.setPixelRatio(_maxDpr);
-  console.log('[v78.116] mobile pixelRatio cap 1.75 (was 3.0). 실제:', _maxDpr, '(devicePixelRatio:', window.devicePixelRatio, ')');
+  // ✨ v78.162 — 사용자 6fps 보고 → pixelRatio 1.0 강제 (모든 dpr 무시). fragment shader 부하 추가 36% 감소.
+  renderer.setPixelRatio(1.0);
+  console.log('[v78.162] mobile pixelRatio 1.0 강제 (devicePixelRatio:', window.devicePixelRatio, ')');
 }
 const _pr = renderer.getPixelRatio();
 const msaaRT = new THREE.WebGLRenderTarget(innerWidth * _pr, innerHeight * _pr, {
@@ -10426,17 +10426,24 @@ function createUVCLights() {
     const lightH = Math.min(desiredH, maxH);
     const offsetY = Math.max(size.y * 0.55, maxDim * 0.005) + UVC.lightYOff * maxDim;
     const lightY = bb.min.y - offsetY;
+    // ✨ v78.161 — 모바일: RectAreaLight 비활성 (LTC integration 매우 비쌈) → PointLight 만 사용.
+    const _mobSkipRect = (typeof _isMobileRenderer !== 'undefined' && _isMobileRenderer);
     const light = new THREE.RectAreaLight(UVC.lightColor.clone(), 0, lightW, lightH);
     light.position.set(center.x, lightY, center.z);
     light.rotation.set(-Math.PI / 2, 0, useX ? 0 : Math.PI / 2);
     light.userData.uvcRole = 'lamp';
     light.userData.uvcLampMesh = s.mesh;
-    scene.add(light);
+    light.userData._mobileSkipped = _mobSkipRect;
+    if (!_mobSkipRect) {
+      scene.add(light);
+    }
     uvcPointLights.push(light);
     // ★ v77.136 — 같은 위치에 PointLight 추가 (omnidirectional 보강 + 헬퍼 시각화 가능)
+    // ✨ v78.161 — 모바일에서 RectAreaLight 비활성 보강 위해 PointLight power boost 2x.
     const pl = new THREE.PointLight(UVC.lightColor.clone(), 0, 0, 1.5);  // distance 0 = infinite, decay 1.5
     pl.position.copy(light.position);
     pl.userData.uvcRole = 'lamp-point';
+    pl.userData._mobilePowerBoost = _mobSkipRect ? 2.0 : 1.0;
     scene.add(pl);
     uvcPointLights.push(pl);
     // PointLight 위치 시각화 헬퍼
@@ -11451,20 +11458,20 @@ addEventListener('resize', () => {
  *   - AdditiveBlending + brightness multiplier → 빛나는 느낌
  *   - 모든 파라미터 PARTICLES state 로 슬라이더 조정 가능
  */
-// ✨ v78.159 — Ionizer 파티클 최적화 + 밝은 푸른 글로우.
-//   count 800→500 (CPU 부담 감소), size +37%, opacity 1.0, color #c8e0ff (밝은 시안)
+// ✨ v78.162 — 파티클 진짜 빛나게 (Additive 복귀 + 어두운 base color).
+//   NormalBlending 으론 발광 효과 없음 → AdditiveBlending 으로 변경. 색은 어두운 블루 → 겹쳐도 blue 우세 유지.
 const PARTICLES = {
-  count: 500,                         // 800 → 500 (CPU 38% 감소)
-  size: 0.055,                        // 0.040 → 0.055 (글로우 영역 확대)
+  count: 500,
+  size: 0.055,
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
   turbulence: 1.45,
   damping: 0.96,
   gravity: -0.31,
-  brightness: 1.0,
+  brightness: 1.5,                    // 1.0 → 1.5 (Additive 합산 시 brightness 보강)
   opacity: 1.0,
-  color: new THREE.Color('#c8e0ff'),  // ✨ v78.159 — 밝은 시안 (uniform 자체에 푸른빛) → texture × color = 더 푸르게
+  color: new THREE.Color('#1e4dbf'),  // 어두운 블루 (Additive 에서 겹침 시 mid-bright blue → 글로우)
   lifetime: [5, 9],
   // ★ 6면 개별 마진 — 사용자 확정값
   marginXMin: 0.03,
@@ -11684,11 +11691,12 @@ function createUVCParticles() {
     transparent: true,
     opacity: 0,
     depthWrite: false,
-    // ✨ v78.147 — AdditiveBlending → NormalBlending. 겹침에도 RGB saturate 안 됨, 색 그대로 유지.
-    blending: THREE.NormalBlending,
+    // ✨ v78.162 — AdditiveBlending 복귀 (사용자 보고: NormalBlending 으론 빛나는 효과 없음).
+    //   어두운 base color (#1e4dbf) + 흰색 texture → fragment 는 mid-low blue → 겹치면 brighter blue.
+    blending: THREE.AdditiveBlending,
     map: tex,
     alphaTest: 0.01,
-    toneMapped: true,     // ✨ v78.147 — 정상 tonemap (Normal blend 에서 raw HDR 의미 없음)
+    toneMapped: false,    // raw HDR → bloom 없이도 발광 효과 살림
   });
   uvcParticles = new THREE.Points(geom, mat);
   uvcParticles.frustumCulled = false;
@@ -13837,8 +13845,17 @@ window._hkFps = 0;
   //   각 함수 내부에 가드 있긴 하지만 함수 호출 + early-return 도 누적 부담. 챕터 일치할 때만 호출.
   const _cur = window.currentChapter;
   // UV-C particles: UV-C/Ionizer 챕터에서만.
+  // ✨ v78.161 — 모바일에선 2 frame 마다 1번 update (500 particle CPU loop 50% ↓). dt 도 2배로 보정.
   if (_cur === 'uvc' || _cur === 'ionizer') {
-    updateUVCParticles(dt);
+    if (_isMobileRenderer) {
+      window._particleFrameSkip = (window._particleFrameSkip || 0) + 1;
+      if (window._particleFrameSkip >= 2) {
+        updateUVCParticles(dt * 2);   // dt 2배 보정 → 속도 유지
+        window._particleFrameSkip = 0;
+      }
+    } else {
+      updateUVCParticles(dt);
+    }
   }
   // UV-C wave tick: UV-C 챕터에서만 (beam pulse + PointLight breath).
   if (_cur === 'uvc') {
