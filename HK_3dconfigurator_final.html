@@ -13700,9 +13700,9 @@ window._hkFps = 0;
   _forceLightingBaseline();
   // ✨ v77.931 — splat-bg filter 강제 적용 (매 frame).
   _forceSplatBgFilter();
-  // ✨ v78.155 — backwall + normalScale 락 캐싱 최적화.
-  //   이전: 매 frame modelRoot.traverse(수백 mesh) — 모바일 CPU 부담.
-  //   현재: 첫 호출 시 backwall mat 들 + normalScale 있는 mat 들을 배열로 캐싱 → 이후 배열만 순회.
+  // ✨ v78.158 — backwall RAF 락 + metal normalScale 영구 락 (race condition fix).
+  //   이전 v78.155: snapshot at +3.5s → v78.149 patch (multiplyScalar 0.15) 가 +5s 쯤 실행 → lock 이 pre-patch 값으로 revert (롤백 원인).
+  //   현재 v78.158: _v78_111_patched 플래그 (v78.149 mobile patch 완료 signal) 확인 후에만 snapshot. 한 번 더 ×0.5 적용 후 lock.
   if (window._modelRoot) {
     if (!window._bwLockMats) {
       // 첫 호출: traverse 한 번만, 캐싱.
@@ -13720,7 +13720,7 @@ window._hkFps = 0;
           });
         }
       });
-      console.log('[v78.155] RAF 락 캐싱: backwall', window._bwLockMats.length, 'mat, normalScale', window._nsLockEntries.length, 'mat');
+      console.log('[v78.158] RAF 락 캐싱: backwall', window._bwLockMats.length, 'mat, normalScale', window._nsLockEntries.length, 'mat');
     }
     // backwall lock (캐싱된 배열만 순회)
     for (let i = 0; i < window._bwLockMats.length; i++) {
@@ -13728,20 +13728,32 @@ window._hkFps = 0;
       if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
       if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
     }
-    // normalScale lock (3.5초 후 snapshot, 이후 매 frame 복원)
-    const _nsLockReady = performance.now() > 3500;
-    if (_nsLockReady) {
-      for (let i = 0; i < window._nsLockEntries.length; i++) {
-        const e = window._nsLockEntries[i];
-        const m = e.mat;
-        if (!e.snapped) {
+    // normalScale lock — race condition 해결: 각 mat 의 _v78_111_patched 플래그를 확인 후 snapshot.
+    //   PC 에서는 _isMobileRenderer=false 라 v78.149 patch 가 안 돌아감 → 플래그 없음 → 그냥 3.5s 대기.
+    for (let i = 0; i < window._nsLockEntries.length; i++) {
+      const e = window._nsLockEntries[i];
+      const m = e.mat;
+      if (!e.snapped) {
+        // 모바일: _v78_111_patched (v78.149) + (metal 이면) _metalNsHalved (v77.340) 둘 다 완료 후 snapshot.
+        // PC: 6초 후 fallback.
+        const v149Done = m._v78_111_patched === true;
+        const v340NeededAndDone = (m.name === 'metal') ? (m.userData && m.userData._metalNsHalved === true) : true;
+        const fallbackReady = performance.now() > 6000;
+        if ((v149Done && v340NeededAndDone) || fallbackReady) {
+          // ✨ v78.158 — 사용자 요청: metal 재질 normal 추가 ×0.5. snapshot 직전에 한 번 적용.
+          //   "metal" 이름 mat 만 + 아직 _v78_158_halved 안 된 것만.
+          if (m.name === 'metal' && !m._v78_158_halved) {
+            m.normalScale.multiplyScalar(0.5);
+            m._v78_158_halved = true;
+            console.log('[v78.158] metal mat normal ×0.5 적용:', m.normalScale.x.toFixed(4));
+          }
           e.x = m.normalScale.x;
           e.y = m.normalScale.y;
           e.snapped = true;
-        } else {
-          if (Math.abs(m.normalScale.x - e.x) > 0.0001 || Math.abs(m.normalScale.y - e.y) > 0.0001) {
-            m.normalScale.set(e.x, e.y);
-          }
+        }
+      } else {
+        if (Math.abs(m.normalScale.x - e.x) > 0.0001 || Math.abs(m.normalScale.y - e.y) > 0.0001) {
+          m.normalScale.set(e.x, e.y);
         }
       }
     }
@@ -21155,7 +21167,8 @@ init();
       m.metalness       = m.metalness       + (targetMetal  - (m.metalness       ?? 1.0))  * LERP_STEP;
       m.roughness       = m.roughness       + (targetRough  - (m.roughness       ?? 0.15)) * LERP_STEP;
       m.envMapIntensity = m.envMapIntensity + (targetEnvInt - (m.envMapIntensity ?? 2.0))  * LERP_STEP;
-      if (m.normalScale) m.normalScale.set(0.328, 0.328);
+      // ✨ v78.158 — 사용자 요청: metal normal 락이 정상 값 유지하도록 mutateToCanonical 의 normalScale 강제 제거.
+      // (이전: m.normalScale.set(0.328, 0.328) → 매 frame 0.328 으로 reset → v78.158 락과 충돌 = 롤백 원인)
       // ✨ v77.739 — DoubleSide 강제. UV-C / Drying 등 챕터에서 cabinet 내부 카메라일 때
       //   FrontSide 라면 normals 방향에 따라 back face 가 culled → walls 사라짐 (사용자 보고).
       //   DoubleSide → 양면 렌더링으로 외부/내부 어디서 봐도 visible.
