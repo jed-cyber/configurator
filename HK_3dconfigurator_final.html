@@ -7675,8 +7675,8 @@ async function applyLookdevPreset(s) {
         if (o.isMesh && o.name === 'backwall' && o.material) {
           const mats = Array.isArray(o.material) ? o.material : [o.material];
           mats.forEach(m => {
-            if (m.color) m.color.setRGB(1, 1, 1);   // brightness 1.09 → clamp 1.0 (color max)
-            if ('aoMapIntensity' in m) m.aoMapIntensity = 1.87;
+            if (m.color) m.color.setRGB(0.7, 0.7, 0.7);   // ✨ v78.152 brightness -30% (1.0 → 0.7)
+            if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;   // ✨ v78.152 AO +50% (1.87 → 2.8)
             m._backwallLocked = true;
             m.needsUpdate = true;
           });
@@ -13721,18 +13721,17 @@ window._hkFps = 0;
   _forceLightingBaseline();
   // ✨ v77.931 — splat-bg filter 강제 적용 (매 frame).
   _forceSplatBgFilter();
-  // ✨ v78.150 — backwall 재질 영구 락 (사용자 요청: overview 설정 전 챕터 유지).
-  //   color=white, AO=1.87. UV-C/Ionizer/Modular 챕터들이 색/AO 덮어써도 다음 frame 복원.
+  // ✨ v78.152 — backwall 재질 영구 락. 사용자 요청: brightness -30% (1.0→0.7), AO +50% (1.87→2.8).
   if (window._bwLockEnabled !== false && window._modelRoot) {
     window._modelRoot.traverse(o => {
       if (o.isMesh && o.name === 'backwall' && o.material) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         mats.forEach(m => {
-          if (m.color && (m.color.r < 0.999 || m.color.g < 0.999 || m.color.b < 0.999)) {
-            m.color.setRGB(1, 1, 1);
+          if (m.color && (Math.abs(m.color.r - 0.7) > 0.01 || Math.abs(m.color.g - 0.7) > 0.01 || Math.abs(m.color.b - 0.7) > 0.01)) {
+            m.color.setRGB(0.7, 0.7, 0.7);
           }
-          if ('aoMapIntensity' in m && Math.abs(m.aoMapIntensity - 1.87) > 0.01) {
-            m.aoMapIntensity = 1.87;
+          if ('aoMapIntensity' in m && Math.abs(m.aoMapIntensity - 2.8) > 0.01) {
+            m.aoMapIntensity = 2.8;
           }
         });
       }
@@ -15246,39 +15245,37 @@ async function init() {
       try { window._runPreWarmup(); }
       catch(e) { console.warn('[PreWarmup] runPreWarmup 실패:', e); }
     }
-    // ✨ v77.896 — sequential chapter pre-warm. (v78.097 revert: 원래대로 모바일도 실행)
-    // ✨ v78.105 — 각 챕터 진입 wait 150 → 350ms (onEnter 의 setTimeout cascade 완전 settle) + 명시적 renderer.compile.
-    //              사용자 보고: "각 챕터 이동할때 튀는게 많아. 각 챕터가 시작 되기전에 모든 로딩을 다끝내."
-    window._skipDissolve = true;
-    try {
-      if (window._enterChapter && window._exitChapter && window._CHAPTER_CONTENT) {
-        const chList = Object.keys(window._CHAPTER_CONTENT);
-        for (const ch of chList) {
-          if (typeof setStatus === 'function') setStatus(`챕터 ${ch} 캐시 중...`);
-          window._enterChapter(ch);
-          // ✨ v78.122 — 사용자 요청 로딩 시간 단축: wait 100ms → 50ms (챕터 7개 × 50ms = 350ms 절감).
-          await new Promise(r => setTimeout(r, 50));
+    // ✨ v78.152 — Sequential chapter pre-warm 을 인트로 후 idle background 로 defer (로딩 단축 1-2초).
+    //   이전: 로딩 화면 동안 7개 챕터 cycle (7 × 50ms + 300ms = ~650ms + onEnter cost) → 사용자 대기.
+    //   현재: 인트로 시작 후 2초 뒤 background 실행. 사용자가 챕터 들어가기 전엔 완료.
+    window._deferredSequentialChapterPrewarm = async () => {
+      window._skipDissolve = true;
+      try {
+        if (window._enterChapter && window._exitChapter && window._CHAPTER_CONTENT) {
+          const chList = Object.keys(window._CHAPTER_CONTENT);
+          for (const ch of chList) {
+            window._enterChapter(ch);
+            await new Promise(r => setTimeout(r, 50));
+            try {
+              if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+                renderer.compile(scene, camera);
+                renderer.render(scene, camera);
+              }
+            } catch(e) { console.warn('[v78.152] chapter ' + ch + ' render 실패:', e); }
+          }
+          window._exitChapter();
+          await new Promise(r => setTimeout(r, 300));
           try {
-            if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+            if (typeof renderer !== 'undefined') {
               renderer.compile(scene, camera);
               renderer.render(scene, camera);
             }
-          } catch(e) { console.warn('[v78.113] chapter ' + ch + ' render 실패:', e); }
+          } catch(e) {}
+          console.log('[v78.152] Deferred sequential chapter pre-warm 완료 (background)');
         }
-        // 모든 챕터 완료 → TOC 복귀.
-        if (typeof setStatus === 'function') setStatus('Overview 복귀 중...');
-        window._exitChapter();
-        await new Promise(r => setTimeout(r, 300));
-        try {
-          if (typeof renderer !== 'undefined') {
-            renderer.compile(scene, camera);
-            renderer.render(scene, camera);
-          }
-        } catch(e) {}
-        console.log('[v78.105] Sequential chapter pre-warm 완료 — 7개 챕터 × 350ms + 2 frame render');
-      }
-    } catch(e) { console.warn('[v77.896] Sequential pre-warm 실패:', e); }
-    window._skipDissolve = false;
+      } catch(e) { console.warn('[v78.152] Deferred sequential pre-warm 실패:', e); }
+      window._skipDissolve = false;
+    };
     requestAnimationFrame(() => {
       // ✨ v77.882 — 로딩 hide 직전 DoF blur 1 frame 강제 render (사용자가 처음 보는 화면 = 이미 blur 적용).
       //   원인: 시작 화면이 splat sharp → DoF blur 1-2 frame 후 적용되어 transition 보임.
@@ -15328,6 +15325,13 @@ async function init() {
                 if (typeof window._deferredDryingPrewarm === 'function') window._deferredDryingPrewarm();
                 if (typeof window._deferredUvcWavePrewarm === 'function') window._deferredUvcWavePrewarm();
               }, 1500);
+              // ✨ v78.152 — 인트로 시작 후 2.5초 뒤 sequential chapter pre-warm (background cache).
+              //   1-2초 절감 (이전: 로딩 화면 동안 동기 실행).
+              setTimeout(() => {
+                if (typeof window._deferredSequentialChapterPrewarm === 'function') {
+                  window._deferredSequentialChapterPrewarm();
+                }
+              }, 2500);
             } catch (err) {
               console.error('[Init] ChapterManager.startIntro 실패 — 기존 패널로 폴백:', err);
               showFallbackPanels();
@@ -19119,9 +19123,9 @@ window.ChapterManager = (() => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // ✨ v78.144 — backwall white + ao 1.87 락인.
-                  if (m.color) m.color.setRGB(1, 1, 1);
-                  if ('aoMapIntensity' in m) m.aoMapIntensity = 1.87;
+                  // ✨ v78.152 — backwall 0.7 (-30%) + AO 2.8 (+50%).
+                  if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
+                  if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
                   m.needsUpdate = true;
                   m._backwallLocked = true;
                 });
@@ -19179,9 +19183,9 @@ window.ChapterManager = (() => {
               if (o.isMesh && o.name === 'backwall' && o.material) {
                 const mats = Array.isArray(o.material) ? o.material : [o.material];
                 mats.forEach(m => {
-                  // v78.144 — 락 유지 (white, AO 1.87)
-                  if (m.color) m.color.setRGB(1, 1, 1);
-                  if ('aoMapIntensity' in m) m.aoMapIntensity = 1.87;
+                  // ✨ v78.152 — 락 유지 (color 0.7, AO 2.8)
+                  if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
+                  if ('aoMapIntensity' in m) m.aoMapIntensity = 2.8;
                   m._backwallLocked = true;
                   m.needsUpdate = true;
                 });
