@@ -13714,25 +13714,29 @@ window._hkFps = 0;
   //   이전 v78.155: snapshot at +3.5s → v78.149 patch (multiplyScalar 0.15) 가 +5s 쯤 실행 → lock 이 pre-patch 값으로 revert (롤백 원인).
   //   현재 v78.158: _v78_111_patched 플래그 (v78.149 mobile patch 완료 signal) 확인 후에만 snapshot. 한 번 더 ×0.5 적용 후 lock.
   if (window._modelRoot) {
-    if (!window._bwLockMats) {
-      // 첫 호출: traverse 한 번만, 캐싱.
+    // ✨ v78.163 — backwall lock 재캐싱 (사용자 보고: 값이 다시 바뀜).
+    //   원인: 첫 cache 빌드 시 backwall mat 0 개 캐싱 (모델 로드 전), 또는 chapter swap 으로 mat clone 됨.
+    //   해결: backwall mat 없으면 매 frame 재시도. + 매 30 frame 마다 fresh re-cache (chapter swap 대응).
+    if (!window._bwLockMats || window._bwLockMats.length === 0 || (window._bwLockReCacheFrame = (window._bwLockReCacheFrame || 0) + 1) % 30 === 0) {
       window._bwLockMats = [];
-      window._nsLockEntries = [];
+      if (!window._nsLockEntries) window._nsLockEntries = [];
       window._modelRoot.traverse(o => {
-        if (o.isMesh && o.material) {
+        if (o.isMesh && o.name === 'backwall' && o.material) {
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(m => { if (m) window._bwLockMats.push(m); });
+        }
+        // normalScale 은 한 번만 캐싱 (chapter swap 없음).
+        if (window._nsLockEntries.length === 0 && o.isMesh && o.material) {
           const mats = Array.isArray(o.material) ? o.material : [o.material];
           mats.forEach(m => {
-            if (!m) return;
-            if (o.name === 'backwall') window._bwLockMats.push(m);
-            if (m.normalScale && (m.normalScale.x > 0.001 || m.normalScale.y > 0.001)) {
+            if (m && m.normalScale && (m.normalScale.x > 0.001 || m.normalScale.y > 0.001)) {
               window._nsLockEntries.push({ mat: m, snapped: false, x: 0, y: 0 });
             }
           });
         }
       });
-      console.log('[v78.158] RAF 락 캐싱: backwall', window._bwLockMats.length, 'mat, normalScale', window._nsLockEntries.length, 'mat');
     }
-    // backwall lock (캐싱된 배열만 순회)
+    // backwall lock — 매 frame 강제 set.
     for (let i = 0; i < window._bwLockMats.length; i++) {
       const m = window._bwLockMats[i];
       if (m.color) m.color.setRGB(0.7, 0.7, 0.7);
