@@ -23090,13 +23090,52 @@ init();
 
 <script>
 (function(){
-  // ✨ v78.170 — 캐비닛 내부 균일 조명을 위한 새 기본값.
-  //   position: 캐비닛 상단 (내부 천장 근처). target: 캐비닛 바닥 중앙. cone 85° 광범위 (~ point light 처럼 spread).
+  // ✨ v78.171 — cabinet 실제 좌표 기반 auto-positioning. 슬라이더 기본값은 fallback.
   const state = { px: 0, py: 1.85, pz: 0, tx: 0, ty: 0.3, tz: 0, pow: 45, cone: 85, dist: 5, col: 0x3060ff };
+
+  // ✨ v78.171 — 캐비닛 interior box 기반으로 SpotLight 위치 자동 계산 + 슬라이더 default 갱신.
+  function _autoFitFromCabinet() {
+    try {
+      const ib = window.uvcInteriorBox || (typeof getCabinetInteriorBox === 'function' ? getCabinetInteriorBox() : null);
+      if (!ib || ib.isEmpty()) return false;
+      const sz = ib.getSize(new THREE.Vector3());
+      const c = ib.getCenter(new THREE.Vector3());
+      // 캐비닛 정면 (z = 카메라 쪽). z+ 가 카메라 방향이라 가정. 내부 깊이의 절반만큼 z+ 로 빠져나옴.
+      // pos: 내부 천장 가까이 (y = top ~ 80%). target: 바닥 중앙.
+      state.px = c.x;
+      state.py = ib.min.y + sz.y * 0.95;   // 천장 근처
+      state.pz = c.z;
+      state.tx = c.x;
+      state.ty = ib.min.y + sz.y * 0.15;   // 바닥 근처
+      state.tz = c.z;
+      state.dist = sz.y * 1.5;             // 캐비닛 높이 1.5배
+      // cone 은 내부 폭/높이 비율에서 결정 — 좁고 깊은 캐비닛 → 넓은 cone 필요.
+      const w = Math.max(sz.x, sz.z);
+      const h = sz.y * 0.8;
+      const angleRad = Math.atan(w / h);
+      state.cone = Math.min(120, Math.max(70, angleRad * 180 / Math.PI * 2));
+      console.log('[v78.171] auto-fit:', JSON.stringify(state, null, 2));
+      return true;
+    } catch(e) { console.warn('[v78.171] auto-fit 실패:', e); return false; }
+  }
+  function _syncSlidersFromState() {
+    const map = [['usp-px',state.px,2],['usp-py',state.py,2],['usp-pz',state.pz,2],['usp-tx',state.tx,2],['usp-ty',state.ty,2],['usp-tz',state.tz,2],['usp-pow',state.pow,0],['usp-cone',state.cone,0],['usp-dist',state.dist,1]];
+    map.forEach(([id, v, fix]) => {
+      const el = document.getElementById(id); if (el) el.value = v.toFixed(fix);
+      const vEl = document.getElementById(id + '-v'); if (vEl) vEl.textContent = v.toFixed(fix);
+    });
+  }
 
   function _ensureSpot() {
     if (window._uvcUserSpot) return window._uvcUserSpot;
     if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null;
+    // 첫 ensure 시 cabinet 좌표 기반 auto-fit.
+    if (!window._uvcSpotAutoFitDone) {
+      if (_autoFitFromCabinet()) {
+        window._uvcSpotAutoFitDone = true;
+        setTimeout(_syncSlidersFromState, 0);
+      }
+    }
     const spot = new THREE.SpotLight(state.col, state.pow, state.dist, state.cone * Math.PI / 360, 0.5, 1.5);
     spot.position.set(state.px, state.py, state.pz);
     spot.castShadow = false;
