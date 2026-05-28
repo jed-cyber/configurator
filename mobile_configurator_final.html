@@ -102,21 +102,22 @@ window._splatReadyToFade = false;
 window._checkFadeLoading = function() {
   const _ifrLoaded = window._iframeLoaded === true;
   if (window._splatReadyToFade && _ifrLoaded) {
-    // 둘 다 ready → 추가 1초 대기 (인트로 시작 안정화) 후 fade
+    // ✨ v78.150 — 1초 대기 → 200ms (로딩 시간 단축). 인트로 안정화는 iframe 의 startIntro delay 가 담당.
     setTimeout(() => {
       const el = document.getElementById('mobileLoading');
       if (el) el.classList.add('fade');
-    }, 1000);
+    }, 200);
   }
 };
-// 안전망: 30 초 안에 fade 가 발동되지 않으면 강제 fade (splat fetch 실패 시).
+// 안전망: 15초 안에 fade 가 발동되지 않으면 강제 fade (splat fetch 실패 시).
+// ✨ v78.150 — 30초 → 15초 (사용자 요청: 로딩 시간 단축).
 setTimeout(() => {
   const el = document.getElementById('mobileLoading');
   if (el && !el.classList.contains('fade')) {
     el.classList.add('fade');
-    console.warn('[v78.086] 30 초 안전망 발동 → loading 강제 hide');
+    console.warn('[v78.150] 15 초 안전망 발동 → loading 강제 hide');
   }
-}, 30000);
+}, 15000);
 document.getElementById('hk-frame').addEventListener('load', () => {
   window._iframeLoaded = true;
   window._checkFadeLoading();

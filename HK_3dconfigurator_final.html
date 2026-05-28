@@ -5783,9 +5783,9 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 window.controls = controls;
 window.camera = camera;
 controls.enableDamping = true;
-// ★ 마우스 감도 — rotate 0.42
-// ✨ v78.149 — 사용자 요청: 감도 +30%. 0.42 → 0.546.
-controls.rotateSpeed = 0.546;
+// ★ 마우스 감도 — rotate
+// ✨ v78.150 — 사용자 추가 요청: 감도 더 올림. 0.546 → 0.75 (v78.149 대비 +37%).
+controls.rotateSpeed = 0.75;
 controls.panSpeed = 0.7;
 // ★ 카메라 제한:
 //   maxPolarAngle = 98° → 수평선 아래에서 살짝 위로 보는 각도까지 허용 (8°)
@@ -13708,6 +13708,23 @@ let _prevFrameTime = performance.now();
   _forceLightingBaseline();
   // ✨ v77.931 — splat-bg filter 강제 적용 (매 frame).
   _forceSplatBgFilter();
+  // ✨ v78.150 — backwall 재질 영구 락 (사용자 요청: overview 설정 전 챕터 유지).
+  //   color=white, AO=1.87. UV-C/Ionizer/Modular 챕터들이 색/AO 덮어써도 다음 frame 복원.
+  if (window._bwLockEnabled !== false && window._modelRoot) {
+    window._modelRoot.traverse(o => {
+      if (o.isMesh && o.name === 'backwall' && o.material) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(m => {
+          if (m.color && (m.color.r < 0.999 || m.color.g < 0.999 || m.color.b < 0.999)) {
+            m.color.setRGB(1, 1, 1);
+          }
+          if ('aoMapIntensity' in m && Math.abs(m.aoMapIntensity - 1.87) > 0.01) {
+            m.aoMapIntensity = 1.87;
+          }
+        });
+      }
+    });
+  }
   const dt = Math.min(0.05, elapsed / 1000);    // 최대 50ms (폭주 방지)
   _prevFrameTime = now;
   // ★ v77.137 — currentMode는 ChapterManager scope. window._chMode로 노출. ReferenceError 방지.
@@ -15288,6 +15305,7 @@ async function init() {
       const _doStartIntro = () => {
         $('#loadingOverlay').classList.add('hide');
         if (window.ChapterManager && typeof ChapterManager.startIntro === 'function') {
+          // ✨ v78.150 — 300ms → 100ms (로딩 시간 단축). PMREM 은 이미 락 완료된 시점.
           setTimeout(() => {
             try {
               ChapterManager.startIntro();
@@ -15295,7 +15313,7 @@ async function init() {
               console.error('[Init] ChapterManager.startIntro 실패 — 기존 패널로 폴백:', err);
               showFallbackPanels();
             }
-          }, 300);
+          }, 100);
         } else {
           console.warn('[Init] ChapterManager 미정의 — 기존 패널로 폴백');
           showFallbackPanels();
@@ -15305,17 +15323,18 @@ async function init() {
         try { return window.parent !== window && window.parent._splatReadyToFade !== undefined; } catch(e) { return false; }
       })();
       if (_isMobileFrame) {
-        // parent 의 splat 다운로드 완료까지 polling. 안전망 20초.
+        // parent 의 splat 다운로드 완료까지 polling.
+        // ✨ v78.150 — polling 200ms → 100ms (반응성), 안전망 20초 → 10초 (실패 케이스 빠른 fallback).
         const _startT = performance.now();
         const _poll = () => {
           let parentReady = false;
           try { parentReady = !!window.parent._splatReadyToFade; } catch(e) { parentReady = true; }   // 접근 실패 시 그냥 진행
           const _elapsed = performance.now() - _startT;
-          if (parentReady || _elapsed > 20000) {
-            console.log('[v78.149] splat ready (' + _elapsed.toFixed(0) + 'ms) → startIntro');
+          if (parentReady || _elapsed > 10000) {
+            console.log('[v78.150] splat ready (' + _elapsed.toFixed(0) + 'ms) → startIntro');
             _doStartIntro();
           } else {
-            setTimeout(_poll, 200);
+            setTimeout(_poll, 100);
           }
         };
         _poll();
