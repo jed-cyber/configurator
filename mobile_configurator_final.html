@@ -210,40 +210,37 @@ document.getElementById('hk-frame').src = './HK_3dconfigurator_final.html?splat=
 //   이유: splat 60MB 다운로드가 인트로 시작 후에 진행되어 사용자가 검은 배경에서 splat 점진적 등장을 봄.
 //   해결: splat 100% 다운로드 완료 → loading fade. window._splatReadyToFade 가 신호.
 window._splatReadyToFade = false;
-// ✨ v78.166 — 검은 화면 제거: iframe 의 intro 가 실제로 시작될 때까지 mobileLoading 유지.
-//   이전: iframe load (HTML/JS 로드) + splat ready 만 보고 fade → iframe 이 HDRI/PMREM 처리 동안 검은 화면.
-//   현재: hkWindow._introStarted (iframe 의 ChapterManager.startIntro() 실행 신호) 확인 후 fade.
+// ✨ v78.167 — 검은 화면 진짜 제거: iframe 의 intro 가 실제로 첫 frame 렌더한 후에만 fade.
+//   이전 v78.166: _introStarted (callback 호출 시점) 으론 부족 — camera/HDRI 적용 전 → 검은 화면.
+//   현재: _introRenderReady (6 frame render 후 신호) 만 fade trigger. 안전망 15s.
 window._mobileLoadingStartT = performance.now();
 window._checkFadeLoading = function() {
-  const _ifrLoaded = window._iframeLoaded === true;
-  const _introOK = (() => {
+  const _introRendered = (() => {
     try {
       const hk = document.getElementById('hk-frame');
-      return !!(hk && hk.contentWindow && hk.contentWindow._introStarted);
+      return !!(hk && hk.contentWindow && hk.contentWindow._introRenderReady);
     } catch(e) { return false; }
   })();
-  // intro 시작 신호가 있으면 즉시 fade. 아직이면 splat+iframe 만 보고 대기.
-  if (_introOK || (window._splatReadyToFade && _ifrLoaded)) {
+  if (_introRendered) {
     const elapsed = performance.now() - (window._mobileLoadingStartT || 0);
-    const MIN_SHOW = 1500;   // 최소 1.5초 노출 (carousel 1 사이클 확보, 이전 2s → 1.5s)
-    // intro 시작 신호 도착했으면 즉시 (최소 시간만 보장), 아니면 안전망으로 대기.
-    const remain = _introOK ? Math.max(0, MIN_SHOW - elapsed) : Math.max(200, MIN_SHOW - elapsed);
+    const MIN_SHOW = 1500;   // 최소 1.5초 노출 (carousel)
+    const remain = Math.max(0, MIN_SHOW - elapsed);
     setTimeout(() => {
       const el = document.getElementById('mobileLoading');
       if (el) el.classList.add('fade');
     }, remain);
   }
 };
-// ✨ v78.166 — intro 신호 polling 안전망 (post-message 형식 안 써도 OK).
+// ✨ v78.167 — _introRenderReady polling 안전망 + 15s 강제 fade (실패 케이스 대응).
 setInterval(() => {
   if (document.getElementById('mobileLoading')?.classList.contains('fade')) return;
   try {
     const hk = document.getElementById('hk-frame');
-    if (hk && hk.contentWindow && hk.contentWindow._introStarted) {
+    if (hk && hk.contentWindow && hk.contentWindow._introRenderReady) {
       window._checkFadeLoading();
     }
   } catch(e) {}
-}, 200);
+}, 150);
 // 안전망: 15초 안에 fade 가 발동되지 않으면 강제 fade (splat fetch 실패 시).
 // ✨ v78.150 — 30초 → 15초 (사용자 요청: 로딩 시간 단축).
 setTimeout(() => {

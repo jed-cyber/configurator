@@ -15384,13 +15384,26 @@ async function init() {
           setTimeout(() => {
             try {
               ChapterManager.startIntro();
-              // ✨ v78.166 — intro 시작 신호 → parent 가 mobileLoading 페이드 (검은 화면 제거).
+              // ✨ v78.166 — intro 시작 신호 (callback 호출 시점).
               window._introStarted = true;
-              try {
-                if (window.parent && window.parent !== window && typeof window.parent._checkFadeLoading === 'function') {
-                  window.parent._checkFadeLoading();
+              // ✨ v78.167 — 실제 첫 intro frame 렌더 완료 후 _introRenderReady 신호 → parent fade.
+              //   이전 v78.166: startIntro() 호출 직후 fade → 첫 frame 미 렌더 상태에서 검은 화면 보임.
+              //   현재: 6 frame (≈100ms@60fps) 기다린 후 신호 → HDRI/PMREM/camera 모두 적용된 상태.
+              let _renderCount = 0;
+              const _waitFirstRender = () => {
+                _renderCount++;
+                if (_renderCount >= 6) {
+                  window._introRenderReady = true;
+                  try {
+                    if (window.parent && window.parent !== window && typeof window.parent._checkFadeLoading === 'function') {
+                      window.parent._checkFadeLoading();
+                    }
+                  } catch(e) {}
+                  return;
                 }
-              } catch(e) {}
+                requestAnimationFrame(_waitFirstRender);
+              };
+              requestAnimationFrame(_waitFirstRender);
               // ✨ v78.151 — 인트로 시작 후 1.5초 뒤 deferred pre-warm (UV-C waves + drying arrows).
               //   사용자가 챕터 들어가기 전에 background load 완료. 로딩 화면 시간은 단축.
               setTimeout(() => {
