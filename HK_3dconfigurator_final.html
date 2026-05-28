@@ -23093,30 +23093,49 @@ init();
   // ✨ v78.171 — cabinet 실제 좌표 기반 auto-positioning. 슬라이더 기본값은 fallback.
   const state = { px: 0, py: 1.85, pz: 0, tx: 0, ty: 0.3, tz: 0, pow: 45, cone: 85, dist: 5, col: 0x3060ff };
 
-  // ✨ v78.171 — 캐비닛 interior box 기반으로 SpotLight 위치 자동 계산 + 슬라이더 default 갱신.
+  // ✨ v78.172 — 더 안전한 cabinet box 기반 autoFit + 더 강한 SpotLight power.
   function _autoFitFromCabinet() {
     try {
       const ib = window.uvcInteriorBox || (typeof getCabinetInteriorBox === 'function' ? getCabinetInteriorBox() : null);
-      if (!ib || ib.isEmpty()) return false;
+      if (!ib || ib.isEmpty()) {
+        console.warn('[v78.172] uvcInteriorBox 없음 → modelRoot bbox fallback');
+        if (typeof modelRoot !== 'undefined' && modelRoot) {
+          const bb = new THREE.Box3().setFromObject(modelRoot);
+          if (!bb.isEmpty()) {
+            const sz = bb.getSize(new THREE.Vector3());
+            const c = bb.getCenter(new THREE.Vector3());
+            state.px = c.x;
+            state.py = bb.min.y + sz.y * 0.85;
+            state.pz = c.z;
+            state.tx = c.x;
+            state.ty = bb.min.y + sz.y * 0.2;
+            state.tz = c.z;
+            state.dist = sz.y * 1.8;
+            state.cone = 95;
+            state.pow = 80;
+            console.log('[v78.172] modelRoot bbox auto-fit:', { sz, c, state: {...state} });
+            return true;
+          }
+        }
+        return false;
+      }
       const sz = ib.getSize(new THREE.Vector3());
       const c = ib.getCenter(new THREE.Vector3());
-      // 캐비닛 정면 (z = 카메라 쪽). z+ 가 카메라 방향이라 가정. 내부 깊이의 절반만큼 z+ 로 빠져나옴.
-      // pos: 내부 천장 가까이 (y = top ~ 80%). target: 바닥 중앙.
       state.px = c.x;
-      state.py = ib.min.y + sz.y * 0.95;   // 천장 근처
+      state.py = ib.min.y + sz.y * 0.95;
       state.pz = c.z;
       state.tx = c.x;
-      state.ty = ib.min.y + sz.y * 0.15;   // 바닥 근처
+      state.ty = ib.min.y + sz.y * 0.15;
       state.tz = c.z;
-      state.dist = sz.y * 1.5;             // 캐비닛 높이 1.5배
-      // cone 은 내부 폭/높이 비율에서 결정 — 좁고 깊은 캐비닛 → 넓은 cone 필요.
+      state.dist = sz.y * 1.6;             // 1.5 → 1.6 (살짝 길게)
       const w = Math.max(sz.x, sz.z);
       const h = sz.y * 0.8;
       const angleRad = Math.atan(w / h);
-      state.cone = Math.min(120, Math.max(70, angleRad * 180 / Math.PI * 2));
-      console.log('[v78.171] auto-fit:', JSON.stringify(state, null, 2));
+      state.cone = Math.min(120, Math.max(80, angleRad * 180 / Math.PI * 2));   // 70→80 min (더 넓게)
+      state.pow = 70;                       // 45 → 70 (더 밝게)
+      console.log('[v78.172] uvcInteriorBox auto-fit:', { sz, c, ibMin: ib.min, ibMax: ib.max, state: {...state} });
       return true;
-    } catch(e) { console.warn('[v78.171] auto-fit 실패:', e); return false; }
+    } catch(e) { console.warn('[v78.172] auto-fit 실패:', e); return false; }
   }
   function _syncSlidersFromState() {
     const map = [['usp-px',state.px,2],['usp-py',state.py,2],['usp-pz',state.pz,2],['usp-tx',state.tx,2],['usp-ty',state.ty,2],['usp-tz',state.tz,2],['usp-pow',state.pow,0],['usp-cone',state.cone,0],['usp-dist',state.dist,1]];
@@ -23145,6 +23164,29 @@ init();
     spot.target.updateMatrixWorld();
     spot.visible = false;
     window._uvcUserSpot = spot;
+    // ✨ v78.172 — SpotLightHelper (cone wireframe). 사용자가 라이트 위치 시각 확인 가능.
+    //   URL 에 ?spotdebug=1 있으면만 보이게. 평소엔 hidden.
+    try {
+      const helper = new THREE.SpotLightHelper(spot, 0xffff00);
+      helper.visible = (new URLSearchParams(location.search).get('spotdebug') === '1');
+      scene.add(helper);
+      window._uvcUserSpotHelper = helper;
+      // 매 frame helper.update() 호출 (spot pos 변경 시 wireframe 갱신).
+      (function _helperRaf() {
+        if (window._uvcUserSpotHelper && window._uvcUserSpotHelper.visible) {
+          try { window._uvcUserSpotHelper.update(); } catch(e) {}
+        }
+        requestAnimationFrame(_helperRaf);
+      })();
+    } catch(e) { console.warn('[v78.172] SpotLightHelper 생성 실패:', e); }
+    console.log('[v78.172] SpotLight 생성 상태:', JSON.stringify({
+      pos: [spot.position.x, spot.position.y, spot.position.z],
+      target: [spot.target.position.x, spot.target.position.y, spot.target.position.z],
+      intensity: spot.intensity,
+      angle_deg: spot.angle * 180 / Math.PI,
+      distance: spot.distance,
+      color: '#' + spot.color.getHexString()
+    }, null, 2));
     return spot;
   }
   function _applyAll() {
