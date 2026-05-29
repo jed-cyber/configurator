@@ -23201,21 +23201,46 @@ init();
       window._uvcFillBot = fillBot;
       console.log('[v78.173] interior fill PointLight 트리오 생성:', { cx, cy, cz, h, diag });
     } catch(e) { console.warn('[v78.173] PointLight 트리오 생성 실패:', e); }
-    // ✨ v78.172 — SpotLightHelper (cone wireframe). 사용자가 라이트 위치 시각 확인 가능.
-    //   URL 에 ?spotdebug=1 있으면만 보이게. 평소엔 hidden.
+    // ✨ v78.174 — SpotLightHelper 항상 표시 (cone wireframe 노란색).
+    //   + target marker (작은 빨간 wireframe sphere) — 사용자가 슬라이더로 직접 조정 가능.
+    //   ?spotdebug=0 으로만 숨김.
     try {
       const helper = new THREE.SpotLightHelper(spot, 0xffff00);
-      helper.visible = (new URLSearchParams(location.search).get('spotdebug') === '1');
+      helper.visible = (new URLSearchParams(location.search).get('spotdebug') !== '0');
       scene.add(helper);
       window._uvcUserSpotHelper = helper;
-      // 매 frame helper.update() 호출 (spot pos 변경 시 wireframe 갱신).
+      // ✨ target marker — 빨간 wireframe sphere (반지름 0.06).
+      const targetGeo = new THREE.SphereGeometry(0.06, 16, 12);
+      const targetMat = new THREE.MeshBasicMaterial({ color: 0xff3333, wireframe: true, depthTest: false, transparent: true, opacity: 0.9 });
+      const targetMarker = new THREE.Mesh(targetGeo, targetMat);
+      targetMarker.renderOrder = 999;
+      targetMarker.position.copy(spot.target.position);
+      targetMarker.visible = helper.visible;
+      scene.add(targetMarker);
+      window._uvcUserSpotTargetMarker = targetMarker;
+      // ✨ position marker — 파란 wireframe sphere (라이트 위치).
+      const posGeo = new THREE.SphereGeometry(0.08, 16, 12);
+      const posMat = new THREE.MeshBasicMaterial({ color: 0x3399ff, wireframe: true, depthTest: false, transparent: true, opacity: 0.9 });
+      const posMarker = new THREE.Mesh(posGeo, posMat);
+      posMarker.renderOrder = 999;
+      posMarker.position.copy(spot.position);
+      posMarker.visible = helper.visible;
+      scene.add(posMarker);
+      window._uvcUserSpotPosMarker = posMarker;
+      // 매 frame helper.update() + 마커 위치 갱신.
       (function _helperRaf() {
         if (window._uvcUserSpotHelper && window._uvcUserSpotHelper.visible) {
           try { window._uvcUserSpotHelper.update(); } catch(e) {}
+          if (window._uvcUserSpotTargetMarker && window._uvcUserSpot) {
+            window._uvcUserSpotTargetMarker.position.copy(window._uvcUserSpot.target.position);
+          }
+          if (window._uvcUserSpotPosMarker && window._uvcUserSpot) {
+            window._uvcUserSpotPosMarker.position.copy(window._uvcUserSpot.position);
+          }
         }
         requestAnimationFrame(_helperRaf);
       })();
-    } catch(e) { console.warn('[v78.172] SpotLightHelper 생성 실패:', e); }
+    } catch(e) { console.warn('[v78.174] SpotLightHelper 생성 실패:', e); }
     console.log('[v78.172] SpotLight 생성 상태:', JSON.stringify({
       pos: [spot.position.x, spot.position.y, spot.position.z],
       target: [spot.target.position.x, spot.target.position.y, spot.target.position.z],
@@ -23251,6 +23276,7 @@ init();
       document.documentElement.setAttribute('data-chapter', cur);
     }
     const shouldShow = (cur === 'uvc' || cur === 'ionizer');
+    const debugOn = (new URLSearchParams(location.search).get('spotdebug') !== '0');
     if (shouldShow) {
       const s = _ensureSpot();
       if (s) { s.visible = true; _applyAll(); }
@@ -23258,11 +23284,18 @@ init();
       if (window._uvcFillTop) window._uvcFillTop.visible = true;
       if (window._uvcFillMid) window._uvcFillMid.visible = true;
       if (window._uvcFillBot) window._uvcFillBot.visible = true;
+      // ✨ v78.174 — helper/markers 챕터 따라 ON.
+      if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = debugOn;
+      if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = debugOn;
+      if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = debugOn;
     } else {
       if (window._uvcUserSpot) window._uvcUserSpot.visible = false;
       if (window._uvcFillTop) window._uvcFillTop.visible = false;
       if (window._uvcFillMid) window._uvcFillMid.visible = false;
       if (window._uvcFillBot) window._uvcFillBot.visible = false;
+      if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = false;
+      if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = false;
+      if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = false;
     }
   }, 300);
 
