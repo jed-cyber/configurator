@@ -23210,7 +23210,7 @@ init();
     //   ?spotdebug=0 으로만 숨김.
     try {
       const helper = new THREE.SpotLightHelper(spot, 0xffff00);
-      helper.visible = (new URLSearchParams(location.search).get('spotdebug') !== '0');
+      helper.visible = false;  // ✨ v78.179 — 와이어프레임 영구 숨김 (사용자 재요청).
       scene.add(helper);
       window._uvcUserSpotHelper = helper;
       // ✨ target marker — 빨간 wireframe sphere (반지름 0.06).
@@ -23219,7 +23219,7 @@ init();
       const targetMarker = new THREE.Mesh(targetGeo, targetMat);
       targetMarker.renderOrder = 999;
       targetMarker.position.copy(spot.target.position);
-      targetMarker.visible = helper.visible;
+      targetMarker.visible = false;  // ✨ v78.179 — 영구 숨김.
       scene.add(targetMarker);
       window._uvcUserSpotTargetMarker = targetMarker;
       // ✨ position marker — 파란 wireframe sphere (라이트 위치).
@@ -23228,7 +23228,7 @@ init();
       const posMarker = new THREE.Mesh(posGeo, posMat);
       posMarker.renderOrder = 999;
       posMarker.position.copy(spot.position);
-      posMarker.visible = helper.visible;
+      posMarker.visible = false;  // ✨ v78.179 — 영구 숨김.
       scene.add(posMarker);
       window._uvcUserSpotPosMarker = posMarker;
       // 매 frame helper.update() + 마커 위치 갱신.
