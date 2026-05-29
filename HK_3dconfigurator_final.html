@@ -11466,7 +11466,8 @@ addEventListener('resize', () => {
 //   count 500 → 300 (-40% CPU + draw call), size 0.055 → 0.062 (적은 수 보강).
 const PARTICLES = {
   count: 300,
-  size: 0.062,
+  // ✨ v78.183 — Ionizer 파티클 크기 절반 (0.062 → 0.031).
+  size: 0.031,
   spawnScale: 1.0,
   spawnYOff: 0,
   initSpeed: 0.08,
@@ -23101,7 +23102,8 @@ init();
 (function(){
   // ✨ v78.177 — 사용자 락인 값 (스크린샷 기반). autoFit skip.
   // ✨ v78.181 — ambPow 0.4 → 0.12 (REFL HDRI 어두워 보이는 증상 완화).
-  const state = { px: 1.16, py: 3.32, pz: -0.78, tx: -0.80, ty: 0.00, tz: -0.82, pow: 21, cone: 60, dist: 3.2, col: 0x3060ff, pointPow: 115, ambPow: 0.12 };
+  // ✨ v78.183 — SpotLight power 절반 (21 → 10).
+  const state = { px: 1.16, py: 3.32, pz: -0.78, tx: -0.80, ty: 0.00, tz: -0.82, pow: 10, cone: 60, dist: 3.2, col: 0x3060ff, pointPow: 115, ambPow: 0.12 };
 
   // ✨ v78.172 — 더 안전한 cabinet box 기반 autoFit + 더 강한 SpotLight power.
   function _autoFitFromCabinet() {
@@ -23343,6 +23345,66 @@ init();
   _bind('usp-ppow', 'usp-ppow-v', 'pointPow', false, v => v.toFixed(0));
   _bind('usp-apow', 'usp-apow-v', 'ambPow', false, v => v.toFixed(2));
   _bind('usp-col', 'usp-col-v', 'col', true);
+})();
+</script>
+
+<!-- ✨ v78.183 — 챕터 전환 로딩 오버레이 (모든 챕터 진입 시 1.5초 표시) -->
+<style>
+#chapterLoadingOverlay {
+  position: fixed; inset: 0; z-index: 99996;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 18px;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.22s ease-out;
+}
+#chapterLoadingOverlay.active { opacity: 1; pointer-events: auto; }
+#chapterLoadingOverlay .ch-spin {
+  width: 52px; height: 52px;
+  border: 3px solid rgba(255,255,255,0.16);
+  border-top-color: #6b9cff;
+  border-radius: 50%;
+  animation: chSpinRot 0.85s linear infinite;
+}
+@keyframes chSpinRot { to { transform: rotate(360deg); } }
+#chapterLoadingOverlay .ch-msg {
+  color: rgba(255,255,255,0.92);
+  font-size: 12px; letter-spacing: 3px; font-weight: 500;
+  text-transform: uppercase;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+</style>
+<div id="chapterLoadingOverlay">
+  <div class="ch-spin"></div>
+  <div class="ch-msg">Loading</div>
+</div>
+<script>
+(function(){
+  const overlay = document.getElementById('chapterLoadingOverlay');
+  if (!overlay) return;
+  let _hideTimer = null;
+  function showOverlay(durationMs) {
+    overlay.classList.add('active');
+    if (_hideTimer) clearTimeout(_hideTimer);
+    _hideTimer = setTimeout(() => {
+      overlay.classList.remove('active');
+      _hideTimer = null;
+    }, durationMs || 1500);
+  }
+  window._showChapterLoading = showOverlay;
+  // 챕터 변경 감지 → 오버레이 표시.
+  //   currentChapter 가 바뀔 때마다 1.5초 로딩 표시.
+  //   OVERVIEW (chapter==null) 진입 시는 skip (메인 화면 → 챕터 흐름만 커버).
+  let _lastCh = window.currentChapter || null;
+  setInterval(() => {
+    const cur = window.currentChapter || null;
+    if (cur !== _lastCh) {
+      _lastCh = cur;
+      if (cur) showOverlay(1500);   // 챕터 진입 시만 (OVERVIEW exit 시는 skip)
+    }
+  }, 80);
+  console.log('[v78.183] 챕터 전환 로딩 오버레이 설치 완료');
 })();
 </script>
 
