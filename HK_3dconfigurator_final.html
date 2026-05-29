@@ -23073,19 +23073,21 @@ init();
   <div class="usp-head"><span>💡 UV-C / Ion SpotLight</span><span class="usp-tri">▶</span></div>
   <div class="usp-body">
     <div class="usp-section">Position</div>
-    <div class="usp-row"><label>X <span class="usp-v" id="usp-px-v">0.00</span></label><input type="range" id="usp-px" min="-3" max="3" step="0.01" value="0"></div>
-    <div class="usp-row"><label>Y <span class="usp-v" id="usp-py-v">1.85</span></label><input type="range" id="usp-py" min="0" max="5" step="0.01" value="1.85"></div>
-    <div class="usp-row"><label>Z <span class="usp-v" id="usp-pz-v">0.00</span></label><input type="range" id="usp-pz" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-px-v">1.16</span></label><input type="range" id="usp-px" min="-3" max="3" step="0.01" value="1.16"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-py-v">3.32</span></label><input type="range" id="usp-py" min="0" max="5" step="0.01" value="3.32"></div>
+    <div class="usp-row"><label>Z <span class="usp-v" id="usp-pz-v">-0.78</span></label><input type="range" id="usp-pz" min="-3" max="3" step="0.01" value="-0.78"></div>
     <div class="usp-section">Target</div>
-    <div class="usp-row"><label>X <span class="usp-v" id="usp-tx-v">0.00</span></label><input type="range" id="usp-tx" min="-3" max="3" step="0.01" value="0"></div>
-    <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">0.30</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="0.3"></div>
-    <div class="usp-row"><label>Z <span class="usp-v" id="usp-tz-v">0.00</span></label><input type="range" id="usp-tz" min="-3" max="3" step="0.01" value="0"></div>
+    <div class="usp-row"><label>X <span class="usp-v" id="usp-tx-v">-0.80</span></label><input type="range" id="usp-tx" min="-3" max="3" step="0.01" value="-0.80"></div>
+    <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">0.00</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="0.00"></div>
+    <div class="usp-row"><label>Z <span class="usp-v" id="usp-tz-v">-0.82</span></label><input type="range" id="usp-tz" min="-3" max="3" step="0.01" value="-0.82"></div>
     <div class="usp-section">Light</div>
-    <div class="usp-row"><label>Spot Power <span class="usp-v" id="usp-pow-v">45</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="45"></div>
-    <div class="usp-row"><label>Cone ° <span class="usp-v" id="usp-cone-v">85</span></label><input type="range" id="usp-cone" min="5" max="120" step="1" value="85"></div>
-    <div class="usp-row"><label>Distance <span class="usp-v" id="usp-dist-v">5.0</span></label><input type="range" id="usp-dist" min="1" max="20" step="0.5" value="5"></div>
+    <div class="usp-row"><label>Spot Power <span class="usp-v" id="usp-pow-v">21</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="21"></div>
+    <div class="usp-row"><label>Cone ° <span class="usp-v" id="usp-cone-v">60</span></label><input type="range" id="usp-cone" min="5" max="120" step="1" value="60"></div>
+    <div class="usp-row"><label>Distance <span class="usp-v" id="usp-dist-v">3.2</span></label><input type="range" id="usp-dist" min="1" max="20" step="0.5" value="3.2"></div>
     <div class="usp-section">Point Fill</div>
-    <div class="usp-row"><label>Point Power <span class="usp-v" id="usp-ppow-v">25</span></label><input type="range" id="usp-ppow" min="0" max="200" step="1" value="25"></div>
+    <div class="usp-row"><label>Point Power <span class="usp-v" id="usp-ppow-v">115</span></label><input type="range" id="usp-ppow" min="0" max="200" step="1" value="115"></div>
+    <div class="usp-section">Soft Fill (Ambient)</div>
+    <div class="usp-row"><label>Soft Power <span class="usp-v" id="usp-apow-v">0.40</span></label><input type="range" id="usp-apow" min="0" max="3" step="0.05" value="0.40"></div>
     <div class="usp-section">Color</div>
     <div class="usp-row"><label>Color <span class="usp-v" id="usp-col-v">#3060ff</span></label><input type="color" id="usp-col" value="#3060ff"></div>
   </div>
@@ -23093,9 +23095,8 @@ init();
 
 <script>
 (function(){
-  // ✨ v78.171 — cabinet 실제 좌표 기반 auto-positioning. 슬라이더 기본값은 fallback.
-  // ✨ v78.176 — pointPow 추가 (PointLight 별도 power 조절).
-  const state = { px: 0, py: 1.85, pz: 0, tx: 0, ty: 0.3, tz: 0, pow: 45, cone: 85, dist: 5, col: 0x3060ff, pointPow: 25 };
+  // ✨ v78.177 — 사용자 락인 값 (스크린샷 기반). autoFit skip.
+  const state = { px: 1.16, py: 3.32, pz: -0.78, tx: -0.80, ty: 0.00, tz: -0.82, pow: 21, cone: 60, dist: 3.2, col: 0x3060ff, pointPow: 115, ambPow: 0.4 };
 
   // ✨ v78.172 — 더 안전한 cabinet box 기반 autoFit + 더 강한 SpotLight power.
   function _autoFitFromCabinet() {
@@ -23152,14 +23153,13 @@ init();
   function _ensureSpot() {
     if (window._uvcUserSpot) return window._uvcUserSpot;
     if (typeof THREE === 'undefined' || typeof scene === 'undefined') return null;
-    // 첫 ensure 시 cabinet 좌표 기반 auto-fit.
+    // ✨ v78.177 — autoFit skip. 사용자 락인 값 그대로 사용.
     if (!window._uvcSpotAutoFitDone) {
-      if (_autoFitFromCabinet()) {
-        window._uvcSpotAutoFitDone = true;
-        setTimeout(_syncSlidersFromState, 0);
-      }
+      window._uvcSpotAutoFitDone = true;
+      setTimeout(_syncSlidersFromState, 0);
     }
-    const spot = new THREE.SpotLight(state.col, state.pow, state.dist, state.cone * Math.PI / 360, 0.5, 1.5);
+    // ✨ v78.177 — penumbra 0.5 → 0.95 (cone 가장자리 부드럽게, 빛 퍼짐).
+    const spot = new THREE.SpotLight(state.col, state.pow, state.dist, state.cone * Math.PI / 360, 0.95, 1.5);
     spot.position.set(state.px, state.py, state.pz);
     spot.castShadow = false;
     scene.add(spot);
@@ -23187,13 +23187,21 @@ init();
           cy = ct.y;
         }
       }
-      const fillMain = new THREE.PointLight(state.col, state.pointPow, diag * 2.0, 1.2);
+      // ✨ v78.177 — decay 1.2 → 0.5 (감쇠 완화, 멀리까지 부드럽게 퍼짐).
+      const fillMain = new THREE.PointLight(state.col, state.pointPow, diag * 3.0, 0.5);
       fillMain.position.set(cx, cy, cz);
       fillMain.visible = false;
       scene.add(fillMain);
       window._uvcFillMain = fillMain;
-      console.log('[v78.176] 단일 PointLight 생성:', { cx, cy, cz, h, diag, intensity: state.pointPow });
-    } catch(e) { console.warn('[v78.176] PointLight 생성 실패:', e); }
+      console.log('[v78.177] 단일 PointLight 생성:', { cx, cy, cz, h, diag, intensity: state.pointPow });
+      // ✨ v78.177 — AmbientLight (재질 변경 없이 푸른 톤 전체 깔림).
+      //   하이라이트 안 만들고 어두운 부분만 떠올림 → 빛 퍼짐 효과.
+      const amb = new THREE.AmbientLight(state.col, state.ambPow);
+      amb.visible = false;
+      scene.add(amb);
+      window._uvcFillAmb = amb;
+      console.log('[v78.177] AmbientLight (Soft Fill) 생성:', { intensity: state.ambPow });
+    } catch(e) { console.warn('[v78.177] PointLight/AmbientLight 생성 실패:', e); }
     // ✨ v78.174 — SpotLightHelper 항상 표시 (cone wireframe 노란색).
     //   + target marker (작은 빨간 wireframe sphere) — 사용자가 슬라이더로 직접 조정 가능.
     //   ?spotdebug=0 으로만 숨김.
@@ -23259,6 +23267,11 @@ init();
       window._uvcFillMain.color.setHex(state.col);
       window._uvcFillMain.intensity = state.pointPow;
     }
+    // ✨ v78.177 — AmbientLight 색상 + intensity 동기화.
+    if (window._uvcFillAmb) {
+      window._uvcFillAmb.color.setHex(state.col);
+      window._uvcFillAmb.intensity = state.ambPow;
+    }
   }
 
   // chapter 변경 감지 + visible 토글
@@ -23276,6 +23289,8 @@ init();
       if (s) { s.visible = true; _applyAll(); }
       // ✨ v78.176 — 단일 PointLight ON.
       if (window._uvcFillMain) window._uvcFillMain.visible = true;
+      // ✨ v78.177 — AmbientLight ON.
+      if (window._uvcFillAmb) window._uvcFillAmb.visible = true;
       // ✨ v78.174 — helper/markers 챕터 따라 ON.
       if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = debugOn;
       if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = debugOn;
@@ -23283,6 +23298,7 @@ init();
     } else {
       if (window._uvcUserSpot) window._uvcUserSpot.visible = false;
       if (window._uvcFillMain) window._uvcFillMain.visible = false;
+      if (window._uvcFillAmb) window._uvcFillAmb.visible = false;
       if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = false;
       if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = false;
       if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = false;
@@ -23313,6 +23329,7 @@ init();
   _bind('usp-cone', 'usp-cone-v', 'cone', false, v => v.toFixed(0));
   _bind('usp-dist', 'usp-dist-v', 'dist', false, v => v.toFixed(1));
   _bind('usp-ppow', 'usp-ppow-v', 'pointPow', false, v => v.toFixed(0));
+  _bind('usp-apow', 'usp-apow-v', 'ambPow', false, v => v.toFixed(2));
   _bind('usp-col', 'usp-col-v', 'col', true);
 })();
 </script>
