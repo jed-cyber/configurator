@@ -23099,7 +23099,8 @@ init();
 <script>
 (function(){
   // ✨ v78.177 — 사용자 락인 값 (스크린샷 기반). autoFit skip.
-  const state = { px: 1.16, py: 3.32, pz: -0.78, tx: -0.80, ty: 0.00, tz: -0.82, pow: 21, cone: 60, dist: 3.2, col: 0x3060ff, pointPow: 115, ambPow: 0.4 };
+  // ✨ v78.181 — ambPow 0.4 → 0.12 (REFL HDRI 어두워 보이는 증상 완화).
+  const state = { px: 1.16, py: 3.32, pz: -0.78, tx: -0.80, ty: 0.00, tz: -0.82, pow: 21, cone: 60, dist: 3.2, col: 0x3060ff, pointPow: 115, ambPow: 0.12 };
 
   // ✨ v78.172 — 더 안전한 cabinet box 기반 autoFit + 더 강한 SpotLight power.
   function _autoFitFromCabinet() {
