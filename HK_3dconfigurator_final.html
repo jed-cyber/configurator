@@ -23081,9 +23081,12 @@ init();
     <div class="usp-row"><label>Y <span class="usp-v" id="usp-ty-v">0.30</span></label><input type="range" id="usp-ty" min="0" max="3" step="0.01" value="0.3"></div>
     <div class="usp-row"><label>Z <span class="usp-v" id="usp-tz-v">0.00</span></label><input type="range" id="usp-tz" min="-3" max="3" step="0.01" value="0"></div>
     <div class="usp-section">Light</div>
-    <div class="usp-row"><label>Power <span class="usp-v" id="usp-pow-v">45</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="45"></div>
+    <div class="usp-row"><label>Spot Power <span class="usp-v" id="usp-pow-v">45</span></label><input type="range" id="usp-pow" min="0" max="200" step="1" value="45"></div>
     <div class="usp-row"><label>Cone ° <span class="usp-v" id="usp-cone-v">85</span></label><input type="range" id="usp-cone" min="5" max="120" step="1" value="85"></div>
     <div class="usp-row"><label>Distance <span class="usp-v" id="usp-dist-v">5.0</span></label><input type="range" id="usp-dist" min="1" max="20" step="0.5" value="5"></div>
+    <div class="usp-section">Point Fill</div>
+    <div class="usp-row"><label>Point Power <span class="usp-v" id="usp-ppow-v">25</span></label><input type="range" id="usp-ppow" min="0" max="200" step="1" value="25"></div>
+    <div class="usp-section">Color</div>
     <div class="usp-row"><label>Color <span class="usp-v" id="usp-col-v">#3060ff</span></label><input type="color" id="usp-col" value="#3060ff"></div>
   </div>
 </div>
@@ -23091,7 +23094,8 @@ init();
 <script>
 (function(){
   // ✨ v78.171 — cabinet 실제 좌표 기반 auto-positioning. 슬라이더 기본값은 fallback.
-  const state = { px: 0, py: 1.85, pz: 0, tx: 0, ty: 0.3, tz: 0, pow: 45, cone: 85, dist: 5, col: 0x3060ff };
+  // ✨ v78.176 — pointPow 추가 (PointLight 별도 power 조절).
+  const state = { px: 0, py: 1.85, pz: 0, tx: 0, ty: 0.3, tz: 0, pow: 45, cone: 85, dist: 5, col: 0x3060ff, pointPow: 25 };
 
   // ✨ v78.172 — 더 안전한 cabinet box 기반 autoFit + 더 강한 SpotLight power.
   function _autoFitFromCabinet() {
@@ -23164,9 +23168,8 @@ init();
     spot.target.updateMatrixWorld();
     spot.visible = false;
     window._uvcUserSpot = spot;
-    // ✨ v78.173 — 내부 균일 조명 위해 PointLight 페어 추가.
-    //   SpotLight 만으로는 cone 방향성 때문에 한쪽만 묻음. PointLight 는 전방향 fill.
-    //   PointLight 2 개를 위/아래 중앙에 배치해서 전 내부 균일 채움.
+    // ✨ v78.176 — 단일 PointLight 만 사용 (사용자 요청: 하나만).
+    //   cabinet interior center 에 배치. 슬라이더로 power 조절 가능.
     try {
       const ib = window.uvcInteriorBox || (typeof getCabinetInteriorBox === 'function' ? getCabinetInteriorBox() : null);
       let cx = 0, cy = 1.3, cz = 0, h = 1.5, diag = 2.0;
@@ -23184,41 +23187,13 @@ init();
           cy = ct.y;
         }
       }
-      const fillTop = new THREE.PointLight(state.col, 35, diag * 2.0, 1.2);
-      fillTop.position.set(cx, cy + h * 0.30, cz);
-      fillTop.visible = false;
-      scene.add(fillTop);
-      window._uvcFillTop = fillTop;
-      const fillMid = new THREE.PointLight(state.col, 25, diag * 2.0, 1.2);
-      fillMid.position.set(cx, cy, cz);
-      fillMid.visible = false;
-      scene.add(fillMid);
-      window._uvcFillMid = fillMid;
-      const fillBot = new THREE.PointLight(state.col, 20, diag * 2.0, 1.2);
-      fillBot.position.set(cx, cy - h * 0.30, cz);
-      fillBot.visible = false;
-      scene.add(fillBot);
-      window._uvcFillBot = fillBot;
-      // ✨ v78.175 — L/R 벽 grazing angle 조명용 offset PointLight 2 개 추가.
-      //   center X 정렬 PointLight 는 L/R 벽에 수직 입사 → metallic 반사가 광원 쪽으로 가서 카메라에 안 보임.
-      //   X 방향 offset 위치에 light 두면 grazing angle 생성 → 벽에 highlight 묻음.
-      let sx = diag * 0.25;  // fallback width-based offset
-      try {
-        const ibSz = (ib && !ib.isEmpty()) ? ib.getSize(new THREE.Vector3()) : null;
-        if (ibSz) sx = Math.max(ibSz.x * 0.30, 0.15);  // 내부 width 의 30% offset
-      } catch(e) {}
-      const fillLeft = new THREE.PointLight(state.col, 28, diag * 2.0, 1.2);
-      fillLeft.position.set(cx - sx, cy, cz);
-      fillLeft.visible = false;
-      scene.add(fillLeft);
-      window._uvcFillLeft = fillLeft;
-      const fillRight = new THREE.PointLight(state.col, 28, diag * 2.0, 1.2);
-      fillRight.position.set(cx + sx, cy, cz);
-      fillRight.visible = false;
-      scene.add(fillRight);
-      window._uvcFillRight = fillRight;
-      console.log('[v78.175] interior fill PointLight 5 개 생성 (top/mid/bot + L/R):', { cx, cy, cz, h, diag, sx });
-    } catch(e) { console.warn('[v78.173] PointLight 트리오 생성 실패:', e); }
+      const fillMain = new THREE.PointLight(state.col, state.pointPow, diag * 2.0, 1.2);
+      fillMain.position.set(cx, cy, cz);
+      fillMain.visible = false;
+      scene.add(fillMain);
+      window._uvcFillMain = fillMain;
+      console.log('[v78.176] 단일 PointLight 생성:', { cx, cy, cz, h, diag, intensity: state.pointPow });
+    } catch(e) { console.warn('[v78.176] PointLight 생성 실패:', e); }
     // ✨ v78.174 — SpotLightHelper 항상 표시 (cone wireframe 노란색).
     //   + target marker (작은 빨간 wireframe sphere) — 사용자가 슬라이더로 직접 조정 가능.
     //   ?spotdebug=0 으로만 숨김.
@@ -23279,13 +23254,11 @@ init();
     s.distance = state.dist;
     s.angle = state.cone * Math.PI / 360;   // cone 도 (degree) → 반각 (rad)
     s.color.setHex(state.col);
-    // ✨ v78.173 — fill PointLight 트리오 색상 동기화 (위치는 cabinet 따라 고정 유지).
-    if (window._uvcFillTop) window._uvcFillTop.color.setHex(state.col);
-    if (window._uvcFillMid) window._uvcFillMid.color.setHex(state.col);
-    if (window._uvcFillBot) window._uvcFillBot.color.setHex(state.col);
-    // ✨ v78.175 — L/R offset fill 색상 동기화.
-    if (window._uvcFillLeft) window._uvcFillLeft.color.setHex(state.col);
-    if (window._uvcFillRight) window._uvcFillRight.color.setHex(state.col);
+    // ✨ v78.176 — 단일 PointLight 색상 + intensity 동기화.
+    if (window._uvcFillMain) {
+      window._uvcFillMain.color.setHex(state.col);
+      window._uvcFillMain.intensity = state.pointPow;
+    }
   }
 
   // chapter 변경 감지 + visible 토글
@@ -23301,24 +23274,15 @@ init();
     if (shouldShow) {
       const s = _ensureSpot();
       if (s) { s.visible = true; _applyAll(); }
-      // ✨ v78.173 — fill PointLight 트리오 ON (내부 균일 조명).
-      if (window._uvcFillTop) window._uvcFillTop.visible = true;
-      if (window._uvcFillMid) window._uvcFillMid.visible = true;
-      if (window._uvcFillBot) window._uvcFillBot.visible = true;
-      // ✨ v78.175 — L/R offset fill ON.
-      if (window._uvcFillLeft) window._uvcFillLeft.visible = true;
-      if (window._uvcFillRight) window._uvcFillRight.visible = true;
+      // ✨ v78.176 — 단일 PointLight ON.
+      if (window._uvcFillMain) window._uvcFillMain.visible = true;
       // ✨ v78.174 — helper/markers 챕터 따라 ON.
       if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = debugOn;
       if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = debugOn;
       if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = debugOn;
     } else {
       if (window._uvcUserSpot) window._uvcUserSpot.visible = false;
-      if (window._uvcFillTop) window._uvcFillTop.visible = false;
-      if (window._uvcFillMid) window._uvcFillMid.visible = false;
-      if (window._uvcFillBot) window._uvcFillBot.visible = false;
-      if (window._uvcFillLeft) window._uvcFillLeft.visible = false;
-      if (window._uvcFillRight) window._uvcFillRight.visible = false;
+      if (window._uvcFillMain) window._uvcFillMain.visible = false;
       if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = false;
       if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = false;
       if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = false;
@@ -23348,6 +23312,7 @@ init();
   _bind('usp-pow', 'usp-pow-v', 'pow', false, v => v.toFixed(0));
   _bind('usp-cone', 'usp-cone-v', 'cone', false, v => v.toFixed(0));
   _bind('usp-dist', 'usp-dist-v', 'dist', false, v => v.toFixed(1));
+  _bind('usp-ppow', 'usp-ppow-v', 'pointPow', false, v => v.toFixed(0));
   _bind('usp-col', 'usp-col-v', 'col', true);
 })();
 </script>
