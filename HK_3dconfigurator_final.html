@@ -23199,7 +23199,25 @@ init();
       fillBot.visible = false;
       scene.add(fillBot);
       window._uvcFillBot = fillBot;
-      console.log('[v78.173] interior fill PointLight 트리오 생성:', { cx, cy, cz, h, diag });
+      // ✨ v78.175 — L/R 벽 grazing angle 조명용 offset PointLight 2 개 추가.
+      //   center X 정렬 PointLight 는 L/R 벽에 수직 입사 → metallic 반사가 광원 쪽으로 가서 카메라에 안 보임.
+      //   X 방향 offset 위치에 light 두면 grazing angle 생성 → 벽에 highlight 묻음.
+      let sx = diag * 0.25;  // fallback width-based offset
+      try {
+        const ibSz = (ib && !ib.isEmpty()) ? ib.getSize(new THREE.Vector3()) : null;
+        if (ibSz) sx = Math.max(ibSz.x * 0.30, 0.15);  // 내부 width 의 30% offset
+      } catch(e) {}
+      const fillLeft = new THREE.PointLight(state.col, 28, diag * 2.0, 1.2);
+      fillLeft.position.set(cx - sx, cy, cz);
+      fillLeft.visible = false;
+      scene.add(fillLeft);
+      window._uvcFillLeft = fillLeft;
+      const fillRight = new THREE.PointLight(state.col, 28, diag * 2.0, 1.2);
+      fillRight.position.set(cx + sx, cy, cz);
+      fillRight.visible = false;
+      scene.add(fillRight);
+      window._uvcFillRight = fillRight;
+      console.log('[v78.175] interior fill PointLight 5 개 생성 (top/mid/bot + L/R):', { cx, cy, cz, h, diag, sx });
     } catch(e) { console.warn('[v78.173] PointLight 트리오 생성 실패:', e); }
     // ✨ v78.174 — SpotLightHelper 항상 표시 (cone wireframe 노란색).
     //   + target marker (작은 빨간 wireframe sphere) — 사용자가 슬라이더로 직접 조정 가능.
@@ -23265,6 +23283,9 @@ init();
     if (window._uvcFillTop) window._uvcFillTop.color.setHex(state.col);
     if (window._uvcFillMid) window._uvcFillMid.color.setHex(state.col);
     if (window._uvcFillBot) window._uvcFillBot.color.setHex(state.col);
+    // ✨ v78.175 — L/R offset fill 색상 동기화.
+    if (window._uvcFillLeft) window._uvcFillLeft.color.setHex(state.col);
+    if (window._uvcFillRight) window._uvcFillRight.color.setHex(state.col);
   }
 
   // chapter 변경 감지 + visible 토글
@@ -23284,6 +23305,9 @@ init();
       if (window._uvcFillTop) window._uvcFillTop.visible = true;
       if (window._uvcFillMid) window._uvcFillMid.visible = true;
       if (window._uvcFillBot) window._uvcFillBot.visible = true;
+      // ✨ v78.175 — L/R offset fill ON.
+      if (window._uvcFillLeft) window._uvcFillLeft.visible = true;
+      if (window._uvcFillRight) window._uvcFillRight.visible = true;
       // ✨ v78.174 — helper/markers 챕터 따라 ON.
       if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = debugOn;
       if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = debugOn;
@@ -23293,6 +23317,8 @@ init();
       if (window._uvcFillTop) window._uvcFillTop.visible = false;
       if (window._uvcFillMid) window._uvcFillMid.visible = false;
       if (window._uvcFillBot) window._uvcFillBot.visible = false;
+      if (window._uvcFillLeft) window._uvcFillLeft.visible = false;
+      if (window._uvcFillRight) window._uvcFillRight.visible = false;
       if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = false;
       if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = false;
       if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = false;
