@@ -13852,12 +13852,14 @@ window._hkFps = 0;
   //   각 함수 내부에 가드 있긴 하지만 함수 호출 + early-return 도 누적 부담. 챕터 일치할 때만 호출.
   const _cur = window.currentChapter;
   // UV-C particles: UV-C/Ionizer 챕터에서만.
-  // ✨ v78.168 — 모바일에선 3 frame 마다 1번 update (300 particle × 1/3 frame = 100/frame 수준).
+  // ✨ v78.178 — Ionizer 파티클 뚝뚝 끊김 해소.
+  //   모바일: 3-frame skip → 매 frame update (부드러움 우선).
+  //   FPS 부담 우려 시 _particleSmooth=false 로 옛 동작 복귀 가능.
   if (_cur === 'uvc' || _cur === 'ionizer') {
-    if (_isMobileRenderer) {
+    if (_isMobileRenderer && window._particleSmooth === false) {
       window._particleFrameSkip = (window._particleFrameSkip || 0) + 1;
-      if (window._particleFrameSkip >= 3) {
-        updateUVCParticles(dt * 3);
+      if (window._particleFrameSkip >= 2) {
+        updateUVCParticles(dt * 2);
         window._particleFrameSkip = 0;
       }
     } else {
@@ -23052,7 +23054,8 @@ init();
     max-height: 32px;
     display: none;
   }
-  html[data-chapter="uvc"] #uvc-spot-panel, html[data-chapter="ionizer"] #uvc-spot-panel { display: block; }
+  /* ✨ v78.178 — 슬라이더 패널 완전 숨김 (값 락인됨). */
+  html[data-chapter="uvc"] #uvc-spot-panel, html[data-chapter="ionizer"] #uvc-spot-panel { display: none !important; }
   #uvc-spot-panel.open { max-height: 760px; }
   #uvc-spot-panel .usp-head { height: 32px; line-height: 32px; padding: 0 12px; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; background: rgba(80,130,255,0.2); display: flex; align-items: center; justify-content: space-between; }
   #uvc-spot-panel .usp-tri { transition: transform 0.2s; }
@@ -23291,10 +23294,10 @@ init();
       if (window._uvcFillMain) window._uvcFillMain.visible = true;
       // ✨ v78.177 — AmbientLight ON.
       if (window._uvcFillAmb) window._uvcFillAmb.visible = true;
-      // ✨ v78.174 — helper/markers 챕터 따라 ON.
-      if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = debugOn;
-      if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = debugOn;
-      if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = debugOn;
+      // ✨ v78.178 — helper/markers 완전 숨김 (와이어프레임 제거 요청).
+      if (window._uvcUserSpotHelper) window._uvcUserSpotHelper.visible = false;
+      if (window._uvcUserSpotTargetMarker) window._uvcUserSpotTargetMarker.visible = false;
+      if (window._uvcUserSpotPosMarker) window._uvcUserSpotPosMarker.visible = false;
     } else {
       if (window._uvcUserSpot) window._uvcUserSpot.visible = false;
       if (window._uvcFillMain) window._uvcFillMain.visible = false;
