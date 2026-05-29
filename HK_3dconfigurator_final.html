@@ -6720,7 +6720,8 @@ window._REFL_ION        = window._REFL_OVERVIEW;
 window._REFL_DRYING     = window._REFL_OVERVIEW;
 window._REFL_PANEL      = window._REFL_OVERVIEW;
 window._REFL_MODULAR    = window._REFL_OVERVIEW;
-window._REFL_PREMIUM    = window._REFL_OVERVIEW;
+// ✨ v78.182 — Stainless (Premium) 챕터만 REFL HDRI brightness 절반 (사용자 요청).
+window._REFL_PREMIUM    = { brightness: 1.025, contrast: 3.00, saturation: 0.00, tint: '#FDFBFE' };
 window._REFL_DIMENSIONS = window._REFL_OVERVIEW;
 // ✨ v77.797 — reflColorState 부드러운 dissolve lerp.
 //   target = {brightness, contrast, saturation, tint(hex)}, duration ms.
