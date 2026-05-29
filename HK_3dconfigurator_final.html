@@ -9723,7 +9723,20 @@ function _getUvcGlowTexture() {
 }
 
 window._uvcWavesEnable = function() {
-  if (window._uvcWaves.enabled) return;
+  // ✨ v78.184 — 재진입 케이스: 이미 enabled 면 group 재표시 + beams 재활성 (early return 대신).
+  if (window._uvcWaves.enabled) {
+    if (window._uvcWaves.group) window._uvcWaves.group.visible = true;
+    if (window._uvcBeams && window._uvcBeams.length) {
+      window._uvcBeams.forEach(b => {
+        if (b.mesh) {
+          b.mesh.visible = true;
+          if (b.mesh.material) b.mesh.material.opacity = 0;   // fadeIn raf 가 다시 올림
+        }
+      });
+    }
+    window._uvcBeamFadeIn = -5;   // 5초 pre-delay 후 처음 진입처럼 fade-in
+    return;
+  }
   if (typeof scene === 'undefined' || !scene) return;
   // ★ v77.405 — 옛날 버전 메쉬 잔재 정리 (이전 버전 사용중에 같은 이름 group 남아있을 수 있음)
   const orphan = scene.getObjectByName('_uvcWaveGroup');
@@ -10083,7 +10096,9 @@ window._uvcWavesDisable = function() {
   window._uvcStreaks = null;
   window._uvcStreakTargets = null;
   window._uvcLampAura = null;
-  window._uvcBeams = null;
+  // ✨ v78.184 — _uvcBeams null 처리 제거 (재진입 시 빔 사라지는 버그 fix).
+  //   enabled=true 유지하면서 ref 도 살려야 _uvcWavesEnable 재진입 분기에서 visible 토글 가능.
+  // window._uvcBeams = null;
   window._uvcBeamDust = null; // v77.503 — dust 제거됨 (이전 챕터 진입 잔재 정리)
   // ✨ v77.511 — 모든 wall mesh depthWrite 원복
   if (window._uvcWallRefs && window._uvcWallRefs.length) {
@@ -17128,6 +17143,8 @@ window.ChapterManager = (() => {
           if (window.scene) {
             window.scene.traverse(o => {
               if (o.isLight && o.type === 'PointLight') {
+                // ✨ v78.184 — 사용자 lights 는 watchdog 자동 override 제외.
+                if (o.userData && o.userData._skipUvcWatchdog) return;
                 const cHex = o.color?.getHexString?.() || '';
                 const r = parseInt(cHex.slice(0,2),16)||0;
                 const b = parseInt(cHex.slice(4,6),16)||0;
@@ -23169,6 +23186,7 @@ init();
     const spot = new THREE.SpotLight(state.col, state.pow, state.dist, state.cone * Math.PI / 360, 0.95, 1.5);
     spot.position.set(state.px, state.py, state.pz);
     spot.castShadow = false;
+    spot.userData._skipUvcWatchdog = true;   // ✨ v78.184 — watchdog 자동 override 차단.
     scene.add(spot);
     scene.add(spot.target);
     spot.target.position.set(state.tx, state.ty, state.tz);
@@ -23200,17 +23218,20 @@ init();
       const fillMain = new THREE.PointLight(state.col, state.pointPow, safeDist, 0.5);
       fillMain.position.set(cx, cy, cz);
       fillMain.visible = false;
+      // ✨ v78.184 — UV-C watchdog cache 제외 태그 (자동 intensity override 방지 → 깜빡임 fix).
+      fillMain.userData._skipUvcWatchdog = true;
       scene.add(fillMain);
       window._uvcFillMain = fillMain;
-      console.log('[v78.180] PointLight 생성:', { cx, cy, cz, diag, distance: safeDist, intensity: state.pointPow });
-    } catch(e) { console.warn('[v78.180] PointLight 생성 실패:', e); }
+      console.log('[v78.184] PointLight 생성:', { cx, cy, cz, diag, distance: safeDist, intensity: state.pointPow });
+    } catch(e) { console.warn('[v78.184] PointLight 생성 실패:', e); }
     try {
       const amb = new THREE.AmbientLight(state.col, state.ambPow);
       amb.visible = false;
+      amb.userData._skipUvcWatchdog = true;   // ✨ v78.184
       scene.add(amb);
       window._uvcFillAmb = amb;
-      console.log('[v78.180] AmbientLight 생성:', { intensity: state.ambPow });
-    } catch(e) { console.warn('[v78.180] AmbientLight 생성 실패:', e); }
+      console.log('[v78.184] AmbientLight 생성:', { intensity: state.ambPow });
+    } catch(e) { console.warn('[v78.184] AmbientLight 생성 실패:', e); }
     // ✨ v78.174 — SpotLightHelper 항상 표시 (cone wireframe 노란색).
     //   + target marker (작은 빨간 wireframe sphere) — 사용자가 슬라이더로 직접 조정 가능.
     //   ?spotdebug=0 으로만 숨김.
