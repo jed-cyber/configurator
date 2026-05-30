@@ -535,6 +535,133 @@
     100% { transform: translateX(380%); }
   }
 
+  /* ============ ENTRY ANIMATIONS (Phase B) ============ */
+  .sect .eye, .sect h1, .sect h2, .sect .lead, .sect .stat-strip,
+  .sect .toc-grid, .sect .audience-grid, .sect .feat-cards, .sect .mod-grid,
+  .sect .spec-tbl, .sect .drw-grid, .sect .cert-row, .sect .res-grid,
+  .sect .faq-list, .sect .build-btn, .sect .contact {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sect.in-view .eye    { opacity: 1; transform: translateY(0); transition-delay: 0.02s; }
+  .sect.in-view h1, .sect.in-view h2 { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+  .sect.in-view .lead   { opacity: 1; transform: translateY(0); transition-delay: 0.18s; }
+  .sect.in-view .stat-strip,
+  .sect.in-view .toc-grid,
+  .sect.in-view .audience-grid,
+  .sect.in-view .feat-cards,
+  .sect.in-view .mod-grid,
+  .sect.in-view .spec-tbl,
+  .sect.in-view .drw-grid,
+  .sect.in-view .cert-row,
+  .sect.in-view .res-grid,
+  .sect.in-view .faq-list,
+  .sect.in-view .build-btn,
+  .sect.in-view .contact { opacity: 1; transform: translateY(0); transition-delay: 0.26s; }
+
+  /* Stagger children */
+  .sect.in-view .toc-card,
+  .sect.in-view .audience-card,
+  .sect.in-view .fc,
+  .sect.in-view .mc,
+  .sect.in-view .ct,
+  .sect.in-view .res-card,
+  .sect.in-view .stat {
+    animation: cardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .sect.in-view .toc-card:nth-child(1),
+  .sect.in-view .audience-card:nth-child(1),
+  .sect.in-view .fc:nth-child(1),
+  .sect.in-view .mc:nth-child(1),
+  .sect.in-view .ct:nth-child(1),
+  .sect.in-view .res-card:nth-child(1),
+  .sect.in-view .stat:nth-child(1) { animation-delay: 0.30s; }
+  .sect.in-view .toc-card:nth-child(2),
+  .sect.in-view .audience-card:nth-child(2),
+  .sect.in-view .fc:nth-child(2),
+  .sect.in-view .mc:nth-child(2),
+  .sect.in-view .ct:nth-child(2),
+  .sect.in-view .res-card:nth-child(2),
+  .sect.in-view .stat:nth-child(2) { animation-delay: 0.36s; }
+  .sect.in-view .toc-card:nth-child(3),
+  .sect.in-view .audience-card:nth-child(3),
+  .sect.in-view .fc:nth-child(3),
+  .sect.in-view .mc:nth-child(3),
+  .sect.in-view .ct:nth-child(3),
+  .sect.in-view .res-card:nth-child(3),
+  .sect.in-view .stat:nth-child(3) { animation-delay: 0.42s; }
+  .sect.in-view .toc-card:nth-child(4),
+  .sect.in-view .audience-card:nth-child(4),
+  .sect.in-view .fc:nth-child(4),
+  .sect.in-view .mc:nth-child(4),
+  .sect.in-view .res-card:nth-child(4),
+  .sect.in-view .stat:nth-child(4) { animation-delay: 0.48s; }
+  .sect.in-view .toc-card:nth-child(5),
+  .sect.in-view .fc:nth-child(5),
+  .sect.in-view .mc:nth-child(5) { animation-delay: 0.54s; }
+  .sect.in-view .toc-card:nth-child(6),
+  .sect.in-view .fc:nth-child(6),
+  .sect.in-view .mc:nth-child(6) { animation-delay: 0.60s; }
+  .sect.in-view .mc:nth-child(7) { animation-delay: 0.66s; }
+  .sect.in-view .mc:nth-child(8) { animation-delay: 0.72s; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ BIG CHAPTER WATERMARK (Phase B) ============ */
+  .sect .ch-watermark {
+    position: absolute;
+    top: 40px; left: 16px;
+    font-size: 96px; font-weight: 800;
+    color: var(--bg-soft);
+    letter-spacing: -3px;
+    line-height: 1;
+    user-select: none;
+    z-index: 0;
+    pointer-events: none;
+  }
+  @media (max-width: 768px) {
+    .sect .ch-watermark { font-size: 64px; top: 24px; left: 8px; }
+  }
+  .sect > *:not(.ch-watermark) { position: relative; z-index: 1; }
+
+  /* ============ HERO POLISH (Phase B) ============ */
+  #sect-0 {
+    background: linear-gradient(180deg, #fff 0%, var(--bg-soft) 100%);
+    padding-top: 140px;
+  }
+  #sect-0 .scroll-cue {
+    margin-top: 56px;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 2px; color: var(--text-soft);
+    text-transform: uppercase;
+    opacity: 0; transform: translateY(0);
+    animation: cuePulse 2s ease-in-out infinite, fadeInUp 1s 0.6s both;
+  }
+  #sect-0 .scroll-cue .arrow {
+    width: 1px; height: 24px; background: var(--text-soft);
+    position: relative;
+    animation: arrowGrow 1.5s ease-in-out infinite;
+  }
+  @keyframes cuePulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 0.85; transform: translateY(0); } }
+  @keyframes arrowGrow { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.4); transform-origin: top; } }
+
+  /* ============ TOC CARD POLISH ============ */
+  .toc-card { position: relative; overflow: hidden; }
+  .toc-card::after {
+    content: '→';
+    position: absolute;
+    right: 18px; bottom: 16px;
+    font-size: 16px; color: var(--accent);
+    opacity: 0; transform: translateX(-6px);
+    transition: all 0.25s;
+  }
+  .toc-card:hover::after { opacity: 1; transform: translateX(0); }
+
   /* ============ TOC OVERLAY MENU ============ */
   #tocOverlay {
     position: fixed; inset: 0; z-index: 80;
@@ -634,24 +761,26 @@
       <div class="eye">HK · NEO+ STERILIZER · HKNS-1019</div>
       <h1><span class="light">Engineered for</span><br><b>Pure Preservation</b></h1>
       <div class="lead">호텔·단체급식·병원을 위한 살균 캐비닛.<br>약품 없이, 교체 없이.</div>
-      <div style="margin-top:36px; font-size:11px; letter-spacing:2px; color:var(--text-soft); text-transform:uppercase;">↓ Scroll to Explore</div>
+      <div class="scroll-cue"><span>Scroll to explore</span><span class="arrow"></span></div>
     </section>
 
     <!-- ============ S01 — POSITIONING ============ -->
     <section class="sect" id="sect-1" data-chapter="overview">
+      <div class="ch-watermark">01</div>
       <div class="eye">01 · Overview</div>
       <h2><b>99.9%</b> 살균. 무화학. 무유지.</h2>
       <div class="lead">280nm UV-C LED, 음이온 발생기, 모듈식 거치대를<br>하나의 STS-304 캐비닛에 담았습니다.</div>
       <div class="stat-strip">
-        <div class="stat"><div class="v">99.9%</div><div class="l">Sterilization</div></div>
-        <div class="stat"><div class="v">280nm</div><div class="l">UV-C Wavelength</div></div>
-        <div class="stat"><div class="v">25k h</div><div class="l">LED Lifetime</div></div>
-        <div class="stat"><div class="v">220V</div><div class="l">60Hz / 350W</div></div>
+        <div class="stat"><div class="v" data-count="99.9" data-suffix="%">0%</div><div class="l">Sterilization</div></div>
+        <div class="stat"><div class="v" data-count="280" data-suffix="nm">0nm</div><div class="l">UV-C Wavelength</div></div>
+        <div class="stat"><div class="v" data-count="25" data-suffix="k h">0k h</div><div class="l">LED Lifetime</div></div>
+        <div class="stat"><div class="v" data-count="220" data-suffix="V">0V</div><div class="l">60Hz / 350W</div></div>
       </div>
     </section>
 
     <!-- ============ S02 — WHO IT'S FOR ============ -->
     <section class="sect" id="sect-2" data-chapter="overview">
+      <div class="ch-watermark">02</div>
       <div class="eye">02 · Applications</div>
       <h2>이런 곳에 설치됩니다</h2>
       <div class="lead">매일 수백 인분의 식기·조리도구를 살균해야 하는 환경.</div>
@@ -689,6 +818,7 @@
 
     <!-- ============ S03 — TOC ============ -->
     <section class="sect" id="sect-3" data-chapter="overview">
+      <div class="ch-watermark">03</div>
       <div class="eye">03 · Contents</div>
       <h2>Five Core Systems</h2>
       <div class="lead">한 캐비닛, 다섯 가지 시스템. 아래로 스크롤하면 각 기능이 차례로 시연됩니다.</div>
@@ -704,8 +834,9 @@
 
     <!-- ============ S04 — UV-C ============ -->
     <section class="sect" id="sect-4" data-chapter="uvc">
-      <div class="eye">04 · STERILIZATION</div>
-      <h1><b>99.9%</b><br><span class="light">살균률</span></h1>
+      <div class="ch-watermark" style="color:rgba(126,20,255,0.06);">04</div>
+      <div class="eye" style="color:var(--uv);">04 · STERILIZATION</div>
+      <h1><b data-count="99.9" data-suffix="%">0%</b><br><span class="light">살균률</span></h1>
       <div class="lead">280nm UV-C LED가 캐비닛 내부 전체를 살균합니다.<br>약품 없이, 교체 없이, 무인 운전.</div>
       <div class="feat-cards uv">
         <div class="fc"><div class="l">Chemical-Free</div><div class="v">약품 사용 없음</div></div>
@@ -716,6 +847,7 @@
 
     <!-- ============ S05 — IONIZER ============ -->
     <section class="sect" id="sect-5" data-chapter="ionizer">
+      <div class="ch-watermark">05</div>
       <div class="eye">05 · AIR PURIFICATION</div>
       <h2>Clean air,<br>every cycle</h2>
       <div class="lead">120만 개의 음이온이 캐비닛 내부 공기를 순환시키며<br>냄새와 부유 박테리아를 중화시킵니다.</div>
@@ -728,6 +860,7 @@
 
     <!-- ============ S06 — LED PANEL ============ -->
     <section class="sect" id="sect-6" data-chapter="panel">
+      <div class="ch-watermark">06</div>
       <div class="eye">06 · CONTROL</div>
       <h2>Every cycle,<br>at a glance</h2>
       <div class="lead">직관적인 하나의 패널.<br>모드·시간·실시간 상태를 한 눈에.</div>
@@ -743,6 +876,7 @@
 
     <!-- ============ S07 — MODULAR ============ -->
     <section class="sect" id="sect-7" data-chapter="modular">
+      <div class="ch-watermark">07</div>
       <div class="eye">07 · MODULAR DESIGN</div>
       <h2>Configure<br>your inside</h2>
       <div class="lead">8가지 거치대 모듈을 자유롭게 슬라이드 인·아웃.<br>칼·도마·고무장갑·앞치마까지.</div>
@@ -760,6 +894,7 @@
 
     <!-- ============ S08 — PREMIUM STAINLESS ============ -->
     <section class="sect" id="sect-8" data-chapter="premium">
+      <div class="ch-watermark">08</div>
       <div class="eye">08 · MATERIAL</div>
       <h2>Built<br>to last</h2>
       <div class="lead">STS-304 0.8T 바디·도어.<br>위생적이고 부식에 강하며, 주방 환경에 최적화됐습니다.</div>
@@ -772,19 +907,21 @@
 
     <!-- ============ S09 — DIMENSIONS ============ -->
     <section class="sect" id="sect-9" data-chapter="dimensions">
+      <div class="ch-watermark">09</div>
       <div class="eye">09 · DIMENSIONS</div>
-      <h1><b>1000</b> × <b>600</b> × <b>1900</b><br><span class="light" style="font-size:0.45em;">mm (W × D × H)</span></h1>
+      <h1><b data-count="1000">0</b> × <b data-count="600">0</b> × <b data-count="1900">0</b><br><span class="light" style="font-size:0.45em;">mm (W × D × H)</span></h1>
       <div class="lead">설치 공간: 좌우 도어 스윙 각 600mm 권장.</div>
       <div class="stat-strip">
-        <div class="stat"><div class="v">1000</div><div class="l">Width (mm)</div></div>
-        <div class="stat"><div class="v">600</div><div class="l">Depth (mm)</div></div>
-        <div class="stat"><div class="v">1900</div><div class="l">Height (mm)</div></div>
-        <div class="stat"><div class="v">≈100</div><div class="l">Weight (kg)</div></div>
+        <div class="stat"><div class="v" data-count="1000">0</div><div class="l">Width (mm)</div></div>
+        <div class="stat"><div class="v" data-count="600">0</div><div class="l">Depth (mm)</div></div>
+        <div class="stat"><div class="v" data-count="1900">0</div><div class="l">Height (mm)</div></div>
+        <div class="stat"><div class="v" data-count="100" data-prefix="≈">≈0</div><div class="l">Weight (kg)</div></div>
       </div>
     </section>
 
     <!-- ============ S10 — SPEC TABLE ============ -->
     <section class="sect" id="sect-10" data-chapter="dimensions">
+      <div class="ch-watermark">10</div>
       <div class="eye">10 · Specifications</div>
       <h2>전체 사양</h2>
       <div class="spec-tbl">
@@ -803,6 +940,7 @@
 
     <!-- ============ S11 — DRAWINGS ============ -->
     <section class="sect" id="sect-11" data-chapter="dimensions">
+      <div class="ch-watermark">11</div>
       <div class="eye">11 · Drawings</div>
       <h2>도면</h2>
       <div class="lead">전면도·측면도·평면도. CAD 파일 별도 다운로드 가능.</div>
@@ -819,6 +957,7 @@
 
     <!-- ============ S12 — CERTIFICATIONS ============ -->
     <section class="sect" id="sect-12" data-chapter="overview">
+      <div class="ch-watermark">12</div>
       <div class="eye">12 · Certifications</div>
       <h2>Certified for<br>trust</h2>
       <div class="lead">전기·식품 안전·조달 등록 완료.</div>
@@ -831,6 +970,7 @@
 
     <!-- ============ S13 — RESOURCES ============ -->
     <section class="sect" id="sect-13" data-chapter="overview">
+      <div class="ch-watermark">13</div>
       <div class="eye">13 · Resources</div>
       <h2>Everything in<br>one place</h2>
       <div class="lead">사용설명서·카탈로그·도면·인증서 모두 한 곳에서.</div>
@@ -868,6 +1008,7 @@
 
     <!-- ============ S14 — FAQ ============ -->
     <section class="sect" id="sect-14" data-chapter="overview">
+      <div class="ch-watermark">14</div>
       <div class="eye">14 · FAQ</div>
       <h2>자주 묻는<br>질문</h2>
       <div class="faq-list" id="faqList"></div>
@@ -1044,9 +1185,40 @@
   // fallback: hide after 6s regardless
   setTimeout(hideLoad, 6000);
 
+  /* ============ Phase B — IntersectionObserver: section fade-in + count-up ============ */
+  const sectObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('in-view');
+        // Trigger count-up for any [data-count] in this section
+        e.target.querySelectorAll('[data-count]').forEach(el => {
+          if (el.dataset._counted) return;
+          el.dataset._counted = '1';
+          const target = parseFloat(el.dataset.count);
+          const suffix = el.dataset.suffix || '';
+          const prefix = el.dataset.prefix || '';
+          const isFloat = /\./.test(el.dataset.count);
+          const duration = 1100;
+          const startT = performance.now();
+          function tick(now) {
+            const t = Math.min(1, (now - startT) / duration);
+            // easeOutCubic
+            const eased = 1 - Math.pow(1 - t, 3);
+            const val = target * eased;
+            el.textContent = prefix + (isFloat ? val.toFixed(1) : Math.round(val).toLocaleString()) + suffix;
+            if (t < 1) requestAnimationFrame(tick);
+            else el.textContent = prefix + (isFloat ? target.toFixed(1) : target.toLocaleString()) + suffix;
+          }
+          requestAnimationFrame(tick);
+        });
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
+  sections.forEach(s => { if (s) sectObserver.observe(s); });
+
   /* ============ Init ============ */
   onScroll();
-  console.log('[v3 e-catalog] Daelim-style long-scroll + 3D sticky · 16 sections');
+  console.log('[v3 Phase B] Daelim-style long-scroll + 3D sticky + fade-in + count-up');
 })();
 </script>
 
