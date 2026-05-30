@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0a0e17" />
+<title>HK NEO+ Sterilizer — v2 (Mockup Build)</title>
+<style>
+  /* ============ RESET ============ */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; background: #0a0e17;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+    touch-action: pan-y;
+  }
+  body { height: 100vh; height: 100dvh; overflow: hidden; }
+  /* ============ TOP BAR ============ */
+  #topBar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    height: 56px;
+    background: linear-gradient(180deg, rgba(10,14,23,0.88), rgba(10,14,23,0.5) 70%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    display: flex; align-items: center; padding: 0 18px;
+    gap: 14px;
+    pointer-events: auto;
+  }
+  #topBar .brand {
+    font-size: 11px; letter-spacing: 3px; font-weight: 600;
+    opacity: 0.7; text-transform: uppercase;
+  }
+  #topBar .brand b { color: #6b9cff; }
+  #topBar .breadcrumb {
+    margin-left: auto;
+    font-size: 10px; letter-spacing: 2px; opacity: 0.55;
+    text-transform: uppercase;
+  }
+  #topBar .breadcrumb .sep { margin: 0 8px; opacity: 0.4; }
+  #topBar .breadcrumb .cur { color: #6b9cff; opacity: 1; font-weight: 600; }
+  #topBar .menu-btn {
+    width: 32px; height: 32px;
+    display: flex; flex-direction: column; justify-content: center; gap: 4px;
+    cursor: pointer;
+  }
+  #topBar .menu-btn span { display: block; width: 18px; height: 1.5px; background: #fff; border-radius: 2px; }
+
+  /* ============ SIDEBAR ============ */
+  #sideBar {
+    position: fixed; top: 56px; left: 0; bottom: 0; z-index: 45;
+    width: 72px;
+    background: rgba(10,14,23,0.45);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column;
+    padding: 20px 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-out;
+  }
+  #sideBar.open { transform: translateX(0); }
+  #sideBar .nav-item {
+    height: 52px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 9px; letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+    border-left: 2px solid transparent;
+    text-transform: uppercase;
+    gap: 4px;
+  }
+  #sideBar .nav-item:hover { color: rgba(255,255,255,0.9); background: rgba(107,156,255,0.06); }
+  #sideBar .nav-item.active {
+    color: #6b9cff; border-left-color: #6b9cff;
+    background: rgba(107,156,255,0.08);
+  }
+  #sideBar .nav-item .ico {
+    width: 18px; height: 18px;
+    fill: none; stroke: currentColor; stroke-width: 1.5;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ============ 3D HOST (iframe) ============ */
+  #hk-frame {
+    position: fixed; top: 56px; bottom: 90px;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    border: none; background: transparent;
+    z-index: 5;
+    transition: opacity 0.4s;
+  }
+  #hk-frame.dim { opacity: 0; pointer-events: none; }
+
+  /* ============ DECORATIVE BG ============ */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 50% 40%, #131c2f 0%, #050810 70%);
+  }
+
+  /* ============ CHAPTER NAV (BOTTOM) ============ */
+  #chapterBar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    height: 90px;
+    background: linear-gradient(0deg, rgba(10,14,23,0.95), rgba(10,14,23,0.6) 70%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 12px;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #chapterBar::-webkit-scrollbar { display: none; }
+  #chapterBar .ch-btn {
+    flex: 0 0 auto;
+    min-width: 62px;
+    height: 64px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.75);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.22s ease-out;
+    font-size: 10px; letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  #chapterBar .ch-btn:hover {
+    background: rgba(107,156,255,0.10);
+    border-color: rgba(107,156,255,0.3);
+    color: #fff;
+  }
+  #chapterBar .ch-btn.active {
+    background: linear-gradient(135deg, rgba(107,156,255,0.20), rgba(126,20,255,0.15));
+    border-color: rgba(107,156,255,0.55);
+    color: #fff;
+    box-shadow: 0 0 18px rgba(107,156,255,0.3);
+  }
+  #chapterBar .ch-btn .dot {
+    font-size: 11px; line-height: 1;
+  }
+  #chapterBar .ch-btn.active .dot { color: #6b9cff; }
+  #chapterBar .ch-btn[data-ch="uvc"].active .dot,
+  #chapterBar .ch-btn[data-ch="uvc"] .dot { color: #7e14ff; }
+  #chapterBar .ch-btn[data-ch="ionizer"].active .dot,
+  #chapterBar .ch-btn[data-ch="ionizer"] .dot { color: #6b9cff; }
+
+  /* ============ QUICK SPEC BAR (OVERVIEW ONLY) ============ */
+  #quickSpec {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 24px); max-width: 390px;
+    z-index: 18;
+    background: rgba(15,22,38,0.72);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  #quickSpec.show { opacity: 1; pointer-events: auto; }
+  #quickSpec .qs-col { text-align: center; }
+  #quickSpec .qs-label {
+    font-size: 8px; letter-spacing: 1.5px; opacity: 0.55;
+    margin-bottom: 4px; text-transform: uppercase;
+  }
+  #quickSpec .qs-value {
+    font-size: 11px; font-weight: 600; color: #fff;
+  }
+
+  /* ============ TEXT OVERLAY (per chapter copy) ============ */
+  #textOverlay {
+    position: fixed; top: 56px; left: 90px; z-index: 20;
+    max-width: 320px;
+    padding: 18px 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.45s ease-out;
+  }
+  #textOverlay.show { opacity: 1; }
+  #textOverlay .eyebrow {
+    font-size: 10px; letter-spacing: 3px; opacity: 0.6;
+    margin-bottom: 14px; color: #6b9cff;
+    text-transform: uppercase; font-weight: 600;
+  }
+  #textOverlay .h1 {
+    font-size: 30px; line-height: 1.1; font-weight: 700;
+    margin: 0 0 18px 0; letter-spacing: -0.5px;
+  }
+  #textOverlay .h1 .accent { color: #6b9cff; }
+  #textOverlay .body {
+    font-size: 13px; line-height: 1.55; opacity: 0.78;
+    max-width: 280px;
+  }
+  /* Mobile small */
+  @media (max-width: 480px) {
+    #textOverlay { left: 16px; right: 16px; max-width: none; }
+    #textOverlay .h1 { font-size: 22px; }
+    #textOverlay .body { font-size: 12px; }
+  }
+
+  /* ============ FEATURE CARDS (Overview right side) ============ */
+  #featureCards {
+    position: fixed; right: 14px; top: 76px;
+    width: 200px; max-width: 38%;
+    z-index: 15;
+    display: flex; flex-direction: column; gap: 6px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  #featureCards.show { opacity: 1; pointer-events: auto; }
+  #featureCards .fc-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #featureCards .fc-card:hover {
+    background: rgba(107,156,255,0.10);
+    border-color: rgba(107,156,255,0.4);
+    transform: translateX(-2px);
+  }
+  #featureCards .fc-num {
+    font-size: 9px; opacity: 0.5; letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  #featureCards .fc-title {
+    font-size: 12px; font-weight: 600;
+  }
+  @media (max-width: 480px) {
+    #featureCards { display: none; }   /* mobile uses bottom chapter bar */
+  }
+
+  /* ============ SIDE CARDS (per chapter, right) ============ */
+  #sideCards {
+    position: fixed; right: 14px; top: 90px;
+    width: 200px; max-width: 38%;
+    z-index: 16;
+    display: flex; flex-direction: column; gap: 6px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  #sideCards.show { opacity: 1; pointer-events: auto; }
+  #sideCards .sc-card {
+    background: rgba(255,255,255,0.06);
+    border-left: 2px solid #6b9cff;
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  #sideCards .sc-label {
+    font-size: 9px; letter-spacing: 1.5px; opacity: 0.6;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    color: #6b9cff;
+  }
+  #sideCards .sc-value {
+    font-size: 12px; font-weight: 500;
+  }
+  @media (max-width: 480px) {
+    #sideCards { display: none; }
+  }
+
+  /* ============ FULLSCREEN PANELS (SPEC / RESOURCES / FAQ / CTA) ============ */
+  .panel {
+    position: fixed; top: 56px; left: 0; right: 0; bottom: 90px;
+    z-index: 25;
+    background: linear-gradient(180deg, #0a0e17 0%, #0f1626 100%);
+    overflow-y: auto;
+    padding: 32px 24px 60px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease-out;
+  }
+  .panel.show { opacity: 1; pointer-events: auto; }
+  .panel .new-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #7e14ff, #6b9cff);
+    color: #fff;
+    font-size: 9px; letter-spacing: 1.5px; font-weight: 700;
+    padding: 3px 7px; border-radius: 4px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+  .panel h1 {
+    font-size: 28px; font-weight: 700;
+    margin: 0 0 24px;
+    letter-spacing: -0.5px;
+  }
+  .panel h1 .accent { color: #6b9cff; }
+  .panel .sub {
+    font-size: 13px; opacity: 0.65; margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  /* ===== Spec Panel ===== */
+  #specPanel .spec-table {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  #specPanel .spec-row {
+    display: grid; grid-template-columns: 110px 1fr;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+  }
+  #specPanel .spec-row:last-child { border-bottom: none; }
+  #specPanel .spec-row .label { opacity: 0.55; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding-top: 2px; }
+  #specPanel .spec-row .value { font-weight: 500; }
+  #specPanel .drawings {
+    margin-top: 24px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  #specPanel .drw {
+    aspect-ratio: 1 / 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.18);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; opacity: 0.55;
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  #specPanel .plan-drw {
+    grid-column: 1 / 3; aspect-ratio: 2 / 1; margin-top: 4px;
+  }
+  #specPanel .dl-btn {
+    display: block; margin-top: 20px;
+    background: #fff; color: #0a0e17;
+    border: none; padding: 14px 18px;
+    border-radius: 24px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* ===== Resources Panel ===== */
+  #resourcesPanel .res-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  #resourcesPanel .res-card {
+    background: rgba(255,255,255,0.04);
+    border-left: 3px solid #7e14ff;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex; flex-direction: column;
+  }
+  #resourcesPanel .res-thumb {
+    aspect-ratio: 1 / 1.2;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 8px;
+    font-size: 9px; letter-spacing: 1.5px; opacity: 0.45;
+    margin-bottom: 12px;
+  }
+  #resourcesPanel .res-title {
+    font-size: 14px; font-weight: 700; margin-bottom: 2px;
+  }
+  #resourcesPanel .res-en { font-size: 11px; opacity: 0.55; margin-bottom: 4px; }
+  #resourcesPanel .res-meta { font-size: 10px; opacity: 0.5; margin-bottom: 12px; letter-spacing: 0.5px; }
+  #resourcesPanel .res-dl {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 11px; letter-spacing: 1.5px; font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+  }
+  #resourcesPanel .res-dl:hover { background: rgba(107,156,255,0.18); border-color: rgba(107,156,255,0.5); }
+
+  /* ===== FAQ Panel ===== */
+  #faqPanel .faq-layout {
+    display: grid; grid-template-columns: 150px 1fr; gap: 24px;
+  }
+  @media (max-width: 600px) {
+    #faqPanel .faq-layout { grid-template-columns: 1fr; }
+    #faqPanel .faq-cats { display: flex; flex-wrap: wrap; gap: 8px; }
+    #faqPanel .faq-cat { flex: 0 0 auto; }
+  }
+  #faqPanel .faq-cats {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #faqPanel .faq-cat {
+    font-size: 11px; letter-spacing: 1px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+  }
+  #faqPanel .faq-cat.active {
+    color: #6b9cff;
+    background: rgba(107,156,255,0.12);
+    border-left: 2px solid #6b9cff;
+  }
+  #faqPanel .faq-list { display: flex; flex-direction: column; gap: 6px; }
+  #faqPanel .faq-item {
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+  }
+  #faqPanel .faq-item.open { background: rgba(107,156,255,0.06); border: 1px solid rgba(107,156,255,0.3); }
+  #faqPanel .faq-q {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 600;
+  }
+  #faqPanel .faq-q .toggle { color: #6b9cff; font-size: 18px; line-height: 1; }
+  #faqPanel .faq-a {
+    margin-top: 10px; font-size: 12px; opacity: 0.7; line-height: 1.55;
+    display: none;
+  }
+  #faqPanel .faq-item.open .faq-a { display: block; }
+
+  /* ===== CTA Panel ===== */
+  #ctaPanel { padding: 60px 28px; }
+  #ctaPanel .cta-hero {
+    font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -1.5px;
+    margin-bottom: 18px;
+  }
+  #ctaPanel .cta-sub {
+    font-size: 14px; opacity: 0.72; line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  #ctaPanel .cta-dots {
+    display: flex; gap: 8px; margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+  #ctaPanel .cta-dot {
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    font-size: 10px; letter-spacing: 1.5px; font-weight: 600;
+    color: #6b9cff;
+    cursor: pointer;
+  }
+  #ctaPanel .cta-build {
+    width: 100%;
+    background: linear-gradient(135deg, #7e14ff, #6b9cff);
+    color: #fff;
+    border: none;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 14px; font-weight: 700; letter-spacing: 1.5px;
+    cursor: pointer;
+    margin-bottom: 36px;
+  }
+  #ctaPanel .cta-contact {
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 18px;
+    font-size: 11px; opacity: 0.55; letter-spacing: 1.5px;
+  }
+  #ctaPanel .cta-contact b { color: #fff; opacity: 1; margin-right: 12px; }
+
+  /* ============ V2 BADGE ============ */
+  #v2Badge {
+    position: fixed; top: 12px; right: 12px; z-index: 60;
+    background: rgba(126,20,255,0.85);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 9px; letter-spacing: 1.5px; font-weight: 700;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  /* ============ LOADING OVERLAY (CHAPTER) ============ */
+  #chapterLoading {
+    position: fixed; inset: 0; z-index: 70;
+    background: rgba(10,14,23,0.6);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    gap: 16px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  #chapterLoading.show { opacity: 1; pointer-events: auto; }
+  #chapterLoading .spin {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #6b9cff;
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+  }
+  #chapterLoading .msg {
+    font-size: 11px; letter-spacing: 3px; opacity: 0.85;
+    text-transform: uppercase;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ============ V2 BADGE ============ -->
+<div id="v2Badge">V2 · MOCKUP</div>
+
+<!-- ============ TOP BAR ============ -->
+<div id="topBar">
+  <div class="menu-btn" id="menuBtn"><span></span><span></span><span></span></div>
+  <div class="brand">HK · <b>NEO+</b> STERILIZER</div>
+  <div class="breadcrumb">
+    <span class="model">HKNS-1019</span>
+    <span class="sep">·</span>
+    <span class="cur" id="curChapterLabel">OVERVIEW</span>
+  </div>
+</div>
+
+<!-- ============ SIDEBAR ============ -->
+<nav id="sideBar">
+  <div class="nav-item active" data-target="overview">
+    <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    <span>OVER</span>
+  </div>
+  <div class="nav-item" data-target="features">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    <span>FEAT</span>
+  </div>
+  <div class="nav-item" data-target="spec">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>SPEC</span>
+  </div>
+  <div class="nav-item" data-target="resources">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span>RES</span>
+  </div>
+  <div class="nav-item" data-target="faq">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>FAQ</span>
+  </div>
+  <div class="nav-item" data-target="cta">
+    <svg class="ico" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    <span>CTA</span>
+  </div>
+</nav>
+
+<!-- ============ 3D IFRAME (existing engine) ============ -->
+<iframe id="hk-frame" src="HK_3dconfigurator_final.html?mobile=1&_=v2_0&v2parent=1" allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+<!-- ============ TEXT OVERLAY (chapter copy) ============ -->
+<div id="textOverlay">
+  <div class="eyebrow" id="txEyebrow">01 · OVERVIEW</div>
+  <h1 class="h1" id="txH1">Engineered for<br><span class="accent">Pure Preservation</span></h1>
+  <div class="body" id="txBody">A hygiene cabinet built for kitchens that demand more.</div>
+</div>
+
+<!-- ============ FEATURE CARDS (Overview right) ============ -->
+<div id="featureCards">
+  <div class="fc-card" data-target="uvc"><div class="fc-num">01</div><div class="fc-title">UV-C Sterilization</div></div>
+  <div class="fc-card" data-target="ionizer"><div class="fc-num">02</div><div class="fc-title">Air Ionizer</div></div>
+  <div class="fc-card" data-target="panel"><div class="fc-num">03</div><div class="fc-title">LED Panel</div></div>
+  <div class="fc-card" data-target="modular"><div class="fc-num">04</div><div class="fc-title">Modular Design</div></div>
+  <div class="fc-card" data-target="premium"><div class="fc-num">05</div><div class="fc-title">Premium Stainless</div></div>
+  <div class="fc-card" data-target="spec"><div class="fc-num">06</div><div class="fc-title">Spec & Drawing</div></div>
+</div>
+
+<!-- ============ SIDE CARDS (per chapter spec cards) ============ -->
+<div id="sideCards"></div>
+
+<!-- ============ QUICK SPEC BAR ============ -->
+<div id="quickSpec">
+  <div class="qs-col"><div class="qs-label">Size</div><div class="qs-value">1000×600×1900</div></div>
+  <div class="qs-col"><div class="qs-label">Door</div><div class="qs-value">Dual swing</div></div>
+  <div class="qs-col"><div class="qs-label">Power</div><div class="qs-value">220V / 60Hz</div></div>
+  <div class="qs-col"><div class="qs-label">Model</div><div class="qs-value">HKNS-1019</div></div>
+</div>
+
+<!-- ============ CHAPTER BAR (bottom) ============ -->
+<div id="chapterBar">
+  <div class="ch-btn active" data-target="overview"><div class="dot">●</div>Overview</div>
+  <div class="ch-btn" data-ch="uvc" data-target="uvc"><div class="dot">◆</div>UV-C</div>
+  <div class="ch-btn" data-ch="ionizer" data-target="ionizer"><div class="dot">◆</div>Ionizer</div>
+  <div class="ch-btn" data-target="panel"><div class="dot">◆</div>LED</div>
+  <div class="ch-btn" data-target="modular"><div class="dot">◆</div>Modular</div>
+  <div class="ch-btn" data-target="premium"><div class="dot">◆</div>Premium</div>
+  <div class="ch-btn" data-target="spec"><div class="dot">◆</div>Spec</div>
+  <div class="ch-btn" data-target="resources"><div class="dot">◆</div>Resources</div>
+  <div class="ch-btn" data-target="faq"><div class="dot">◆</div>FAQ</div>
+  <div class="ch-btn" data-target="cta"><div class="dot">◆</div>Build</div>
+</div>
+
+<!-- ============ SPEC PANEL ============ -->
+<div class="panel" id="specPanel">
+  <h1>Spec & Drawing<span class="new-badge">New</span></h1>
+  <div class="spec-table">
+    <div class="spec-row"><div class="label">Model</div><div class="value">HKNS-1019</div></div>
+    <div class="spec-row"><div class="label">Size (mm)</div><div class="value">W1000 × D600 × H1900</div></div>
+    <div class="spec-row"><div class="label">Thickness</div><div class="value">STS-304 · 0.8T</div></div>
+    <div class="spec-row"><div class="label">Door</div><div class="value">Dual swing</div></div>
+    <div class="spec-row"><div class="label">Sterilize</div><div class="value">UV-C LED · 280nm</div></div>
+    <div class="spec-row"><div class="label">Power</div><div class="value">220V / 60Hz</div></div>
+    <div class="spec-row"><div class="label">Control</div><div class="value">P.C.B</div></div>
+    <div class="spec-row"><div class="label">Window</div><div class="value">Glass (Transparent)</div></div>
+    <div class="spec-row"><div class="label">Feet</div><div class="value">Adjustable Stainless</div></div>
+    <div class="spec-row"><div class="label">Cert</div><div class="value">KC · HACCP · 조달 24885355</div></div>
+  </div>
+  <div class="drawings">
+    <div class="drw">Front View</div>
+    <div class="drw">Side View</div>
+    <div class="drw plan-drw">Plan View · Top + Section</div>
+  </div>
+  <button class="dl-btn" onclick="window.open('https://ffrbiz.cafe24.com/mall/pdf/web/neo_plus.pdf', '_blank')">↓ Download PDF · CAD</button>
+</div>
+
+<!-- ============ RESOURCES PANEL ============ -->
+<div class="panel" id="resourcesPanel">
+  <h1>Everything <span class="accent">in one place</span><span class="new-badge">New</span></h1>
+  <div class="sub">사용설명서 · 카탈로그 · 도면 · 인증서 PDF 직접 다운로드</div>
+  <div class="res-grid">
+    <div class="res-card">
+      <div class="res-thumb">PDF Preview</div>
+      <div class="res-title">사용설명서</div>
+      <div class="res-en">User Manual</div>
+      <div class="res-meta">PDF · 12p</div>
+      <a class="res-dl" href="#" onclick="alert('User Manual 준비 중'); return false;">↓ DOWNLOAD</a>
+    </div>
+    <div class="res-card">
+      <div class="res-thumb">PDF Preview</div>
+      <div class="res-title">카탈로그</div>
+      <div class="res-en">Catalog</div>
+      <div class="res-meta">PDF · 24p · 2026</div>
+      <a class="res-dl" href="https://ffrbiz.cafe24.com/mall/pdf/web/neo_plus.pdf" target="_blank">↓ DOWNLOAD</a>
+    </div>
+    <div class="res-card">
+      <div class="res-thumb">PDF Preview</div>
+      <div class="res-title">도면 · CAD</div>
+      <div class="res-en">Drawing · DWG</div>
+      <div class="res-meta">PDF + DWG</div>
+      <a class="res-dl" href="#" onclick="alert('도면 파일 준비 중'); return false;">↓ DOWNLOAD</a>
+    </div>
+    <div class="res-card">
+      <div class="res-thumb">PDF Preview</div>
+      <div class="res-title">인증서</div>
+      <div class="res-en">Certificates</div>
+      <div class="res-meta">KC · HACCP · 조달</div>
+      <a class="res-dl" href="#" onclick="alert('인증서 준비 중'); return false;">↓ DOWNLOAD</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FAQ PANEL ============ -->
+<div class="panel" id="faqPanel">
+  <h1>Common <span class="accent">questions</span><span class="new-badge">New</span></h1>
+  <div class="sub">자주 묻는 질문 · 카테고리 선택 후 펼쳐보세요</div>
+  <div class="faq-layout">
+    <div class="faq-cats">
+      <div class="faq-cat active" data-cat="all">전체 (10)</div>
+      <div class="faq-cat" data-cat="uvc">UV-C 안전 (3)</div>
+      <div class="faq-cat" data-cat="install">설치·전원 (2)</div>
+      <div class="faq-cat" data-cat="use">사용·청소 (3)</div>
+      <div class="faq-cat" data-cat="as">A/S (2)</div>
+    </div>
+    <div class="faq-list" id="faqList">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ============ CTA PANEL ============ -->
+<div class="panel" id="ctaPanel">
+  <div class="cta-hero">Make<br>it yours.</div>
+  <div class="cta-sub">Pick your racks. See your price.<br>Get a quote.</div>
+  <div class="cta-dots">
+    <div class="cta-dot">◆ UV-C</div>
+    <div class="cta-dot">◆ ION</div>
+    <div class="cta-dot">◆ LED</div>
+    <div class="cta-dot">◆ MOD</div>
+    <div class="cta-dot">◆ PREM</div>
+  </div>
+  <button class="cta-build" onclick="alert('Builder는 다음 단계에 통합 예정')">BUILD YOUR CONFIGURATION →</button>
+  <div class="cta-contact">
+    <b>1899-3651</b> · KKO · IG · YT · BLOG
+  </div>
+</div>
+
+<!-- ============ CHAPTER LOADING OVERLAY ============ -->
+<div id="chapterLoading"><div class="spin"></div><div class="msg">Loading</div></div>
+
+<script>
+(function(){
+  /* ============ STATE ============ */
+  const COPY = {
+    overview: {
+      eyebrow: '01 · OVERVIEW',
+      h1: 'Engineered for<br><span class="accent">Pure Preservation</span>',
+      body: 'A hygiene cabinet built for kitchens that demand more.',
+      label: 'OVERVIEW',
+      showCards: true, showSpec: true, hide3D: false,
+      sideCards: []
+    },
+    features: {
+      eyebrow: 'FEATURES',
+      h1: 'Five Core <span class="accent">Systems</span>',
+      body: 'One cabinet · UV-C · Ionizer · LED Panel · Modular Racks · Premium STS-304.',
+      label: 'FEATURES', showCards: true, showSpec: false, hide3D: false,
+      sideCards: []
+    },
+    uvc: {
+      eyebrow: '02 · UV-C STERILIZATION',
+      h1: 'Kills 99.9% of<br><span class="accent">what you can\'t see</span>',
+      body: '280nm UV-C LEDs sterilize the entire interior in minutes — no chemicals, no replacement.',
+      label: 'UV-C', showCards: false, showSpec: false, hide3D: false,
+      sideCards: [
+        { label: '99.9%', value: 'Sterilization Rate' },
+        { label: '280nm', value: 'UV-C Wavelength' },
+        { label: 'Chemical-Free', value: '약품 사용 없음' },
+        { label: 'Hazard-Free', value: '도어 닫힘 시만 작동' }
+      ]
+    },
+    ionizer: {
+      eyebrow: '03 · AIR IONIZER',
+      h1: 'Clean air,<br><span class="accent">every cycle</span>',
+      body: '1.2 million negative ions neutralize odor and airborne bacteria.',
+      label: 'IONIZER', showCards: false, showSpec: false, hide3D: false,
+      sideCards: [
+        { label: 'Negative Ion', value: '음이온 1.2M/cm³' },
+        { label: 'Antibacterial', value: '항균' },
+        { label: 'Odor Remove', value: '냄새 제거' },
+        { label: 'Air Flow', value: '공기 순환' }
+      ]
+    },
+    panel: {
+      eyebrow: '04 · LED PANEL',
+      h1: 'Every cycle,<br><span class="accent">at a glance</span>',
+      body: 'One intuitive panel — mode, time, and live status.',
+      label: 'LED PANEL', showCards: false, showSpec: false, hide3D: false,
+      sideCards: [
+        { label: 'Mode', value: '동작 모드' },
+        { label: 'Time', value: '잔여 시간' },
+        { label: 'Alert', value: '상태 알림' },
+        { label: 'Light', value: 'LED 인디케이터' }
+      ]
+    },
+    modular: {
+      eyebrow: '05 · MODULAR DESIGN',
+      h1: 'Configure<br><span class="accent">your inside</span>',
+      body: 'Eight rack modules slide in and out — knives, boards, gloves, aprons.',
+      label: 'MODULAR', showCards: false, showSpec: false, hide3D: false,
+      sideCards: [
+        { label: 'F02', value: '타공선반' },
+        { label: 'F03', value: '칼' },
+        { label: 'F04', value: '도마' },
+        { label: 'F05', value: '고무장갑' },
+        { label: 'F11', value: '도마받침' },
+        { label: 'F16', value: '앞치마' }
+      ]
+    },
+    premium: {
+      eyebrow: '06 · PREMIUM STAINLESS',
+      h1: 'Built<br><span class="accent">to last</span>',
+      body: 'STS-304 0.8T body and door — hygienic, corrosion-resistant, kitchen-grade.',
+      label: 'PREMIUM', showCards: false, showSpec: false, hide3D: false,
+      sideCards: [
+        { label: 'Body', value: 'STS-304 · 0.8T' },
+        { label: 'Door', value: 'STS-304 · 0.8T' },
+        { label: 'Feet', value: 'Stainless Steel' }
+      ]
+    },
+    spec: { label: 'SPEC', isPanel: true },
+    resources: { label: 'RESOURCES', isPanel: true },
+    faq: { label: 'FAQ', isPanel: true },
+    cta: { label: 'MAKE IT YOURS', isPanel: true }
+  };
+
+  /* iframe-mapped chapters (existing 3D engine knows these) */
+  const IFRAME_CHAPTERS = ['uvc','ionizer','panel','modular','premium'];
+
+  const els = {
+    iframe: document.getElementById('hk-frame'),
+    txEyebrow: document.getElementById('txEyebrow'),
+    txH1: document.getElementById('txH1'),
+    txBody: document.getElementById('txBody'),
+    textOverlay: document.getElementById('textOverlay'),
+    featureCards: document.getElementById('featureCards'),
+    sideCards: document.getElementById('sideCards'),
+    quickSpec: document.getElementById('quickSpec'),
+    sideBar: document.getElementById('sideBar'),
+    menuBtn: document.getElementById('menuBtn'),
+    curChapterLabel: document.getElementById('curChapterLabel'),
+    chapterLoading: document.getElementById('chapterLoading')
+  };
+  const allPanels = ['specPanel','resourcesPanel','faqPanel','ctaPanel'].map(id => document.getElementById(id));
+  let _curTarget = 'overview';
+
+  /* ============ NAV LOGIC ============ */
+  function setActive(target) {
+    if (_curTarget === target) return;
+    showLoading();
+    _curTarget = target;
+    const meta = COPY[target] || COPY.overview;
+
+    // Highlight buttons
+    document.querySelectorAll('#chapterBar .ch-btn, #sideBar .nav-item, #featureCards .fc-card').forEach(b => {
+      b.classList.toggle('active', b.dataset.target === target);
+    });
+    els.curChapterLabel.textContent = meta.label || target.toUpperCase();
+
+    // Panel chapters (new ones): hide 3D, show fullscreen panel
+    if (meta.isPanel) {
+      els.iframe.classList.add('dim');
+      els.textOverlay.classList.remove('show');
+      els.featureCards.classList.remove('show');
+      els.sideCards.classList.remove('show');
+      els.quickSpec.classList.remove('show');
+      allPanels.forEach(p => p.classList.toggle('show', p.id === target + 'Panel'));
+      setTimeout(hideLoading, 600);
+      return;
+    }
+
+    // 3D chapters: hide panels, show iframe + overlays
+    els.iframe.classList.remove('dim');
+    allPanels.forEach(p => p.classList.remove('show'));
+
+    // Update text overlay
+    els.txEyebrow.textContent = meta.eyebrow || '';
+    els.txH1.innerHTML = meta.h1 || '';
+    els.txBody.textContent = meta.body || '';
+    els.textOverlay.classList.add('show');
+
+    // Overview: cards + spec bar
+    els.featureCards.classList.toggle('show', !!meta.showCards);
+    els.quickSpec.classList.toggle('show', !!meta.showSpec);
+
+    // Side cards per chapter
+    if (meta.sideCards && meta.sideCards.length) {
+      els.sideCards.innerHTML = meta.sideCards.map(c =>
+        '<div class="sc-card"><div class="sc-label">'+c.label+'</div><div class="sc-value">'+c.value+'</div></div>'
+      ).join('');
+      els.sideCards.classList.add('show');
+    } else {
+      els.sideCards.classList.remove('show');
+    }
+
+    // Send chapter to iframe (existing engine)
+    if (IFRAME_CHAPTERS.indexOf(target) >= 0) {
+      try {
+        const win = els.iframe.contentWindow;
+        if (win && win._enterChapter) win._enterChapter(target);
+        else if (win && win.enterChapter) win.enterChapter(target);
+      } catch(e) { console.warn('iframe chapter call failed:', e); }
+    }
+
+    setTimeout(hideLoading, 800);
+  }
+
+  function showLoading() { els.chapterLoading.classList.add('show'); }
+  function hideLoading() { els.chapterLoading.classList.remove('show'); }
+
+  /* ============ BIND ============ */
+  document.querySelectorAll('#chapterBar .ch-btn, #sideBar .nav-item, #featureCards .fc-card').forEach(b => {
+    b.addEventListener('click', () => setActive(b.dataset.target));
+  });
+  els.menuBtn.addEventListener('click', () => els.sideBar.classList.toggle('open'));
+
+  /* ============ FAQ ============ */
+  const FAQ_DATA = [
+    { cat:'uvc', q:'UV-C가 사람에게 안전한가요?', a:'UV-C는 도어 닫힐 때만 작동하며, 도어 오픈 감지 시 즉시 차단됩니다. 인체 노출 없음.' },
+    { cat:'uvc', q:'UV-C LED 수명은 얼마나 되나요?', a:'평균 25,000시간 (하루 8시간 가동 시 약 8년). 교체 없이 사용 가능합니다.' },
+    { cat:'uvc', q:'살균 시간은 얼마나 걸리나요?', a:'표준 사이클 15분. 짧은 라이트 사이클 5분, 풀 살균 25분 옵션 선택 가능.' },
+    { cat:'install', q:'전원·전기 사양은?', a:'220V / 60Hz · 350W. 일반 콘센트로 연결 가능합니다.' },
+    { cat:'install', q:'설치 공간 요구사항은?', a:'본체 1000×600×1900mm, 도어 스윙 공간 좌우 각 600mm 권장.' },
+    { cat:'use', q:'거치대는 따로 사야 하나요?', a:'기본 모듈 8개 포함. F02~F16 추가 모듈은 별도 구매 가능.' },
+    { cat:'use', q:'청소는 어떻게 하나요?', a:'중성세제 + 마른 천으로 STS-304 표면 닦기. 강한 산성/염소계 세제는 피해주세요.' },
+    { cat:'use', q:'음이온 발생기 필터 교체는?', a:'필터리스 구조 — 별도 교체 부품 없음.' },
+    { cat:'as', q:'A/S는 어디서 받나요?', a:'1899-3651 본사 콜센터 또는 카카오톡 채널 "HK 케어"를 통해 접수.' },
+    { cat:'as', q:'보증 기간은?', a:'본체 2년, UV-C LED 모듈 1년. 영업용은 별도 계약 조건.' }
+  ];
+  const faqList = document.getElementById('faqList');
+  let _faqCat = 'all';
+  function renderFaq() {
+    faqList.innerHTML = FAQ_DATA
+      .filter(f => _faqCat === 'all' || f.cat === _faqCat)
+      .map((f, i) =>
+        '<div class="faq-item" data-i="'+i+'">' +
+          '<div class="faq-q">'+f.q+' <span class="toggle">+</span></div>' +
+          '<div class="faq-a">'+f.a+'</div>' +
+        '</div>'
+      ).join('');
+    faqList.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const wasOpen = item.classList.contains('open');
+        faqList.querySelectorAll('.faq-item').forEach(x => { x.classList.remove('open'); x.querySelector('.toggle').textContent = '+'; });
+        if (!wasOpen) { item.classList.add('open'); item.querySelector('.toggle').textContent = '−'; }
+      });
+    });
+  }
+  document.querySelectorAll('#faqPanel .faq-cat').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#faqPanel .faq-cat').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      _faqCat = c.dataset.cat;
+      renderFaq();
+    });
+  });
+  renderFaq();
+
+  /* ============ IFRAME LOAD ============ */
+  els.iframe.addEventListener('load', () => {
+    console.log('[v2] iframe loaded — 3D engine ready');
+    // Initialize overview state
+    setActive('overview');
+  });
+
+  /* ============ INITIAL STATE ============ */
+  els.textOverlay.classList.add('show');
+  els.featureCards.classList.add('show');
+  els.quickSpec.classList.add('show');
+  console.log('[v2 mockup build] init');
+})();
+</script>
+
+</body>
+</html>
