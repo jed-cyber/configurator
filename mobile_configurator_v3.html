@@ -61,7 +61,8 @@
     width: 100vw; max-width: 414px;
     z-index: 2;
     overflow: hidden;
-    pointer-events: none;
+    /* v3.12 — 자식 iframe pointer-events:auto가 동작하도록 부모는 auto */
+    pointer-events: auto;
     background: transparent;
   }
   /* 하단 텍스트 영역 dark gradient */
@@ -76,40 +77,50 @@
     pointer-events: none;
   }
   /* 텍스트 영역 하단 → 3D 영역 자연스러운 fade (multi-stop, 더 길게) */
+  /* v3.12 — 8-stop ease-out 그라데이션으로 진짜 부드럽게 */
   #topBg::after {
     content: '';
     position: absolute;
-    bottom: -120px; left: 0; right: 0;
-    height: 180px;
+    bottom: -160px; left: 0; right: 0;
+    height: 240px;
     background: linear-gradient(
       180deg,
       rgba(26,34,54,1) 0%,
-      rgba(20,27,44,0.85) 35%,
-      rgba(15,22,36,0.45) 65%,
+      rgba(24,32,50,0.96) 12%,
+      rgba(22,29,46,0.88) 24%,
+      rgba(20,27,43,0.75) 36%,
+      rgba(18,25,40,0.58) 50%,
+      rgba(15,22,36,0.38) 65%,
+      rgba(12,18,29,0.18) 82%,
       rgba(10,14,23,0) 100%
     );
     pointer-events: none;
     z-index: 3;
   }
-  /* 3D 영역 상단도 부드럽게 받아주는 fade (top 측) */
+  /* 3D 영역 상단도 부드럽게 받아주는 fade (top 측, 더 길고 부드럽게) */
+  /* z-index:5 + pointer-events:none → 클릭은 iframe으로 통과 */
   #stage3d::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 100px;
+    height: 140px;
     background: linear-gradient(
       180deg,
-      rgba(10,14,23,0.7) 0%,
-      rgba(10,14,23,0.25) 60%,
+      rgba(10,14,23,0.85) 0%,
+      rgba(10,14,23,0.6) 25%,
+      rgba(10,14,23,0.32) 55%,
+      rgba(10,14,23,0.1) 80%,
       rgba(10,14,23,0) 100%
     );
     pointer-events: none;
     z-index: 5;
   }
+  /* ✨ v3.12 — iframe 인터랙션 활성화 (카메라 회전/줌 가능) */
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
-    pointer-events: none;  /* 줌/회전 비활성 → 스크롤 통과 */
+    pointer-events: auto;  /* 카메라 회전/줌 활성 */
+    touch-action: none;    /* 모바일 터치 회전 정상 동작 */
   }
 
   /* ============ TOP BAR (over 3D) ============ */
@@ -375,9 +386,12 @@
   }
 
   /* ============ ENTRANCE ANIMATIONS (preserve translateX -50% centering) ============ */
+  /* v3.12 — z-index 동적 부여로 활성 카드만 위에 (fixed 카드 stack 충돌 해소) */
   .sec .gcard {
     opacity: 0;
     transform: translateX(-50%) translateY(40px);
+    z-index: 4;
+    pointer-events: none;
     transition:
       opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
       transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
@@ -385,6 +399,8 @@
   .sec.in .gcard {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+    z-index: 11;
+    pointer-events: auto;
   }
 
   /* Stagger inside */
@@ -801,12 +817,15 @@
   }
 
   /* Section in-view observer */
+  /* v3.12 — remove('in')도 함께. fixed 카드가 stack 충돌 안 나도록 */
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
         e.target.classList.add('in');
         const i = Array.from(SECS).indexOf(e.target);
         if (i >= 0) setActive(i);
+      } else {
+        e.target.classList.remove('in');
       }
     });
   }, { threshold: 0.55, root: frame });
