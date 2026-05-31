@@ -66,7 +66,7 @@
     background: transparent;
   }
   /* 하단 텍스트 영역 dark gradient */
-  /* ✨ v3.15 — 하단 끝부분에서 더 어둡게 (#1a2236보다 splat 회색에 가깝게)로 자연스러운 transition */
+  /* ✨ v3.16 — 끝까지 #1a2236로 고정 (lighter로 갔던 v3.15 색 변경 되돌림) */
   #topBg {
     position: fixed;
     top: 0;
@@ -76,33 +76,33 @@
     z-index: 1;
     background: linear-gradient(180deg,
       #0a0e17 0%,
-      #11182a 40%,
-      #1a2236 75%,
-      #232b3e 100%);
+      #11182a 45%,
+      #1a2236 100%);
     pointer-events: none;
   }
-  /* ✨ v3.15 — 새 fade-bridge overlay: viewport 정확히 50vh 중심에 위치 (40vh~62vh) */
-  /* 위쪽 자막 BG 색에서 splat 회색까지 22vh(약 175px) 두께로 완전 자연스러운 그라데이션 */
-  /* z-index:50으로 iframe(#stage3d 안 z-index auto) 위로 확실히 떠야 함 */
+  /* ✨ v3.16 — fade-bridge: 색을 자막 BG와 정확히 일치 (rgb(26,34,54) = #1a2236) */
+  /* 단일 색 alpha 그라데이션이라 stripe 없음. 50vh 정확히가 자막색 최대 농도 (자막 영역 연장처럼 보임) */
+  /* z-index:100으로 iframe 확실히 위에 떠서 3D 영역 상단 부분을 자막색으로 덮음 */
   #blendBridge {
     position: fixed;
-    top: 38vh;       /* 자막 영역 하단 12vh 부터 시작 */
-    height: 28vh;    /* 3D 영역 상단 16vh 까지 fade */
+    top: 35vh;       /* 자막 영역 하단 15vh부터 시작 (보이지 않게 alpha 0) */
+    height: 40vh;    /* 75vh까지 → 3D 영역 상단 25vh를 자막색으로 부드럽게 덮음 */
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    z-index: 50;
+    z-index: 100;
     pointer-events: none;
     background: linear-gradient(
       180deg,
-      rgba(26,34,54,0)     0%,
-      rgba(28,36,55,0.35) 15%,
-      rgba(31,40,57,0.65) 30%,
-      rgba(35,44,62,0.85) 45%,
-      rgba(38,48,68,0.92) 55%,
-      rgba(35,46,67,0.78) 68%,
-      rgba(28,38,58,0.5)  82%,
-      rgba(22,30,48,0.22) 92%,
-      rgba(15,21,35,0)   100%
+      rgba(26,34,54,0)    0%,
+      rgba(26,34,54,0.25) 18%,
+      rgba(26,34,54,0.6)  32%,
+      rgba(26,34,54,0.9)  40%,
+      rgba(26,34,54,1)    50%,
+      rgba(26,34,54,0.8)  62%,
+      rgba(26,34,54,0.55) 74%,
+      rgba(26,34,54,0.3)  85%,
+      rgba(26,34,54,0.1)  94%,
+      rgba(26,34,54,0)   100%
     );
   }
   /* ✨ v3.12 — iframe 인터랙션 활성화 (카메라 회전/줌 가능) */
@@ -971,11 +971,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.15] caption/3D blend bridge — soft gradient between halves');
-  // Visible version marker (top-right under top bar) so deploy verification is unambiguous
+  console.log('[v3.16] blendBridge color unified with caption BG (no stripe)');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.15';
+    m.textContent = 'v3.16';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
