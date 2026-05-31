@@ -34,19 +34,18 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.20 — 항상 42vh로 고정 (sec 42vh와 일치, 마지막 sec[10]까지 정확히 snap 가능).
-                rotate-mode 클래스는 더 이상 mobileFrame 크기에 영향 안 줌 */
+  /* ✨ v3.22 — full viewport (long scroll). sec 100vh × 11 = 1100vh content.
+                scroll-snap proximity → 자유 스크롤하다 가까이 가면 자동 snap */
   #mobileFrame {
     position: fixed;
-    top: 0;
-    height: 42vh;
+    top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 5;
     overflow-y: auto;
     overflow-x: hidden;
     background: transparent;
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
@@ -108,15 +107,9 @@
     pointer-events: auto;
   }
 
-  /* ✨ v3.21 — 3D scroll sync: 스크롤 중 #stage3d도 살짝 움직임 (자막과 시각적 unit) */
+  /* ✨ v3.22 — 3D parallax는 JS에서 inline transform으로 처리. CSS transition 없음 (즉시 반응) */
   #stage3d {
-    transition: transform 0.45s cubic-bezier(0.22,1,0.36,1),
-                opacity 0.4s cubic-bezier(0.22,1,0.36,1);
-    will-change: transform, opacity;
-  }
-  body.snapping #stage3d {
-    transform: translateX(-50%) translateY(18px);
-    opacity: 0.78;
+    will-change: transform;
   }
 
   /* ============ 3D STAGE ============ */
@@ -257,11 +250,10 @@
   }
 
   /* ============ SECTIONS (just scroll triggers; content is inside glass card) ============ */
-  /* ✨ v3.17 — section을 mobileFrame 높이(42vh)와 일치 */
+  /* ✨ v3.22 — sec 100vh. .gcard는 sec 상단 42vh만, 하단 58vh는 3D 영역 (시각적). */
   .sec {
-    height: 42vh;
+    height: 100vh;
     scroll-snap-align: start;
-    scroll-snap-stop: always;
     position: relative;
     pointer-events: none;
   }
@@ -913,7 +905,7 @@
   }
 
   /* Section in-view observer */
-  /* ✨ v3.20 — mobileFrame 42vh + sec 42vh 일치, 정상 threshold */
+  /* ✨ v3.22 — mobileFrame 100vh + sec 100vh. */
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
@@ -924,19 +916,29 @@
         e.target.classList.remove('in');
       }
     });
-  }, { threshold: 0.6, root: frame });
+  }, { threshold: 0.5, root: frame });
   SECS.forEach(s => obs.observe(s));
 
-  /* ✨ v3.20 — Scroll-based fallback: container clientHeight 기준 */
+  /* ✨ v3.22 — Scroll-based fallback + 3D parallax */
+  const stage3d = document.getElementById('stage3d');
   function updateActiveFromScroll() {
     const st = frame.scrollTop;
-    const sectionHeight = frame.clientHeight || window.innerHeight * 0.42;
+    const sectionHeight = frame.clientHeight || window.innerHeight;
     const idx = Math.max(0, Math.min(SECS.length - 1, Math.round(st / sectionHeight)));
     SECS.forEach((s, k) => {
       if (k === idx) s.classList.add('in');
       else s.classList.remove('in');
     });
     setActive(idx);
+
+    // ✨ v3.22 — 3D parallax: sec 내부 scroll 진행도(0~1)에 따라 #stage3d 위로 살짝 이동
+    const inSec = st % sectionHeight;          // 0 ~ sectionHeight
+    const progress = inSec / sectionHeight;     // 0 ~ 1
+    // 자막보다 천천히 따라가는 parallax: 최대 -25% sec height만큼 위로
+    const offsetVh = progress * 25;             // 0 ~ 25 (%)
+    if (stage3d) {
+      stage3d.style.transform = `translateX(-50%) translateY(-${offsetVh}vh)`;
+    }
   }
   frame.addEventListener('scroll', () => {
     requestAnimationFrame(updateActiveFromScroll);
@@ -1080,10 +1082,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.21] segmented toggle + 3D scroll-sync + gcard fade-mask');
+  console.log('[v3.22] long-scroll (sec 100vh + proximity snap) + 3D parallax');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.21';
+    m.textContent = 'v3.22';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
@@ -1104,13 +1106,7 @@
       });
     });
 
-    // 3D scroll-sync: snap 중 #stage3d도 살짝 움직임
-    let snapTimer;
-    frame.addEventListener('scroll', () => {
-      document.body.classList.add('snapping');
-      clearTimeout(snapTimer);
-      snapTimer = setTimeout(() => document.body.classList.remove('snapping'), 380);
-    }, { passive: true });
+    // v3.22 — snapping 효과 제거. parallax는 updateActiveFromScroll에서 처리
   } catch(e){}
 })();
 </script>
