@@ -51,12 +51,12 @@
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ============ 3D STAGE — bottom 50vh (top 50vh for card area) ============ */
-  /* ✨ v3.9.4 — 3D 영역 더 아래로 (38vh → 50vh). 상단 50vh 충분히 확보 */
+  /* ============ 3D STAGE — TOP 50vh now (swap) ============ */
+  /* ✨ v3.10 — 위/아래 스왑: 3D는 위, 텍스트는 아래 */
   #stage3d {
     position: fixed;
-    top: 50vh;
-    bottom: 0;
+    top: 0;
+    height: 50vh;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 2;
@@ -64,24 +64,24 @@
     pointer-events: none;
     background: transparent;
   }
-  /* 상단 빈 영역 (카드 뒤) 부드러운 어두운 배경 */
+  /* 하단 텍스트 영역 dark gradient */
   #topBg {
     position: fixed;
-    top: 0;
+    top: 50vh;
+    bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    height: 50vh;
     z-index: 1;
-    background: linear-gradient(180deg, #0a0e17 0%, #14172a 60%, #1a2236 100%);
+    background: linear-gradient(180deg, #1a2236 0%, #0a0e17 100%);
     pointer-events: none;
   }
-  /* 3D 영역 위에 부드러운 fade */
-  #stage3d::before {
+  /* 3D 하단 → 텍스트 영역 fade */
+  #stage3d::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
+    bottom: 0; left: 0; right: 0;
     height: 80px;
-    background: linear-gradient(180deg, #1a2236 0%, rgba(26,34,54,0) 100%);
+    background: linear-gradient(180deg, rgba(26,34,54,0) 0%, #1a2236 100%);
     pointer-events: none;
     z-index: 5;
   }
@@ -153,29 +153,25 @@
     pointer-events: none;
   }
 
-  /* ============ FROSTED GLASS CARD (upper area, max-height: 40vh, no overlap) ============ */
-  /* ✨ v3.9.4 — width 84%, max-height 40vh로 제약. 3D(50vh~) 영역 안 가림 */
+  /* ============ TEXT AREA (no box, centered on dark BG, BOTTOM half) ============ */
+  /* ✨ v3.10 — 박스 제거, 가운데 정렬, 하단 영역에 배치 */
   .gcard {
-    position: absolute;
-    top: 60px;
+    position: fixed;
+    top: 50vh;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 84%;
-    max-width: 340px;
-    max-height: 38vh;
-    padding: 14px 14px;
-    background: rgba(15, 20, 33, 0.62);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 14px;
-    box-shadow:
-      0 10px 40px rgba(0,0,0,0.45),
-      inset 0 1px 0 rgba(255,255,255,0.18);
+    width: 100vw; max-width: 414px;
+    padding: 32px 28px 36px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     overflow-y: auto;
     pointer-events: auto;
-    transition: transform 0.6s cubic-bezier(0.22,1,0.36,1),
-                opacity 0.5s cubic-bezier(0.22,1,0.36,1);
+    text-align: center;
+    display: flex; flex-direction: column;
+    transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1);
   }
   .gcard::-webkit-scrollbar { width: 0; }
   /* SVG noise grain overlay for "roughness" texture */
@@ -367,17 +363,17 @@
     display: block; margin-bottom: 4px;
   }
 
-  /* ============ ENTRANCE ANIMATIONS (cinematic card slide-up) ============ */
+  /* ============ ENTRANCE ANIMATIONS (preserve translateX -50% centering) ============ */
   .sec .gcard {
     opacity: 0;
-    transform: translateY(60px) scale(0.97);
+    transform: translateX(-50%) translateY(40px);
     transition:
       opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
       transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .sec.in .gcard {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(-50%) translateY(0);
   }
 
   /* Stagger inside */
