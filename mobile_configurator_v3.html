@@ -149,193 +149,174 @@
     max-width: 414px;
     margin: 0 auto;
   }
+  /* ✨ v3.4 — 모바일 최적 컴팩트 디자인. 3D 영역 (상단 50vh) 노출 + 패널 자연스럽게 등장 */
   .sec {
     min-height: 100vh;
     display: flex; align-items: flex-end;
-    padding: 56vh 22px 60px;
+    padding: 52vh 16px 32px;
     position: relative;
   }
 
   .panel {
-    max-width: 500px;
-    background: var(--glass);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    width: 100%;
+    background: var(--glass-thick);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 36px 32px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    border-radius: 14px;
+    padding: 20px 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     position: relative;
-  }
-  @media (max-width: 768px) {
-    .panel { padding: 26px 22px; max-width: 100%; }
   }
 
   .panel .num {
     position: absolute;
-    top: 18px; right: 22px;
-    font-size: 11px; letter-spacing: 2.5px; color: var(--text-soft);
+    top: 14px; right: 16px;
+    font-size: 9px; letter-spacing: 2px; color: var(--text-soft);
     font-weight: 500;
   }
-  .panel .num b { color: var(--text); font-weight: 600; }
+  .panel .num b { color: var(--text); font-weight: 700; }
 
   .panel .eye {
-    font-size: 10px; letter-spacing: 3.5px; color: var(--accent);
+    font-size: 9px; letter-spacing: 2.5px; color: var(--accent);
     font-weight: 700; text-transform: uppercase;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
   }
   .panel h1 {
-    font-size: 42px; line-height: 1.1; font-weight: 700;
-    color: var(--text); letter-spacing: -1.2px;
-    margin: 0 0 16px;
+    font-size: 22px; line-height: 1.15; font-weight: 700;
+    color: var(--text); letter-spacing: -0.5px;
+    margin: 0 0 8px;
   }
-  .panel h1 .li { font-weight: 300; color: rgba(255,255,255,0.55); }
+  .panel h1 .li { font-weight: 300; color: rgba(255,255,255,0.6); }
   .panel h1 .ac { color: var(--accent); font-weight: 800; }
-  @media (max-width: 768px) {
-    .panel h1 { font-size: 28px; }
-  }
 
   .panel .sub {
-    font-size: 13px; letter-spacing: 0.3px;
+    font-size: 11px; letter-spacing: 0.2px;
     color: var(--accent);
     font-weight: 500;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--line);
   }
 
   .panel .body {
-    font-size: 13px; line-height: 1.75; color: var(--text-mid);
-    margin-bottom: 24px;
-  }
-  @media (max-width: 768px) {
-    .panel .body { font-size: 12.5px; line-height: 1.7; }
+    font-size: 11.5px; line-height: 1.7; color: var(--text-mid);
+    margin-bottom: 14px;
   }
 
-  /* ========== STAT GRID ========== */
+  /* ========== STAT GRID (4 columns, mobile-tight) ========== */
   .stat-row {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
     background: var(--line);
-    border-radius: 10px; overflow: hidden;
-    margin-top: 16px;
+    border-radius: 8px; overflow: hidden;
+    margin-top: 10px;
   }
   .stat-row .st {
-    background: rgba(8, 12, 22, 0.6);
-    padding: 16px 12px;
+    background: rgba(8, 12, 22, 0.7);
+    padding: 10px 6px;
     text-align: center;
   }
   .stat-row .st .v {
-    font-size: 18px; font-weight: 700; color: var(--text);
-    letter-spacing: -0.3px;
+    font-size: 13px; font-weight: 700; color: var(--text);
+    letter-spacing: -0.2px; white-space: nowrap;
   }
   .stat-row .st .l {
-    font-size: 8.5px; letter-spacing: 1.5px; color: var(--text-soft);
-    margin-top: 4px; text-transform: uppercase;
-  }
-  @media (max-width: 768px) {
-    .stat-row { grid-template-columns: repeat(2, 1fr); gap: 1px; }
-    .stat-row .st .v { font-size: 16px; }
+    font-size: 7.5px; letter-spacing: 1.2px; color: var(--text-soft);
+    margin-top: 3px; text-transform: uppercase;
   }
 
-  /* ========== FEATURE PILLS ========== */
+  /* ========== FEATURE PILLS (mobile-tight 2 col) ========== */
   .pills {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
-    margin-top: 16px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+    margin-top: 10px;
   }
-  .pills.three { grid-template-columns: repeat(3, 1fr); }
+  .pills.three { grid-template-columns: repeat(2, 1fr); }
   .pills .p {
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 13px 14px;
+    border-radius: 8px;
+    padding: 9px 10px;
   }
   .pills .p .pl {
-    font-size: 9px; letter-spacing: 1.8px; color: var(--accent);
+    font-size: 8px; letter-spacing: 1.5px; color: var(--accent);
     font-weight: 700; text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
   }
   .pills .p .pv {
-    font-size: 12.5px; font-weight: 500; color: var(--text);
-    line-height: 1.45;
-  }
-  @media (max-width: 768px) {
-    .pills, .pills.three { grid-template-columns: repeat(2, 1fr); }
+    font-size: 11px; font-weight: 500; color: var(--text);
+    line-height: 1.35;
   }
 
-  /* ========== MODULES GRID (8 racks) ========== */
+  /* ========== MODULES GRID (8 racks 4 col) ========== */
   .mods {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-    margin-top: 16px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;
+    margin-top: 10px;
   }
   .mods .m {
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px 8px;
+    border-radius: 7px;
+    padding: 8px 4px;
     text-align: center;
   }
   .mods .m .c {
-    font-size: 8.5px; letter-spacing: 1.5px; color: var(--text-soft);
+    font-size: 7.5px; letter-spacing: 1px; color: var(--text-soft);
     font-weight: 700;
   }
   .mods .m .n {
-    font-size: 10.5px; font-weight: 500; color: var(--text);
-    margin-top: 3px;
-  }
-  @media (max-width: 768px) {
-    .mods { grid-template-columns: repeat(4, 1fr); }
-    .mods .m { padding: 8px 4px; }
-    .mods .m .n { font-size: 9.5px; }
+    font-size: 9.5px; font-weight: 500; color: var(--text);
+    margin-top: 2px;
   }
 
-  /* ========== SPEC TABLE ========== */
+  /* ========== SPEC TABLE (tight mobile) ========== */
   .spec {
-    margin-top: 12px;
+    margin-top: 8px;
     border-top: 1px solid rgba(255,255,255,0.12);
   }
   .spec .r {
-    display: grid; grid-template-columns: 100px 1fr;
-    padding: 11px 0;
+    display: grid; grid-template-columns: 80px 1fr;
+    padding: 8px 0;
     border-bottom: 1px solid var(--line);
-    font-size: 12px;
+    font-size: 11px;
   }
   .spec .r .k {
-    font-size: 9px; letter-spacing: 1.5px; color: var(--text-soft);
+    font-size: 8.5px; letter-spacing: 1.2px; color: var(--text-soft);
     text-transform: uppercase; padding-top: 2px;
   }
-  .spec .r .v { color: var(--text); font-weight: 500; }
+  .spec .r .v { color: var(--text); font-weight: 500; font-size: 11px; }
 
-  /* ========== RESOURCE CARDS ========== */
+  /* ========== RESOURCE CARDS (tight) ========== */
   .res-cards {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-    margin-top: 16px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    margin-top: 10px;
   }
   .res-cards .r {
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 14px;
+    border-radius: 8px;
+    padding: 10px;
   }
   .res-cards .r .t {
-    font-size: 13px; font-weight: 700; color: var(--text);
+    font-size: 11.5px; font-weight: 700; color: var(--text);
   }
   .res-cards .r .e {
-    font-size: 10px; color: var(--text-soft); margin: 2px 0 6px;
-    letter-spacing: 0.5px;
+    font-size: 9px; color: var(--text-soft); margin: 2px 0 4px;
+    letter-spacing: 0.3px;
   }
   .res-cards .r .m {
-    font-size: 9.5px; color: var(--text-soft); margin-bottom: 10px;
-    letter-spacing: 0.5px;
+    font-size: 8.5px; color: var(--text-soft); margin-bottom: 8px;
+    letter-spacing: 0.3px;
   }
   .res-cards .r .dl {
     display: block; background: var(--accent); color: #fff;
-    padding: 7px; text-align: center;
-    border-radius: 6px; font-size: 10px;
-    letter-spacing: 1.5px; font-weight: 600;
+    padding: 6px; text-align: center;
+    border-radius: 5px; font-size: 9px;
+    letter-spacing: 1.2px; font-weight: 600;
   }
   .res-cards .r .dl:hover { background: var(--accent-soft); }
 
-  /* ========== CTA SECTION ========== */
+  /* ========== CTA SECTION (tight) ========== */
   .panel.cta {
     background: linear-gradient(135deg, rgba(107,156,255,0.18), rgba(126,20,255,0.12));
     border-color: rgba(107,156,255,0.35);
@@ -344,21 +325,22 @@
   .panel.cta .build {
     display: block; width: 100%;
     background: var(--text); color: #050810;
-    padding: 16px; border-radius: 10px;
+    padding: 13px; border-radius: 8px;
     border: 0; cursor: pointer;
-    font-size: 12px; letter-spacing: 2px; font-weight: 700;
-    margin: 18px 0;
+    font-size: 11px; letter-spacing: 1.5px; font-weight: 700;
+    margin: 12px 0;
   }
   .panel.cta .contact {
     border-top: 1px solid var(--line);
-    padding-top: 16px;
-    font-size: 11px; letter-spacing: 0.5px;
+    padding-top: 12px;
+    font-size: 10px; letter-spacing: 0.3px;
     color: var(--text-soft);
+    line-height: 1.6;
   }
   .panel.cta .contact b {
     color: var(--text); font-weight: 700;
-    font-size: 17px; letter-spacing: 1px;
-    display: block; margin-bottom: 4px;
+    font-size: 16px; letter-spacing: 1px;
+    display: block; margin-bottom: 3px;
   }
 
   /* ========== ENTRY ANIMATION ========== */
@@ -493,9 +475,7 @@
       <h1><span class="li">보이지 않는 곳까지</span><br><span class="ac">99.9%</span> 살균</h1>
       <div class="sub">Engineered for Pure Preservation</div>
       <div class="body">
-        매일 수백 인분의 식기와 조리 도구를 처리해야 하는<br>
-        호텔·단체급식·병원 환경을 위한 살균 보관 캐비닛.<br>
-        약품 없이, 교체 없이, 한 번에 99.9%.
+        매일 수백 인분의 식기와 조리 도구를 처리하는 호텔·단체급식·병원 환경을 위한 살균 보관 캐비닛. 약품 없이, 교체 없이, 한 번에 99.9%.
       </div>
       <div class="stat-row">
         <div class="st"><div class="v">99.9%</div><div class="l">Sterilization</div></div>
@@ -515,12 +495,7 @@
       <h1><span class="ac">99.9%</span><br>안 보이는 곳까지 살균</h1>
       <div class="sub">280nm UV-C LED · 화학약품 없음 · 교체 없음</div>
       <div class="body">
-        NEO+의 UV-C 시스템은 살균 전용 파장 280nm의 LED를 사용해<br>
-        캐비닛 내부 전체 표면을 한 사이클 안에 살균합니다.<br>
-        도어가 닫혔을 때만 작동하며, 도어 오픈 감지 시 즉시 차단됩니다.<br>
-        표백제·알코올 등 화학약품을 사용하지 않아 식기 표면 손상이 없고,<br>
-        LED 모듈은 평균 25,000시간 (하루 8시간 사용 시 약 8년)<br>
-        교체 없이 사용할 수 있습니다.
+        살균 전용 파장 280nm의 UV-C LED가 캐비닛 내부 전체 표면을 한 사이클 안에 살균합니다. 도어가 닫혔을 때만 작동, 오픈 감지 시 즉시 차단. 표백제·알코올 같은 화학약품을 쓰지 않아 식기 표면 손상이 없고, LED 모듈은 평균 25,000시간 (≈8년) 교체 없이 사용합니다.
       </div>
       <div class="pills">
         <div class="p"><div class="pl">살균 파장</div><div class="pv">280nm UV-C LED</div></div>
@@ -539,11 +514,7 @@
       <h1><span class="li">매 사이클마다</span><br><span class="ac">공기까지</span> 깨끗하게</h1>
       <div class="sub">음이온 1.2M/cm³ · 항균 · 탈취 · 필터리스</div>
       <div class="body">
-        살균 후 보관 중인 식기 주변에 누적될 수 있는<br>
-        미세 곰팡이 포자·잔여 냄새·부유 박테리아를 처리하기 위해<br>
-        NEO+는 음이온 발생기를 통합했습니다.<br>
-        cm³당 120만 개 농도의 음이온이 내부 공기를 끊임없이 순환시키며,<br>
-        필터리스 구조라 추가 유지보수가 필요 없습니다.
+        살균 후 보관 중 누적되는 미세 곰팡이 포자·잔여 냄새·부유 박테리아를 처리하기 위해 음이온 발생기를 통합. cm³당 120만 개 농도의 음이온이 내부 공기를 끊임없이 순환시키며, 필터리스 구조라 별도 유지보수가 필요 없습니다.
       </div>
       <div class="pills">
         <div class="p"><div class="pl">음이온 농도</div><div class="pv">1,200,000 ions/cm³</div></div>
@@ -562,11 +533,7 @@
       <h1>한 눈에 보는<br><span class="ac">실시간 동작 상태</span></h1>
       <div class="sub">P.C.B 컨트롤 패널 · 직관적 인터페이스</div>
       <div class="body">
-        캐비닛 상단 중앙에 위치한 P.C.B 컨트롤 패널은<br>
-        현재 동작 모드, 잔여 사이클 시간, 도어 상태,<br>
-        이상 감지 등을 한 화면에 표시합니다.<br>
-        운영자는 별도 교육 없이 직관적으로 사용할 수 있으며,<br>
-        사이클 완료 시 알림음과 LED 인디케이터로 알려줍니다.
+        캐비닛 상단의 P.C.B 컨트롤 패널이 동작 모드, 잔여 사이클 시간, 도어 상태, 이상 감지를 한 화면에 표시합니다. 별도 교육 없이 직관적으로 사용할 수 있고, 사이클 완료 시 알림음과 LED 인디케이터로 알려줍니다.
       </div>
       <div class="pills three">
         <div class="p"><div class="pl">Mode</div><div class="pv">UV-C / 음이온 / 건조</div></div>
@@ -587,11 +554,7 @@
       <h1><span class="li">8가지 거치대</span><br><span class="ac">자유로운 조합</span></h1>
       <div class="sub">슬라이드 인·아웃 · 도구별 전용 거치 · 추가 모듈 확장</div>
       <div class="body">
-        거치대 위치와 종류를 자유롭게 바꿀 수 있는 모듈식 구조로,<br>
-        매장의 메뉴 변화나 영업 규모 확장에 따라<br>
-        내부 구성을 새로 짤 수 있습니다.<br>
-        기본 8개 모듈 (F02 ~ F16) 이 포함되어 있으며,<br>
-        추가 모듈은 별도 구매 가능합니다.
+        거치대 위치와 종류를 자유롭게 바꿀 수 있는 모듈식 구조. 매장 메뉴나 영업 규모에 따라 내부 구성을 새로 짤 수 있습니다. 기본 8개 모듈 (F02~F16) 포함, 추가 모듈은 별도 구매.
       </div>
       <div class="mods">
         <div class="m"><div class="c">F02</div><div class="n">타공선반</div></div>
@@ -614,11 +577,7 @@
       <h1><span class="ac">STS-304 · 0.8T</span><br><span class="li">수년을 견디는 마감</span></h1>
       <div class="sub">식품 등급 스테인리스 · 내부식 · 주방 환경 최적</div>
       <div class="body">
-        NEO+의 바디와 도어 전체는 STS-304 0.8T 스테인리스 스틸로 마감.<br>
-        식품 접촉 등급의 스테인리스로 위생적이며,<br>
-        염분·산성 환경에서도 부식되지 않아<br>
-        상업용 주방의 거친 조건에서 오래 사용할 수 있습니다.<br>
-        다리는 조절식 스테인리스 발로 바닥 수평을 정확히 잡습니다.
+        바디와 도어 전체를 STS-304 0.8T 스테인리스 스틸로 마감. 식품 접촉 등급이라 위생적이며, 염분·산성 환경에서도 부식되지 않아 상업용 주방의 거친 조건에서 오래 사용할 수 있습니다. 다리는 조절식 스테인리스로 바닥 수평을 정확히 잡습니다.
       </div>
       <div class="pills">
         <div class="p"><div class="pl">Body</div><div class="pv">STS-304 · 0.8T</div></div>
@@ -819,12 +778,48 @@
     d.addEventListener('click', () => SECS[i] && SECS[i].scrollIntoView({ behavior: 'smooth' }));
   });
 
-  /* Loading hide */
+  /* Loading hide + Hide HK iframe overlays */
   function hideLoad() {
     setTimeout(() => loadEl.classList.add('go'), 300);
     setTimeout(() => { loadEl.style.display = 'none'; }, 1100);
   }
-  iframe.addEventListener('load', hideLoad);
+  function injectHKHideCSS() {
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      const style = doc.createElement('style');
+      style.id = 'v3_hide_hk_overlay';
+      style.textContent = `
+        /* ✨ v3 parent: HK 엔진의 자체 UI 오버레이 모두 숨김 — v3 텍스트 패널이 담당 */
+        .intro-content, .intro-eyebrow, .intro-headline, .intro-sub, .intro-icons,
+        #chapterOverlay, .chapter-text, .ch-text, .chapter-headline, .ch-headline,
+        #subtitleHud, #subtitle, .subtitle, #chapterDots, .ch-dot,
+        #leftHK, #leftLogo, #topLeftLogo, .top-left-logo, .hk-logo, .gallery-spec-nav,
+        #fpsHud, #fps, .fps-hud, #cabHud, .cab-hud,
+        #doorBtn, .door-btn, #doorButtons, .door-buttons, .door-control,
+        .feat-active, #featBar, .feat-bar,
+        #ovTexts, .ov-text, #ovEyebrow, #ovHeadline, #ovSub,
+        .quick-spec, #quickSpec,
+        .chapter-bar, #chapterBar,
+        .toc-overlay, #tocOverlay,
+        .free-explore-btn, #freeExploreBtn {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `;
+      doc.head.appendChild(style);
+      console.log('[v3] HK overlay hide CSS injected');
+    } catch(e) { console.warn('[v3] HK CSS inject failed:', e); }
+  }
+  iframe.addEventListener('load', () => {
+    injectHKHideCSS();
+    // re-inject after 1s/3s in case HK adds more elements dynamically
+    setTimeout(injectHKHideCSS, 1500);
+    setTimeout(injectHKHideCSS, 4000);
+    hideLoad();
+  });
   setTimeout(hideLoad, 6000);
 
   console.log('[v3 RESET] Dark cinematic · scroll progression · 11 sections');
