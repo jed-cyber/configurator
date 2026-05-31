@@ -386,15 +386,15 @@
   }
 
   /* ============ ENTRANCE ANIMATIONS (preserve translateX -50% centering) ============ */
-  /* v3.12 — z-index 동적 부여로 활성 카드만 위에 (fixed 카드 stack 충돌 해소) */
+  /* ✨ v3.13 — IntersectionObserver + scroll-based fallback로 .in 클래스 100% 보장 */
   .sec .gcard {
     opacity: 0;
-    transform: translateX(-50%) translateY(40px);
+    transform: translateX(-50%) translateY(20px);
     z-index: 4;
     pointer-events: none;
     transition:
-      opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .sec.in .gcard {
     opacity: 1;
@@ -831,6 +831,22 @@
   }, { threshold: 0.55, root: frame });
   SECS.forEach(s => obs.observe(s));
 
+  /* ✨ v3.13 — Scroll-based fallback (옵저버가 누락해도 .in 보장) */
+  function updateActiveFromScroll() {
+    const st = frame.scrollTop;
+    const vh = frame.clientHeight || window.innerHeight;
+    const idx = Math.max(0, Math.min(SECS.length - 1, Math.round(st / vh)));
+    SECS.forEach((s, k) => {
+      if (k === idx) s.classList.add('in');
+      else s.classList.remove('in');
+    });
+    setActive(idx);
+  }
+  frame.addEventListener('scroll', () => {
+    requestAnimationFrame(updateActiveFromScroll);
+  }, { passive: true });
+  setTimeout(updateActiveFromScroll, 300);
+
   /* Dot click */
   dots.forEach((d, i) => {
     d.addEventListener('click', () => SECS[i] && SECS[i].scrollIntoView({ behavior: 'smooth' }));
@@ -962,7 +978,14 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.9] Frosted glass cards over 3D · mandatory snap · ready-poll loading');
+  console.log('[v3.13] caption-fix + scroll-fallback + 3D rotate + blend');
+  // Visible version marker (top-right under top bar) so deploy verification is unambiguous
+  try {
+    const m = document.createElement('div');
+    m.textContent = 'v3.13';
+    m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
+    document.body.appendChild(m);
+  } catch(e){}
 })();
 </script>
 
