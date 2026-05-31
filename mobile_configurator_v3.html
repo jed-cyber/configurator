@@ -34,8 +34,7 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.22 — full viewport (long scroll). sec 100vh × 11 = 1100vh content.
-                scroll-snap proximity → 자유 스크롤하다 가까이 가면 자동 snap */
+  /* ✨ v3.24 — scroll-snap mandatory (자석처럼 살짝만 swipe해도 다음 챕터로 휙 snap) */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
@@ -45,7 +44,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     background: transparent;
-    scroll-snap-type: y proximity;
+    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
@@ -102,14 +101,25 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
-  /* ✨ v3.23 — rotate-mode ON 시:
-                #mobileFrame pointer-events:none → swipe가 iframe까지 통과
-                #stage3d iframe pointer-events:auto → 카메라 회전 활성 */
-  body.rotate-mode #mobileFrame {
-    pointer-events: none;
+  /* ✨ v3.24 — rotate-mode 강력 fix: 모든 위 layer pass-through, stage3d 최상위로 */
+  body.rotate-mode #mobileFrame,
+  body.rotate-mode #mobileFrame *,
+  body.rotate-mode #topBg,
+  body.rotate-mode #topBar,
+  body.rotate-mode #topBar *,
+  body.rotate-mode #dotNav,
+  body.rotate-mode #dotNav * {
+    pointer-events: none !important;
+  }
+  body.rotate-mode #stage3d {
+    z-index: 600 !important;
   }
   body.rotate-mode #stage3d iframe {
-    pointer-events: auto;
+    pointer-events: auto !important;
+  }
+  /* 토글은 ROTATE 모드에서도 항상 클릭 가능 */
+  #modeToggle, #modeToggle * {
+    pointer-events: auto !important;
   }
 
   /* ✨ v3.22 — 3D parallax는 JS에서 inline transform으로 처리. CSS transition 없음 (즉시 반응) */
@@ -255,10 +265,11 @@
   }
 
   /* ============ SECTIONS (just scroll triggers; content is inside glass card) ============ */
-  /* ✨ v3.22 — sec 100vh. .gcard는 sec 상단 42vh만, 하단 58vh는 3D 영역 (시각적). */
+  /* ✨ v3.24 — sec 100vh + scroll-snap-stop:always (한 번에 1 sec만 snap) */
   .sec {
     height: 100vh;
     scroll-snap-align: start;
+    scroll-snap-stop: always;
     position: relative;
     pointer-events: none;
   }
@@ -1093,10 +1104,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.23] 1:1 sync + toggle z500 + rotate-mode mobileFrame pass-through');
+  console.log('[v3.24] mandatory snap (magnetic) + strong rotate fix (z600 + !important pass-through)');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.23';
+    m.textContent = 'v3.24';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
