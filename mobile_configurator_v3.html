@@ -34,83 +34,80 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.9.1 — 투명 + z-index 5 (3D 위에 sections + glass cards 렌더) */
+  /* ✨ v3.17 — top:0 height:42vh로 축소: 자막 영역만 차지.
+                하단 58vh는 stage3d로 직접 노출되어 카메라 회전 가능 */
   #mobileFrame {
     position: fixed;
-    top: 0; bottom: 0;
+    top: 0;
+    height: 42vh;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 5;
     overflow-y: auto;
     overflow-x: hidden;
     background: transparent;
-    box-shadow: 0 0 80px rgba(0,0,0,0.55);
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ============ 3D STAGE — TOP 50vh now (swap) ============ */
-  /* ✨ v3.10 — 위/아래 스왑: 3D는 위, 텍스트는 아래 */
+  /* ============ 3D STAGE ============ */
+  /* ✨ v3.17 — top:42vh부터 시작 (자막 42vh 아래) */
   #stage3d {
     position: fixed;
-    top: 50vh;
+    top: 42vh;
     bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 2;
     overflow: hidden;
-    /* v3.12 — 자식 iframe pointer-events:auto가 동작하도록 부모는 auto */
     pointer-events: auto;
     background: transparent;
   }
-  /* 하단 텍스트 영역 dark gradient */
-  /* ✨ v3.16 — 끝까지 #1a2236로 고정 (lighter로 갔던 v3.15 색 변경 되돌림) */
+  /* 자막 영역 BG — viewport 전체 차지 (iframe mask가 투명일 때 비치는 배경) */
+  /* ✨ v3.17 — top:0 bottom:0 풀 viewport. 42vh까지 dark caption color, 그 아래도 #1a2236 유지 */
   #topBg {
     position: fixed;
     top: 0;
-    height: 50vh;
+    bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 1;
     background: linear-gradient(180deg,
       #0a0e17 0%,
-      #11182a 45%,
+      #11182a 25%,
+      #1a2236 42%,
       #1a2236 100%);
     pointer-events: none;
   }
-  /* ✨ v3.16 — fade-bridge: 색을 자막 BG와 정확히 일치 (rgb(26,34,54) = #1a2236) */
-  /* 단일 색 alpha 그라데이션이라 stripe 없음. 50vh 정확히가 자막색 최대 농도 (자막 영역 연장처럼 보임) */
-  /* z-index:100으로 iframe 확실히 위에 떠서 3D 영역 상단 부분을 자막색으로 덮음 */
-  #blendBridge {
-    position: fixed;
-    top: 35vh;       /* 자막 영역 하단 15vh부터 시작 (보이지 않게 alpha 0) */
-    height: 40vh;    /* 75vh까지 → 3D 영역 상단 25vh를 자막색으로 부드럽게 덮음 */
-    left: 50%; transform: translateX(-50%);
-    width: 100vw; max-width: 414px;
-    z-index: 100;
-    pointer-events: none;
-    background: linear-gradient(
-      180deg,
-      rgba(26,34,54,0)    0%,
-      rgba(26,34,54,0.25) 18%,
-      rgba(26,34,54,0.6)  32%,
-      rgba(26,34,54,0.9)  40%,
-      rgba(26,34,54,1)    50%,
-      rgba(26,34,54,0.8)  62%,
-      rgba(26,34,54,0.55) 74%,
-      rgba(26,34,54,0.3)  85%,
-      rgba(26,34,54,0.1)  94%,
-      rgba(26,34,54,0)   100%
-    );
-  }
-  /* ✨ v3.12 — iframe 인터랙션 활성화 (카메라 회전/줌 가능) */
+  /* ✨ v3.17 — blendBridge 제거됨. iframe 자체에 mask-image로 fade 처리 (아래 #stage3d iframe 룰) */
+  /* ✨ v3.17 — iframe mask-image로 상단 fade-in.
+                위쪽 22% (≈13vh)가 투명 → 점차 보임. 투명 영역은 뒤의 #topBg(#1a2236) 비침.
+                자막색과 splat 회색 사이 부드러운 자연스러운 transition. */
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
-    pointer-events: auto;  /* 카메라 회전/줌 활성 */
-    touch-action: none;    /* 모바일 터치 회전 정상 동작 */
+    pointer-events: auto;
+    touch-action: none;
+    -webkit-mask-image: linear-gradient(180deg,
+      transparent 0%,
+      rgba(0,0,0,0.05) 4%,
+      rgba(0,0,0,0.18) 9%,
+      rgba(0,0,0,0.4) 14%,
+      rgba(0,0,0,0.65) 18%,
+      rgba(0,0,0,0.85) 22%,
+      black 28%,
+      black 100%);
+    mask-image: linear-gradient(180deg,
+      transparent 0%,
+      rgba(0,0,0,0.05) 4%,
+      rgba(0,0,0,0.18) 9%,
+      rgba(0,0,0,0.4) 14%,
+      rgba(0,0,0,0.65) 18%,
+      rgba(0,0,0,0.85) 22%,
+      black 28%,
+      black 100%);
   }
 
   /* ============ TOP BAR (over 3D) ============ */
@@ -167,10 +164,11 @@
   }
 
   /* ============ SECTIONS (just scroll triggers; content is inside glass card) ============ */
+  /* ✨ v3.17 — section을 mobileFrame 높이(42vh)와 일치 */
   .sec {
-    height: 100vh;            /* fixed full viewport */
+    height: 42vh;
     scroll-snap-align: start;
-    scroll-snap-stop: always;  /* ✨ 강제 한 섹션씩 휙 */
+    scroll-snap-stop: always;
     position: relative;
     pointer-events: none;
   }
@@ -183,11 +181,11 @@
   .gcard {
     position: absolute;
     top: 0;
-    height: 50vh;
+    height: 42vh;
     left: 0;
     right: 0;
     width: 100%;
-    padding: 56px 28px 28px;  /* top 56px: top bar 공간 확보 */
+    padding: 50px 22px 18px;  /* v3.17 — 42vh에 맞춰 padding 축소 */
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -203,7 +201,7 @@
 
   /* hero card on first section — uses default .gcard layout */
   .sec.hero .gcard {
-    padding: 56px 28px 28px;
+    padding: 50px 22px 18px;
   }
 
   /* ============ TYPOGRAPHY (inside glass card) ============ */
@@ -557,8 +555,8 @@
   <iframe id="hk3d" src="mobile_configurator_final.html?_=v393&v3parent=1" allow="fullscreen"></iframe>
 </div>
 
-<!-- ✨ v3.15 — fade bridge overlay between caption area and 3D area -->
-<div id="blendBridge"></div>
+<!-- v3.17 — blendBridge 제거. iframe mask-image로 대체 -->
+
 
 <!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
 <div id="mobileFrame">
@@ -912,7 +910,13 @@
           #pickerBtn, .picker-btn,
           .gallery-spec-nav, #symbolColorPanel,
           .ch-dot, #chapterDots,
-          .leftPanel, #leftPanel {
+          .leftPanel, #leftPanel,
+          /* v3.17 — 좌측/중앙 잔존 텍스트 hide 추가 */
+          #leftBrand, .left-brand, #productInfo, .product-info,
+          .center-text, #centerText, #chapterLabel, .chapter-label,
+          .progress-text, #progressText, #progressLabel,
+          #brandTag, .brand-tag, .product-tag, #productTag,
+          #pageDots, .page-dots, .page-text, #pageText {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -971,10 +975,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.16] blendBridge color unified with caption BG (no stripe)');
+  console.log('[v3.17] camera rotate + text hide + iframe mask + 42vh gradient');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.16';
+    m.textContent = 'v3.17';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
