@@ -34,7 +34,7 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.24 — scroll-snap mandatory (자석처럼 살짝만 swipe해도 다음 챕터로 휙 snap) */
+  /* ✨ v3.25 — scroll 부드럽게: overscroll contain + scroll-padding으로 부드러운 snap */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
@@ -47,10 +47,12 @@
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-padding-top: 0;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ✨ v3.23 — Segmented toggle z-index 500으로 강화 (확실히 보이게) */
+  /* ✨ v3.25 — Toggle z-index 9999 (rotate-mode stage3d z:600 위로 확실히) */
   #modeToggle {
     position: fixed;
     bottom: 18px;
@@ -60,7 +62,7 @@
     border: 1px solid rgba(122,184,255,0.2);
     border-radius: 100px;
     padding: 4px;
-    z-index: 500;
+    z-index: 9999;
     -webkit-backdrop-filter: blur(16px) saturate(180%);
     backdrop-filter: blur(16px) saturate(180%);
     box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
@@ -631,7 +633,7 @@
 <!-- ===== TOP BAR ===== -->
 <header id="topBar">
   <div class="logo">HK <b>NEO+</b></div>
-  <div class="crumb"><b id="crumbName">OVERVIEW</b> · <span id="crumbIdx">00/10</span></div>
+  <div class="crumb"><b id="crumbName">OVERVIEW</b> · <span id="crumbIdx">00/11</span></div>
   <div class="ham" id="hamBtn"><span></span><span></span><span></span></div>
 </header>
 
@@ -648,6 +650,7 @@
   <div class="d" data-i="8"></div>
   <div class="d" data-i="9"></div>
   <div class="d" data-i="10"></div>
+  <div class="d" data-i="11"></div>
 </nav>
 
 <!-- ===== TOP DARK BG (under card, no 3D here) ===== -->
@@ -724,7 +727,24 @@
     </div>
   </section>
 
-  <!-- ============ S03 — LED PANEL ============ -->
+  <!-- ============ S03 — SMART CIRCULATION (v3.25 추가) ============ -->
+  <section class="sec" id="s_circ" data-ch="ionizer" data-nm="SMART CIRCULATION">
+    <div class="gcard">
+      <div class="num"><b>03</b> · 11</div>
+      <div class="eye">CIRCULATION</div>
+      <h1><span class="li">Smart</span><br><span class="ac">Circulation.</span></h1>
+      <div class="h-kr">캐비닛 내부 공기 <b>전체 순환</b>으로 균일한 살균.</div>
+      <div class="body">상·하 듀얼 팬으로 캐비닛 내부 공기를 위에서 아래로 순환시켜 사각지대 없이 UV-C와 음이온이 전 표면에 도달. 모서리·뒤편도 동일한 살균 효율.</div>
+      <div class="feat-list">
+        <div class="fl"><div class="k">Flow</div><div class="v">상→하 듀얼 팬</div></div>
+        <div class="fl"><div class="k">Coverage</div><div class="v">사각지대 0%</div></div>
+        <div class="fl"><div class="k">Noise</div><div class="v">≤ 28 dB(A)</div></div>
+        <div class="fl"><div class="k">Auto</div><div class="v">사이클 자동 ON</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ S04 — LED PANEL ============ -->
   <section class="sec" id="s3" data-ch="panel" data-nm="LED PANEL">
     <div class="gcard">
       <div class="num"><b>03</b> · 10</div>
@@ -872,18 +892,19 @@
 <!-- ===== TOC OVERLAY ===== -->
 <div id="toc">
   <div class="close" id="tocClose">✕</div>
-  <div class="ttl">CONTENTS · 11 SECTIONS</div>
+  <div class="ttl">CONTENTS · 12 SECTIONS</div>
   <div class="it" data-jump="0"><div class="nm">00</div><div class="kr">표지</div><div class="en">OVERVIEW</div></div>
   <div class="it" data-jump="1"><div class="nm">01</div><div class="kr">UV-C 살균</div><div class="en">UV-C</div></div>
   <div class="it" data-jump="2"><div class="nm">02</div><div class="kr">음이온</div><div class="en">IONIZER</div></div>
-  <div class="it" data-jump="3"><div class="nm">03</div><div class="kr">LED 패널</div><div class="en">PANEL</div></div>
-  <div class="it" data-jump="4"><div class="nm">04</div><div class="kr">모듈 거치대</div><div class="en">MODULAR</div></div>
-  <div class="it" data-jump="5"><div class="nm">05</div><div class="kr">스테인리스</div><div class="en">PREMIUM</div></div>
-  <div class="it" data-jump="6"><div class="nm">06</div><div class="kr">치수</div><div class="en">DIMENSIONS</div></div>
-  <div class="it" data-jump="7"><div class="nm">07</div><div class="kr">사양표</div><div class="en">SPEC</div></div>
-  <div class="it" data-jump="8"><div class="nm">08</div><div class="kr">인증</div><div class="en">CERT</div></div>
-  <div class="it" data-jump="9"><div class="nm">09</div><div class="kr">자료실</div><div class="en">RESOURCES</div></div>
-  <div class="it" data-jump="10"><div class="nm">10</div><div class="kr">문의</div><div class="en">INQUIRY</div></div>
+  <div class="it" data-jump="3"><div class="nm">03</div><div class="kr">공기 순환</div><div class="en">CIRCULATION</div></div>
+  <div class="it" data-jump="4"><div class="nm">04</div><div class="kr">LED 패널</div><div class="en">PANEL</div></div>
+  <div class="it" data-jump="5"><div class="nm">05</div><div class="kr">모듈 거치대</div><div class="en">MODULAR</div></div>
+  <div class="it" data-jump="6"><div class="nm">06</div><div class="kr">스테인리스</div><div class="en">PREMIUM</div></div>
+  <div class="it" data-jump="7"><div class="nm">07</div><div class="kr">치수</div><div class="en">DIMENSIONS</div></div>
+  <div class="it" data-jump="8"><div class="nm">08</div><div class="kr">사양표</div><div class="en">SPEC</div></div>
+  <div class="it" data-jump="9"><div class="nm">09</div><div class="kr">인증</div><div class="en">CERT</div></div>
+  <div class="it" data-jump="10"><div class="nm">10</div><div class="kr">자료실</div><div class="en">RESOURCES</div></div>
+  <div class="it" data-jump="11"><div class="nm">11</div><div class="kr">문의</div><div class="en">INQUIRY</div></div>
 </div>
 
 <script>
@@ -908,7 +929,7 @@
     if (!sec) return;
     dots.forEach((d, k) => d.classList.toggle('on', k === i));
     crumbName.textContent = sec.dataset.nm || '';
-    crumbIdx.textContent = String(i).padStart(2,'0') + '/10';
+    crumbIdx.textContent = String(i).padStart(2,'0') + '/11';
     const ch = sec.dataset.ch || 'overview';
     try {
       const outerWin = iframe.contentWindow;
@@ -1045,7 +1066,15 @@
           .center-text, #centerText, #chapterLabel, .chapter-label,
           .progress-text, #progressText, #progressLabel,
           #brandTag, .brand-tag, .product-tag, #productTag,
-          #pageDots, .page-dots, .page-text, #pageText {
+          #pageDots, .page-dots, .page-text, #pageText,
+          /* v3.25 — Modular 가이드 토스트 (모든 챕터에서 보임) hide */
+          #modularTutorial, .modular-tutorial,
+          #tutorialToast, .tutorial-toast, .tutorial-text,
+          #guideToast, .guide-toast, .game-tip, #gameTip,
+          .hint-toast, #hintToast, .tip-toast, #tipToast,
+          [class*="tutorial-msg"], [id*="tutorialMsg"],
+          [class*="part-guide"], [id*="partGuide"],
+          .modGuide, #modGuide, .modular-toast, #modularToast {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -1073,8 +1102,11 @@
   }
 
   function hideLoad() {
-    loadEl.classList.add('go');
-    setTimeout(() => { loadEl.style.display = 'none'; }, 900);
+    // ✨ v3.25 — 검은화면 방지: HK iframe content 첫 frame 안전하게 그려진 후 fadeout
+    setTimeout(() => {
+      loadEl.classList.add('go');
+      setTimeout(() => { loadEl.style.display = 'none'; }, 900);
+    }, 400);
   }
 
   function pollHKReady() {
@@ -1104,10 +1136,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.24] mandatory snap (magnetic) + strong rotate fix (z600 + !important pass-through)');
+  console.log('[v3.25] Smart Circulation chapter + toggle z9999 + black-screen wait + HK toast hide');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.24';
+    m.textContent = 'v3.25';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
