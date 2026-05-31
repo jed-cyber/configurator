@@ -124,6 +124,59 @@
   /* ✨ v3.22 — 3D parallax는 JS에서 inline transform으로 처리. CSS transition 없음 (즉시 반응) */
   #stage3d {
     will-change: transform;
+    transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1);
+  }
+  /* ✨ v3.27 — content-only 챕터 (SPEC/CERT/RESOURCES/INQUIRY) 활성 시 3D 숨김 */
+  body.fullcontent #stage3d {
+    opacity: 0;
+    pointer-events: none;
+  }
+  body.fullcontent #topBg {
+    background: linear-gradient(180deg, #0a0e17 0%, #0f172a 100%);
+  }
+  /* content-only sec의 gcard: viewport 전체 사용 */
+  .sec.content-only .gcard {
+    height: 100vh;
+    padding: 72px 26px 100px;
+    justify-content: flex-start;
+    overflow-y: auto;
+    -webkit-mask-image: linear-gradient(180deg, black 0%, black 92%, transparent 100%);
+    mask-image: linear-gradient(180deg, black 0%, black 92%, transparent 100%);
+  }
+  /* content-only chapters에서 더 풍성한 spacing + 더 큰 폰트 */
+  .sec.content-only .gcard h1 {
+    font-size: 30px;
+    margin-bottom: 14px;
+  }
+  .sec.content-only .gcard .body {
+    font-size: 13px;
+    line-height: 1.75;
+    margin-bottom: 22px;
+  }
+  .sec.content-only .gcard .feat-list .fl,
+  .sec.content-only .gcard .spec-tbl .r {
+    padding: 13px 0;
+    font-size: 12.5px;
+  }
+  .sec.content-only .gcard .res-grid {
+    margin-top: 18px;
+    gap: 12px;
+  }
+  .sec.content-only .gcard .res-grid .r {
+    padding: 16px;
+  }
+  .sec.content-only .gcard .build-btn {
+    padding: 18px;
+    font-size: 12px;
+    margin: 22px 0;
+  }
+  .sec.content-only .gcard .contact {
+    padding-top: 18px;
+    font-size: 11px;
+  }
+  .sec.content-only .gcard .contact b {
+    font-size: 22px;
+    margin-bottom: 6px;
   }
 
   /* ============ 3D STAGE ============ */
@@ -814,7 +867,7 @@
   </section>
 
   <!-- ============ S07 — SPEC TABLE ============ -->
-  <section class="sec" id="s7" data-ch="dimensions" data-nm="SPECIFICATIONS">
+  <section class="sec content-only" id="s7" data-ch="overview" data-nm="SPECIFICATIONS">
     <div class="gcard">
       <div class="num"><b>07</b> · 10</div>
       <div class="eye">SPECIFICATIONS</div>
@@ -835,7 +888,7 @@
   </section>
 
   <!-- ============ S08 — CERTIFICATIONS ============ -->
-  <section class="sec" id="s8" data-ch="overview" data-nm="CERTIFICATIONS">
+  <section class="sec content-only" id="s8" data-ch="overview" data-nm="CERTIFICATIONS">
     <div class="gcard">
       <div class="num"><b>08</b> · 10</div>
       <div class="eye">CERTIFICATIONS</div>
@@ -851,7 +904,7 @@
   </section>
 
   <!-- ============ S09 — RESOURCES ============ -->
-  <section class="sec" id="s9" data-ch="overview" data-nm="RESOURCES">
+  <section class="sec content-only" id="s9" data-ch="overview" data-nm="RESOURCES">
     <div class="gcard">
       <div class="num"><b>09</b> · 10</div>
       <div class="eye">RESOURCES</div>
@@ -867,7 +920,7 @@
   </section>
 
   <!-- ============ S10 — CTA ============ -->
-  <section class="sec" id="s10" data-ch="overview" data-nm="INQUIRY">
+  <section class="sec content-only" id="s10" data-ch="overview" data-nm="INQUIRY">
     <div class="gcard">
       <div class="num"><b>10</b> · 10</div>
       <div class="eye">INQUIRY</div>
@@ -927,6 +980,8 @@
     dots.forEach((d, k) => d.classList.toggle('on', k === i));
     crumbName.textContent = sec.dataset.nm || '';
     crumbIdx.textContent = String(i).padStart(2,'0') + '/11';
+    // ✨ v3.27 — content-only 챕터 (SPEC/CERT/RESOURCES/INQUIRY)일 때 3D 숨김
+    document.body.classList.toggle('fullcontent', sec.classList.contains('content-only'));
     const ch = sec.dataset.ch || 'overview';
     try {
       const outerWin = iframe.contentWindow;
@@ -985,7 +1040,7 @@
   }, { passive: true });
   setTimeout(updateActiveFromScroll, 300);
 
-  /* ✨ v3.26 — JS smooth wheel scroll (자석 + ease-out 부드러움, 일반 웹사이트 같은 느낌) */
+  /* ✨ v3.27 — JS smooth scroll: duration 1100ms + ease-in-out cubic (더 부드러움) */
   let scrollAnimLock = false;
   function smoothScrollToSec(idx) {
     if (scrollAnimLock) return;
@@ -995,13 +1050,15 @@
     const start = frame.scrollTop;
     const distance = target - start;
     if (Math.abs(distance) < 2) { scrollAnimLock = false; return; }
-    const duration = 700;
+    const duration = 1100;
     const t0 = performance.now();
     function tick(now) {
       const elapsed = now - t0;
       const p = Math.min(1, elapsed / duration);
-      // ease-out cubic
-      const ease = 1 - Math.pow(1 - p, 3);
+      // ease-in-out cubic: 시작/끝 부드럽게
+      const ease = p < 0.5
+        ? 4 * p * p * p
+        : 1 - Math.pow(-2 * p + 2, 3) / 2;
       frame.scrollTop = start + distance * ease;
       if (p < 1) requestAnimationFrame(tick);
       else { scrollAnimLock = false; }
@@ -1193,10 +1250,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.26] drying chapter + JS smooth wheel scroll + toggle inline z99999');
+  console.log('[v3.27] content-only fullscreen (SPEC/CERT/RES/INQ) + ease-in-out 1100ms');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.26';
+    m.textContent = 'v3.27';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
