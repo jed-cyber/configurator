@@ -130,24 +130,26 @@
     pointer-events: none;
   }
 
-  /* ============ FROSTED GLASS CARD (over 3D, content per section) ============ */
+  /* ============ FROSTED GLASS CARD (top of screen, 70% width — product 안 가림) ============ */
+  /* ✨ v3.9.2 — bottom → top, 70% width, 컴팩트 사이즈 */
   .gcard {
     position: absolute;
-    left: 14px; right: 14px;
-    bottom: 16px;
-    padding: 22px 22px 22px;
-    /* roughness via combined: blur + tint + noise */
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    max-width: 290px;
+    padding: 16px 16px 16px;
     background: rgba(15, 20, 33, 0.55);
     backdrop-filter: blur(22px) saturate(160%);
     -webkit-backdrop-filter: blur(22px) saturate(160%);
     border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 22px;
+    border-radius: 16px;
     box-shadow:
       0 10px 40px rgba(0,0,0,0.45),
       inset 0 1px 0 rgba(255,255,255,0.18);
     overflow: hidden;
     pointer-events: auto;
-    transform: translateY(0);
     transition: transform 0.6s cubic-bezier(0.22,1,0.36,1),
                 opacity 0.5s cubic-bezier(0.22,1,0.36,1);
   }
@@ -163,10 +165,10 @@
   }
   .gcard > * { position: relative; z-index: 1; }
 
-  /* hero card on first section — taller, positioned higher */
+  /* hero card on first section — same top position as others */
   .sec.hero .gcard {
-    bottom: 40px;
-    padding: 26px 22px 22px;
+    top: 60px;
+    padding: 18px 16px 16px;
   }
 
   /* ============ TYPOGRAPHY (inside glass card) ============ */
