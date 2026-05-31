@@ -55,8 +55,8 @@
   /* ✨ v3.10 — 위/아래 스왑: 3D는 위, 텍스트는 아래 */
   #stage3d {
     position: fixed;
-    top: 0;
-    height: 50vh;
+    top: 50vh;
+    bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 2;
@@ -67,21 +67,42 @@
   /* 하단 텍스트 영역 dark gradient */
   #topBg {
     position: fixed;
-    top: 50vh;
-    bottom: 0;
+    top: 0;
+    height: 50vh;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 1;
-    background: linear-gradient(180deg, #1a2236 0%, #0a0e17 100%);
+    background: linear-gradient(180deg, #0a0e17 0%, #131a2c 55%, #1a2236 100%);
     pointer-events: none;
   }
-  /* 3D 하단 → 텍스트 영역 fade */
-  #stage3d::after {
+  /* 텍스트 영역 하단 → 3D 영역 자연스러운 fade (multi-stop, 더 길게) */
+  #topBg::after {
     content: '';
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 80px;
-    background: linear-gradient(180deg, rgba(26,34,54,0) 0%, #1a2236 100%);
+    bottom: -120px; left: 0; right: 0;
+    height: 180px;
+    background: linear-gradient(
+      180deg,
+      rgba(26,34,54,1) 0%,
+      rgba(20,27,44,0.85) 35%,
+      rgba(15,22,36,0.45) 65%,
+      rgba(10,14,23,0) 100%
+    );
+    pointer-events: none;
+    z-index: 3;
+  }
+  /* 3D 영역 상단도 부드럽게 받아주는 fade (top 측) */
+  #stage3d::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 100px;
+    background: linear-gradient(
+      180deg,
+      rgba(10,14,23,0.7) 0%,
+      rgba(10,14,23,0.25) 60%,
+      rgba(10,14,23,0) 100%
+    );
     pointer-events: none;
     z-index: 5;
   }
@@ -153,16 +174,16 @@
     pointer-events: none;
   }
 
-  /* ============ TEXT AREA (no box, centered on dark BG, BOTTOM half) ============ */
-  /* ✨ v3.10 — 박스 제거, 가운데 정렬, 하단 영역에 배치 */
+  /* ============ TEXT AREA (no box, centered on dark BG, TOP half) ============ */
+  /* ✨ v3.11 — 자막 위, 3D 아래로 재스왑, 박스 없이 가운데 정렬 */
   .gcard {
     position: fixed;
-    top: 50vh;
-    bottom: 0;
+    top: 0;
+    height: 50vh;
     left: 50%;
     transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    padding: 32px 28px 36px;
+    padding: 56px 28px 28px;  /* top 56px: top bar 공간 확보 */
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -170,26 +191,16 @@
     overflow-y: auto;
     pointer-events: auto;
     text-align: center;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: column; justify-content: center;
     transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1);
   }
   .gcard::-webkit-scrollbar { width: 0; }
-  /* SVG noise grain overlay for "roughness" texture */
-  .gcard::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/></svg>");
-    mix-blend-mode: overlay;
-    opacity: 0.7;
-    pointer-events: none;
-    z-index: 0;
-  }
   .gcard > * { position: relative; z-index: 1; }
 
-  /* hero card on first section — same top position as others */
+  /* hero card on first section — same top layout as others */
   .sec.hero .gcard {
-    top: 60px;
-    padding: 18px 16px 16px;
+    /* no override — inherits .gcard top:0 height:50vh */
+    padding: 56px 28px 28px;
   }
 
   /* ============ TYPOGRAPHY (inside glass card) ============ */
