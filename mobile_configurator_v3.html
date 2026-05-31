@@ -18,8 +18,26 @@
   }
   body {
     min-height: 100vh;
-    background: radial-gradient(ellipse at 50% 30%, #131c2f 0%, #050810 75%);
+    background: #000;
   }
+  /* ✨ v3.3 — 모바일 사이즈 프레임 (PC 에서도 폰처럼 보기). 414px 폭 센터 정렬. */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at center, #1a1f2e 0%, #050810 100%);
+  }
+  #mobileFrame {
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    background: radial-gradient(ellipse at 50% 30%, #131c2f 0%, #050810 75%);
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1;
+    box-shadow: 0 0 80px rgba(107,156,255,0.08);
+  }
+  #mobileFrame::-webkit-scrollbar { width: 0; }
 
   :root {
     --accent: #6b9cff;
@@ -34,29 +52,37 @@
     --glass-thick: rgba(8, 12, 22, 0.85);
   }
 
-  /* ========== STICKY 3D CANVAS (full screen background) ========== */
+  /* ========== STICKY 3D CANVAS (mobile frame inner background) ========== */
   #stage3d {
-    position: fixed; inset: 0; z-index: 1;
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    z-index: 2;
     overflow: hidden;
+    pointer-events: none;
   }
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block; background: transparent;
+    pointer-events: auto;
   }
-  /* gradient veil so text reads on busy scenes */
+  /* gradient veil so text reads on busy scenes (mobile-style: top 3D, bottom text) */
   #veil {
-    position: fixed; inset: 0; z-index: 2;
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    z-index: 3;
     pointer-events: none;
-    background: linear-gradient(90deg, rgba(5,8,16,0.72) 0%, rgba(5,8,16,0.25) 45%, rgba(5,8,16,0) 70%);
-  }
-  @media (max-width: 768px) {
-    #veil {
-      background: linear-gradient(180deg, rgba(5,8,16,0.0) 0%, rgba(5,8,16,0.0) 30%, rgba(5,8,16,0.85) 65%, rgba(5,8,16,0.92) 100%);
-    }
+    background: linear-gradient(180deg, rgba(5,8,16,0.0) 0%, rgba(5,8,16,0.0) 30%, rgba(5,8,16,0.85) 65%, rgba(5,8,16,0.92) 100%);
   }
 
   /* ========== TOP BAR ========== */
   #topBar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    position: fixed; top: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    z-index: 50;
     height: 56px;
     display: flex; align-items: center;
     padding: 0 22px;
@@ -77,7 +103,10 @@
 
   /* ========== PROGRESS LINE ========== */
   #progress {
-    position: fixed; top: 56px; left: 0; right: 0; z-index: 49;
+    position: fixed; top: 56px;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    z-index: 49;
     height: 1px; background: rgba(255,255,255,0.04);
   }
   #progress .fill {
@@ -114,18 +143,17 @@
   @media (max-width: 768px) { #dotNav { display: none; } }
 
   /* ========== SECTIONS (overlay panels scroll over 3D) ========== */
-  #scrollContainer { position: relative; z-index: 10; }
+  #scrollContainer {
+    position: relative;
+    z-index: 10;
+    max-width: 414px;
+    margin: 0 auto;
+  }
   .sec {
     min-height: 100vh;
-    display: flex; align-items: center;
-    padding: 80px 5vw;
+    display: flex; align-items: flex-end;
+    padding: 56vh 22px 60px;
     position: relative;
-  }
-  @media (max-width: 768px) {
-    .sec {
-      align-items: flex-end;
-      padding: 60vh 24px 80px;
-    }
   }
 
   .panel {
@@ -362,7 +390,10 @@
 
   /* ========== LOAD SCREEN ========== */
   #load {
-    position: fixed; inset: 0; z-index: 999;
+    position: fixed; top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    z-index: 999;
     background: #050810;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 18px;
@@ -423,7 +454,7 @@
 
 <!-- ===== 3D CANVAS (sticky fixed background) ===== -->
 <div id="stage3d">
-  <iframe id="hk3d" src="HK_3dconfigurator_final.html?mobile=1&v3parent=1&_=v3reset" allow="fullscreen"></iframe>
+  <iframe id="hk3d" src="HK_3dconfigurator_final.html?mobile=1&_=v3reset" allow="fullscreen"></iframe>
 </div>
 <div id="veil"></div>
 
