@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#ffffff" />
+<meta name="theme-color" content="#0a0e17" />
 <title>HK NEO+ Sterilizer · HKNS-1019</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,241 +12,222 @@
   *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0;
-    background: #000;
-    color: #111;
+    background: #050810;
+    color: #fff;
     font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
-    line-height: 1.6;
+    line-height: 1.55;
   }
   :root {
-    --bg: #fff;
-    --text: #111;
-    --text-mid: #5a5a64;
-    --text-soft: #9a9aa3;
-    --line: #e8e8ec;
-    --accent: #2c5fff;
+    --text: #fff;
+    --text-mid: rgba(255,255,255,0.75);
+    --text-soft: rgba(255,255,255,0.5);
+    --line: rgba(255,255,255,0.12);
+    --line-soft: rgba(255,255,255,0.06);
+    --accent: #7ab8ff;
   }
 
-  /* Outer backdrop (phone frame look on PC) */
   body::before {
     content: '';
     position: fixed; inset: 0; z-index: 0;
     background: radial-gradient(ellipse at center, #14172a 0%, #04060c 100%);
   }
 
-  /* ============ MOBILE FRAME ============ */
+  /* ============ MOBILE FRAME (414px scroll container) ============ */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    background: #fff;
     z-index: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    box-shadow: 0 0 80px rgba(0,0,0,0.45);
-    scroll-snap-type: y proximity;
+    background: #050810;
+    box-shadow: 0 0 80px rgba(0,0,0,0.55);
+    /* ✨ v3.9 — mandatory snap → 휙 넘김 */
+    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
-    scroll-padding-top: 0;
     -webkit-overflow-scrolling: touch;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ============ 3D STAGE — IN-FLOW (scrolls together with page) ============ */
-  /* ✨ v3.8 — sticky 제거. 전체 페이지가 한 덩어리로 자연 스크롤. */
+  /* ============ 3D STAGE — full-screen background inside frame ============ */
   #stage3d {
-    position: relative;
-    width: 100%;
-    height: 78vh;
-    background: radial-gradient(ellipse at 50% 40%, #f4f6fb 0%, #d8dee8 100%);
+    position: fixed;
+    top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 100vw; max-width: 414px;
+    z-index: 2;
     overflow: hidden;
-    margin-bottom: 0;
+    pointer-events: none;
   }
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
-    /* ✨ v3.8 — 줌/회전 비활성 → 스크롤이 그대로 통과 */
-    pointer-events: none;
+    pointer-events: none;  /* 줌/회전 비활성 → 스크롤 통과 */
   }
 
-  /* 3D 하단 → 흰색 콘텐츠 영역으로 부드러운 fade (unified feel) */
-  #stage3d::after {
-    content: '';
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 80px;
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,1) 100%);
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  /* ============ TOP BAR (over 3D, fixed inside frame) ============ */
+  /* ============ TOP BAR (over 3D) ============ */
   #topBar {
     position: fixed;
     top: 0; left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 60;
-    height: 48px;
+    height: 50px;
     display: flex; align-items: center;
     padding: 0 18px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0));
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: linear-gradient(180deg, rgba(5,8,16,0.65), rgba(5,8,16,0));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     pointer-events: none;
   }
   #topBar > * { pointer-events: auto; }
   #topBar .logo {
     font-family: 'Inter', sans-serif;
-    font-size: 11px; letter-spacing: 2.5px; font-weight: 700;
-    color: var(--text);
+    font-size: 11px; letter-spacing: 2.5px; font-weight: 700; color: #fff;
   }
-  #topBar .logo b { font-weight: 800; }
+  #topBar .logo b { font-weight: 800; color: var(--accent); }
   #topBar .crumb {
     margin-left: auto;
     font-family: 'Inter', sans-serif;
     font-size: 9.5px; letter-spacing: 1.5px; color: var(--text-soft);
   }
-  #topBar .crumb b { color: var(--text); font-weight: 600; }
+  #topBar .crumb b { color: #fff; font-weight: 600; }
   #topBar .ham {
-    margin-left: 14px;
+    margin-left: 12px;
     width: 22px; height: 22px;
     display: flex; flex-direction: column; justify-content: center; gap: 4px;
     cursor: pointer;
   }
-  #topBar .ham span { display: block; width: 18px; height: 1px; background: var(--text); }
+  #topBar .ham span { display: block; width: 18px; height: 1px; background: #fff; }
 
-  /* ============ LEFT DOT INDICATOR ============ */
+  /* ============ LEFT DOT NAV ============ */
   #dotNav {
     position: fixed;
     left: calc(50% - 207px + 10px);
     top: 50%; transform: translateY(-50%);
     z-index: 55;
     display: flex; flex-direction: column; gap: 10px;
-    pointer-events: auto;
   }
   #dotNav .d {
-    width: 4px; height: 4px; border-radius: 50%;
-    background: rgba(17,17,17,0.18);
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
     cursor: pointer;
     transition: all 0.3s;
   }
-  #dotNav .d.on { background: var(--text); transform: scale(1.7); }
+  #dotNav .d.on { background: #fff; transform: scale(1.6); box-shadow: 0 0 8px rgba(122,184,255,0.6); }
   @media (max-width: 480px) {
     #dotNav { left: 6px; gap: 8px; }
   }
 
-  /* ============ SECTIONS (Daelim-page style, in-flow) ============ */
+  /* ============ SECTIONS (just scroll triggers; content is inside glass card) ============ */
   .sec {
-    min-height: 88vh;
-    background: #fff;
-    padding: 42px 26px 56px;
+    height: 100vh;            /* fixed full viewport */
     scroll-snap-align: start;
+    scroll-snap-stop: always;  /* ✨ 강제 한 섹션씩 휙 */
     position: relative;
-  }
-  /* S00 (Hero) — 3D iframe takes most space, text below */
-  .sec.hero {
-    min-height: auto;
-    padding: 0;
-    background: #fff;
-  }
-  .sec.hero .hero-text {
-    padding: 30px 26px 50px;
-  }
-  /* Big watermark number for Daelim editorial feel */
-  .sec .wm {
-    position: absolute;
-    top: 24px; right: 22px;
-    font-family: 'Inter', sans-serif;
-    font-size: 88px; font-weight: 800;
-    color: #f3f3f6;
-    letter-spacing: -3px;
-    line-height: 1;
-    z-index: 0;
-    user-select: none;
     pointer-events: none;
   }
-  .sec > *:not(.wm) { position: relative; z-index: 1; }
 
-  /* ============ ENTRANCE ANIMATIONS (cinematic) ============ */
-  .sec .num, .sec .eye, .sec h1, .sec .h-kr,
-  .sec .body, .sec .stats, .sec .feat-list,
-  .sec .mods, .sec .spec-tbl, .sec .res-grid,
-  .sec .build-btn, .sec .contact {
-    opacity: 0;
-    transform: translateY(28px);
-    transition:
-      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  /* ============ FROSTED GLASS CARD (over 3D, content per section) ============ */
+  .gcard {
+    position: absolute;
+    left: 14px; right: 14px;
+    bottom: 16px;
+    padding: 22px 22px 22px;
+    /* roughness via combined: blur + tint + noise */
+    background: rgba(15, 20, 33, 0.55);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 22px;
+    box-shadow:
+      0 10px 40px rgba(0,0,0,0.45),
+      inset 0 1px 0 rgba(255,255,255,0.18);
+    overflow: hidden;
+    pointer-events: auto;
+    transform: translateY(0);
+    transition: transform 0.6s cubic-bezier(0.22,1,0.36,1),
+                opacity 0.5s cubic-bezier(0.22,1,0.36,1);
   }
-  .sec.in .num    { opacity: 1; transform: translateY(0); transition-delay: 0.04s; }
-  .sec.in .eye    { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
-  .sec.in h1      { opacity: 1; transform: translateY(0); transition-delay: 0.22s; }
-  .sec.in .h-kr   { opacity: 1; transform: translateY(0); transition-delay: 0.32s; }
-  .sec.in .body   { opacity: 1; transform: translateY(0); transition-delay: 0.42s; }
-  .sec.in .stats,
-  .sec.in .feat-list,
-  .sec.in .mods,
-  .sec.in .spec-tbl,
-  .sec.in .res-grid,
-  .sec.in .build-btn,
-  .sec.in .contact { opacity: 1; transform: translateY(0); transition-delay: 0.52s; }
+  /* SVG noise grain overlay for "roughness" texture */
+  .gcard::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/></svg>");
+    mix-blend-mode: overlay;
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .gcard > * { position: relative; z-index: 1; }
 
-  /* ============ TYPOGRAPHY ============ */
-  .sec .num {
-    font-family: 'Inter', sans-serif;
-    font-size: 9.5px; letter-spacing: 2px; color: var(--text-soft);
-    margin-bottom: 6px; font-weight: 500;
+  /* hero card on first section — taller, positioned higher */
+  .sec.hero .gcard {
+    bottom: 40px;
+    padding: 26px 22px 22px;
   }
-  .sec .num b { color: var(--text); font-weight: 700; }
-  .sec .eye {
+
+  /* ============ TYPOGRAPHY (inside glass card) ============ */
+  .gcard .num {
     font-family: 'Inter', sans-serif;
-    font-size: 9.5px; letter-spacing: 3px; font-weight: 700;
+    font-size: 9.5px; letter-spacing: 2.5px;
+    color: var(--text-soft);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .gcard .num b { color: #fff; font-weight: 700; }
+  .gcard .eye {
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5px; letter-spacing: 3px;
     color: var(--accent);
     text-transform: uppercase;
-    margin-bottom: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
   }
-  .sec h1 {
+  .gcard h1 {
     font-family: 'Inter', sans-serif;
-    font-size: 28px; line-height: 1.1; font-weight: 800;
-    color: var(--text);
-    letter-spacing: -0.8px;
+    font-size: 24px; line-height: 1.1; font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.6px;
     margin: 0 0 6px;
   }
-  .sec h1 .li { font-weight: 300; color: var(--text-mid); }
-  .sec h1 .ac { color: var(--accent); }
-  .sec .h-kr {
+  .gcard h1 .li { font-weight: 300; color: rgba(255,255,255,0.6); }
+  .gcard h1 .ac { color: var(--accent); }
+  .gcard .h-kr {
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 14px; line-height: 1.5; font-weight: 500;
-    color: var(--text);
-    margin: 10px 0 16px;
+    font-size: 13px; line-height: 1.5; font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    margin: 8px 0 12px;
     letter-spacing: -0.2px;
   }
-  .sec .h-kr b { font-weight: 700; }
-  .sec .body {
+  .gcard .h-kr b { font-weight: 700; color: #fff; }
+  .gcard .body {
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 12px; line-height: 1.75; font-weight: 400;
+    font-size: 11.5px; line-height: 1.7; font-weight: 400;
     color: var(--text-mid);
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     letter-spacing: -0.1px;
   }
 
-  /* ============ INLINE STATS ============ */
+  /* ============ STATS GRID ============ */
   .stats {
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 1px;
     background: var(--line);
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
-    margin-top: 8px;
+    margin-top: 10px;
   }
   .stats .s {
-    background: #fff;
-    padding: 10px 6px;
+    background: rgba(15, 20, 33, 0.4);
+    padding: 10px 4px;
     text-align: center;
   }
   .stats .s .v {
     font-family: 'Inter', sans-serif;
-    font-size: 13px; font-weight: 700; color: var(--text);
+    font-size: 12.5px; font-weight: 700; color: #fff;
     letter-spacing: -0.2px; white-space: nowrap;
   }
   .stats .s .l {
@@ -259,19 +240,20 @@
   .feat-list { margin-top: 8px; }
   .feat-list .fl {
     display: grid; grid-template-columns: 100px 1fr;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 11.5px;
     align-items: baseline;
   }
+  .feat-list .fl:last-child { border-bottom: none; }
   .feat-list .fl .k {
     font-family: 'Inter', sans-serif;
-    font-size: 9px; letter-spacing: 1.5px; color: var(--text-soft);
+    font-size: 8.5px; letter-spacing: 1.5px; color: var(--text-soft);
     text-transform: uppercase; font-weight: 600;
   }
   .feat-list .fl .v {
     font-family: 'Noto Sans KR', sans-serif;
-    color: var(--text); font-weight: 500;
+    color: #fff; font-weight: 500;
   }
 
   /* ============ MODULES ============ */
@@ -282,56 +264,39 @@
     border-bottom: 1px solid var(--line);
     margin-top: 10px;
   }
-  .mods .m {
-    background: #fff;
-    padding: 10px 4px;
-    text-align: center;
-  }
-  .mods .m .c {
-    font-family: 'Inter', sans-serif;
-    font-size: 7.5px; letter-spacing: 1px; color: var(--text-soft);
-    font-weight: 700;
-  }
-  .mods .m .n {
-    font-family: 'Noto Sans KR', sans-serif;
-    font-size: 10px; font-weight: 500; color: var(--text);
-    margin-top: 3px;
-  }
+  .mods .m { background: rgba(15, 20, 33, 0.4); padding: 9px 4px; text-align: center; }
+  .mods .m .c { font-family: 'Inter', sans-serif; font-size: 7.5px; letter-spacing: 1px; color: var(--text-soft); font-weight: 700; }
+  .mods .m .n { font-family: 'Noto Sans KR', sans-serif; font-size: 10px; font-weight: 500; color: #fff; margin-top: 3px; }
 
   /* ============ SPEC TABLE ============ */
-  .spec-tbl {
-    margin-top: 10px;
-    border-top: 1px solid var(--text);
-  }
+  .spec-tbl { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); }
   .spec-tbl .r {
-    display: grid; grid-template-columns: 86px 1fr;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 11px;
+    display: grid; grid-template-columns: 80px 1fr;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 10.5px;
   }
   .spec-tbl .r .k {
     font-family: 'Inter', sans-serif;
-    font-size: 8.5px; letter-spacing: 1.3px; color: var(--text-soft);
+    font-size: 8.5px; letter-spacing: 1.2px; color: var(--text-soft);
     text-transform: uppercase; font-weight: 600;
   }
   .spec-tbl .r .v {
     font-family: 'Inter', 'Noto Sans KR', sans-serif;
-    color: var(--text); font-weight: 500;
+    color: #fff; font-weight: 500; font-size: 10.5px;
   }
 
   /* ============ RESOURCES ============ */
-  .res-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-    margin-top: 10px;
-  }
+  .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
   .res-grid .r {
     border: 1px solid var(--line);
-    border-radius: 7px;
+    border-radius: 8px;
     padding: 10px;
+    background: rgba(255,255,255,0.04);
   }
   .res-grid .r .t {
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 11.5px; font-weight: 700; color: var(--text);
+    font-size: 11.5px; font-weight: 700; color: #fff;
   }
   .res-grid .r .e {
     font-family: 'Inter', sans-serif;
@@ -341,7 +306,7 @@
   }
   .res-grid .r .dl {
     display: block; text-align: center;
-    background: var(--text); color: #fff;
+    background: #fff; color: #050810;
     padding: 7px;
     border-radius: 4px; text-decoration: none;
     font-family: 'Inter', sans-serif;
@@ -350,86 +315,123 @@
   .res-grid .r .dl:hover { background: var(--accent); }
 
   /* ============ CTA ============ */
-  .sec.cta { background: var(--text); color: #fff; }
-  .sec.cta h1, .sec.cta .h-kr, .sec.cta .num b { color: #fff; }
-  .sec.cta .eye { color: #6b9cff; }
-  .sec.cta .num { color: rgba(255,255,255,0.4); }
-  .sec.cta .body { color: rgba(255,255,255,0.65); }
   .build-btn {
     display: block; width: 100%;
-    background: #fff; color: var(--text);
-    border: 0; padding: 16px;
-    border-radius: 6px;
+    background: linear-gradient(135deg, #7ab8ff, #5080ff);
+    color: #050810;
+    border: 0; padding: 14px;
+    border-radius: 8px;
     font-family: 'Inter', sans-serif;
-    font-size: 11px; letter-spacing: 2.5px; font-weight: 700;
+    font-size: 11px; letter-spacing: 2px; font-weight: 800;
     cursor: pointer;
     margin: 14px 0;
   }
   .contact {
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid var(--line);
     padding-top: 14px;
     font-size: 10px; letter-spacing: 0.5px;
-    color: rgba(255,255,255,0.55);
+    color: var(--text-soft);
     line-height: 1.7;
   }
   .contact b {
-    color: #fff; font-size: 19px; font-weight: 800;
+    color: #fff; font-size: 18px; font-weight: 800;
     letter-spacing: 1.5px; font-family: 'Inter', sans-serif;
     display: block; margin-bottom: 4px;
   }
 
-  /* ============ LOAD SCREEN ============ */
+  /* ============ ENTRANCE ANIMATIONS (cinematic card slide-up) ============ */
+  .sec .gcard {
+    opacity: 0;
+    transform: translateY(60px) scale(0.97);
+    transition:
+      opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sec.in .gcard {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Stagger inside */
+  .sec .gcard .num,
+  .sec .gcard .eye,
+  .sec .gcard h1,
+  .sec .gcard .h-kr,
+  .sec .gcard .body,
+  .sec .gcard .stats,
+  .sec .gcard .feat-list,
+  .sec .gcard .mods,
+  .sec .gcard .spec-tbl,
+  .sec .gcard .res-grid,
+  .sec .gcard .build-btn,
+  .sec .gcard .contact {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease-out, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+  }
+  .sec.in .gcard .num     { opacity: 1; transform: translateY(0); transition-delay: 0.18s; }
+  .sec.in .gcard .eye     { opacity: 1; transform: translateY(0); transition-delay: 0.22s; }
+  .sec.in .gcard h1       { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
+  .sec.in .gcard .h-kr    { opacity: 1; transform: translateY(0); transition-delay: 0.34s; }
+  .sec.in .gcard .body    { opacity: 1; transform: translateY(0); transition-delay: 0.40s; }
+  .sec.in .gcard .stats,
+  .sec.in .gcard .feat-list,
+  .sec.in .gcard .mods,
+  .sec.in .gcard .spec-tbl,
+  .sec.in .gcard .res-grid,
+  .sec.in .gcard .build-btn,
+  .sec.in .gcard .contact { opacity: 1; transform: translateY(0); transition-delay: 0.46s; }
+
+  /* ============ LOAD SCREEN (white minimal) ============ */
   #load {
     position: fixed;
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    background: #fff;
+    background: #050810;
     z-index: 999;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: opacity 0.7s ease-out;
+    transition: opacity 0.8s ease-out;
   }
   #load.go { opacity: 0; pointer-events: none; }
   #load .br {
     font-family: 'Inter', sans-serif;
-    font-size: 10px; letter-spacing: 4px; color: var(--text-soft);
+    font-size: 10px; letter-spacing: 4px;
+    color: rgba(255,255,255,0.5);
     font-weight: 600; margin-bottom: 12px;
   }
   #load .pr {
     font-family: 'Inter', sans-serif;
     font-size: 38px; font-weight: 800; letter-spacing: -1px;
-    color: var(--text); margin-bottom: 6px;
+    color: #fff; margin-bottom: 6px;
   }
   #load .pr span { color: var(--accent); }
   #load .sb {
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 11px; color: var(--text-mid); font-weight: 400;
+    font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 400;
     letter-spacing: -0.2px; margin-bottom: 56px;
     text-align: center;
   }
   #load .pb {
-    width: 220px; height: 1px; background: var(--line);
+    width: 220px; height: 1px; background: rgba(255,255,255,0.1);
     overflow: hidden; position: relative;
   }
   #load .pb i {
     display: block; width: 32%; height: 100%;
-    background: var(--text);
+    background: #fff;
     position: absolute; top: 0; left: -32%;
     animation: lb 1.4s ease-in-out infinite;
   }
-  @keyframes lb {
-    0%, 100% { left: -32%; }
-    50% { left: 100%; }
-  }
+  @keyframes lb { 0%, 100% { left: -32%; } 50% { left: 100%; } }
   #load .ld {
     font-family: 'Inter', sans-serif;
-    font-size: 9px; letter-spacing: 2px; color: var(--text-soft);
+    font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,0.45);
     text-transform: uppercase; font-weight: 600; margin-top: 12px;
   }
   #load .ft {
     position: absolute; bottom: 26px;
     font-family: 'Inter', sans-serif;
-    font-size: 9px; letter-spacing: 1.5px; color: var(--text-soft);
+    font-size: 9px; letter-spacing: 1.5px; color: rgba(255,255,255,0.35);
   }
 
   /* ============ TOC OVERLAY ============ */
@@ -438,7 +440,9 @@
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    background: #fff;
+    background: rgba(10,14,23,0.98);
+    backdrop-filter: blur(20px);
+    color: #fff;
     z-index: 80;
     padding: 70px 24px 36px;
     overflow-y: auto;
@@ -447,12 +451,13 @@
   #toc.show { display: block; }
   #toc .close {
     position: absolute; top: 14px; right: 18px;
-    font-size: 22px; cursor: pointer; color: var(--text);
+    font-size: 22px; cursor: pointer; color: #fff;
     line-height: 1;
   }
   #toc .ttl {
     font-family: 'Inter', sans-serif;
-    font-size: 10px; letter-spacing: 3px; color: var(--text-soft);
+    font-size: 10px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.45);
     text-transform: uppercase; margin-bottom: 22px;
     font-weight: 700;
   }
@@ -460,13 +465,13 @@
     display: grid; grid-template-columns: 36px 1fr 68px;
     align-items: baseline;
     padding: 13px 0;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
     cursor: pointer;
   }
-  #toc .it:hover { background: #fafafa; }
-  #toc .it .nm { font-family: 'Inter', sans-serif; font-size: 9.5px; letter-spacing: 1.5px; color: var(--text-soft); font-weight: 600; }
-  #toc .it .kr { font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
-  #toc .it .en { font-family: 'Inter', sans-serif; font-size: 9px; color: var(--text-soft); letter-spacing: 1.5px; text-transform: uppercase; text-align: right; font-weight: 600; }
+  #toc .it:hover { background: rgba(255,255,255,0.05); }
+  #toc .it .nm { font-family: 'Inter', sans-serif; font-size: 9.5px; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); font-weight: 600; }
+  #toc .it .kr { font-family: 'Noto Sans KR', sans-serif; font-size: 16px; font-weight: 600; color: #fff; letter-spacing: -0.3px; }
+  #toc .it .en { font-family: 'Inter', sans-serif; font-size: 9px; color: rgba(255,255,255,0.45); letter-spacing: 1.5px; text-transform: uppercase; text-align: right; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -503,22 +508,21 @@
   <div class="d" data-i="10"></div>
 </nav>
 
-<!-- ===== MOBILE FRAME (scroll container) ===== -->
+<!-- ===== 3D STAGE (full-screen background) ===== -->
+<div id="stage3d">
+  <iframe id="hk3d" src="mobile_configurator_final.html?_=v39&v3parent=1" allow="fullscreen"></iframe>
+</div>
+
+<!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
 <div id="mobileFrame">
 
-  <!-- ============ S00 — HERO (with 3D iframe inline) ============ -->
+  <!-- ============ S00 — HERO ============ -->
   <section class="sec hero" id="s0" data-ch="overview" data-nm="OVERVIEW">
-    <!-- ✨ v3.8 — 3D iframe inline (sticky 아님). 페이지 전체와 함께 스크롤. pointer-events:none → 줌/회전 비활성, 스크롤만. -->
-    <div id="stage3d">
-      <iframe id="hk3d" src="mobile_configurator_final.html?_=v38&v3parent=1" allow="fullscreen"></iframe>
-    </div>
-    <div class="hero-text">
-      <div class="wm">00</div>
+    <div class="gcard">
       <div class="num"><b>00</b> · 10</div>
       <div class="eye">HK · HKNS-1019</div>
       <h1><span class="li">Engineered for</span><br><span class="ac">Pure Preservation.</span></h1>
-      <div class="h-kr">보이지 않는 곳까지 <b>99.9% 살균</b>.<br>호텔·단체급식·병원을 위한 살균 보관 캐비닛.</div>
-      <div class="body">매일 수백 인분의 식기와 조리 도구를 처리해야 하는 환경을 위해 설계된 STS-304 살균 캐비닛. 약품 없이, 교체 없이, 한 번의 사이클로 99.9% 살균을 달성합니다.</div>
+      <div class="h-kr">보이지 않는 곳까지 <b>99.9% 살균</b>.<br>호텔·단체급식·병원을 위한 살균 캐비닛.</div>
       <div class="stats">
         <div class="s"><div class="v">99.9%</div><div class="l">Sterilization</div></div>
         <div class="s"><div class="v">280nm</div><div class="l">UV-C</div></div>
@@ -530,169 +534,177 @@
 
   <!-- ============ S01 — UV-C ============ -->
   <section class="sec" id="s1" data-ch="uvc" data-nm="UV-C STERILIZATION">
-    <div class="wm">01</div>
-    <div class="num"><b>01</b> · 10</div>
-    <div class="eye">STERILIZATION</div>
-    <h1><span class="ac">Kills 99.9%</span><br><span class="li">of what you can't see.</span></h1>
-    <div class="h-kr"><b>280nm UV-C LED</b>가 캐비닛 내부 전체를 살균합니다.</div>
-    <div class="body">살균 전용 파장 280nm의 UV-C LED가 캐비닛 내부 전체 표면을 한 사이클 안에 살균합니다. 도어가 닫혔을 때만 작동, 오픈 감지 시 즉시 차단. 화학약품 없음, LED 평균 25,000시간 (약 8년) 교체 없음.</div>
-    <div class="feat-list">
-      <div class="fl"><div class="k">Wavelength</div><div class="v">280nm UV-C LED</div></div>
-      <div class="fl"><div class="k">Cycle</div><div class="v">15분 표준 · 25분 풀</div></div>
-      <div class="fl"><div class="k">Safety</div><div class="v">도어 오픈 시 즉시 차단</div></div>
-      <div class="fl"><div class="k">LED Life</div><div class="v">25,000 시간 (≈8년)</div></div>
+    <div class="gcard">
+      <div class="num"><b>01</b> · 10</div>
+      <div class="eye">STERILIZATION</div>
+      <h1><span class="ac">Kills 99.9%</span><br><span class="li">of what you can't see.</span></h1>
+      <div class="h-kr"><b>280nm UV-C LED</b>가 캐비닛 내부 전체를 살균합니다.</div>
+      <div class="body">살균 전용 파장 280nm UV-C LED가 캐비닛 전체를 한 사이클 안에 살균. 도어 오픈 시 즉시 차단, 화학약품 없음, LED 평균 25,000시간 (≈8년) 교체 없음.</div>
+      <div class="feat-list">
+        <div class="fl"><div class="k">Wavelength</div><div class="v">280nm UV-C LED</div></div>
+        <div class="fl"><div class="k">Cycle</div><div class="v">15분 표준 · 25분 풀</div></div>
+        <div class="fl"><div class="k">Safety</div><div class="v">도어 오픈 시 즉시 차단</div></div>
+        <div class="fl"><div class="k">LED Life</div><div class="v">25,000 시간 (≈8년)</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S02 — IONIZER ============ -->
   <section class="sec" id="s2" data-ch="ionizer" data-nm="AIR IONIZER">
-    <div class="wm">02</div>
-    <div class="num"><b>02</b> · 10</div>
-    <div class="eye">AIR PURIFICATION</div>
-    <h1><span class="li">Clean air,</span><br><span class="ac">every cycle.</span></h1>
-    <div class="h-kr">cm³당 <b>1,200,000 음이온</b>으로 공기까지 깨끗하게.</div>
-    <div class="body">살균 후 보관 중 누적되는 미세 곰팡이 포자·잔여 냄새·부유 박테리아를 처리하기 위해 음이온 발생기를 통합. 1.2M ions/cm³ 농도의 음이온이 내부 공기를 끊임없이 순환시키며, 필터리스 구조라 별도 유지보수가 필요 없습니다.</div>
-    <div class="feat-list">
-      <div class="fl"><div class="k">Ion Density</div><div class="v">1,200,000 ions/cm³</div></div>
-      <div class="fl"><div class="k">Antibacterial</div><div class="v">부유 박테리아 중화</div></div>
-      <div class="fl"><div class="k">Odor</div><div class="v">잔여 냄새 제거</div></div>
-      <div class="fl"><div class="k">Maintenance</div><div class="v">필터리스 · 무교체</div></div>
+    <div class="gcard">
+      <div class="num"><b>02</b> · 10</div>
+      <div class="eye">AIR PURIFICATION</div>
+      <h1><span class="li">Clean air,</span><br><span class="ac">every cycle.</span></h1>
+      <div class="h-kr">cm³당 <b>1,200,000 음이온</b>으로 공기까지 깨끗하게.</div>
+      <div class="body">살균 후 누적되는 미세 곰팡이 포자·잔여 냄새·부유 박테리아를 처리하기 위해 음이온 발생기 통합. 필터리스 구조라 별도 유지보수 불필요.</div>
+      <div class="feat-list">
+        <div class="fl"><div class="k">Ion Density</div><div class="v">1,200,000 ions/cm³</div></div>
+        <div class="fl"><div class="k">Antibacterial</div><div class="v">부유 박테리아 중화</div></div>
+        <div class="fl"><div class="k">Odor</div><div class="v">잔여 냄새 제거</div></div>
+        <div class="fl"><div class="k">Maintenance</div><div class="v">필터리스 · 무교체</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S03 — LED PANEL ============ -->
   <section class="sec" id="s3" data-ch="panel" data-nm="LED PANEL">
-    <div class="wm">03</div>
-    <div class="num"><b>03</b> · 10</div>
-    <div class="eye">INTERFACE</div>
-    <h1><span class="li">Every cycle,</span><br><span class="ac">at a glance.</span></h1>
-    <div class="h-kr">하나의 패널, 모든 상태를 <b>한 눈에</b>.</div>
-    <div class="body">캐비닛 상단의 P.C.B 컨트롤 패널이 동작 모드, 잔여 사이클 시간, 도어 상태, 이상 감지를 한 화면에 표시합니다. 별도 교육 없이 직관적으로 사용할 수 있고, 사이클 완료 시 알림음과 LED 인디케이터로 알려줍니다.</div>
-    <div class="feat-list">
-      <div class="fl"><div class="k">Mode</div><div class="v">UV-C · 음이온 · 건조</div></div>
-      <div class="fl"><div class="k">Time</div><div class="v">잔여 사이클 표시</div></div>
-      <div class="fl"><div class="k">Alert</div><div class="v">도어 · 이상 감지</div></div>
-      <div class="fl"><div class="k">Diag</div><div class="v">LED 수명 카운터</div></div>
+    <div class="gcard">
+      <div class="num"><b>03</b> · 10</div>
+      <div class="eye">INTERFACE</div>
+      <h1><span class="li">Every cycle,</span><br><span class="ac">at a glance.</span></h1>
+      <div class="h-kr">하나의 패널, 모든 상태를 <b>한 눈에</b>.</div>
+      <div class="body">캐비닛 상단의 P.C.B 컨트롤 패널이 동작 모드, 잔여 시간, 도어 상태, 이상 감지를 한 화면에 표시. 직관적 사용.</div>
+      <div class="feat-list">
+        <div class="fl"><div class="k">Mode</div><div class="v">UV-C · 음이온 · 건조</div></div>
+        <div class="fl"><div class="k">Time</div><div class="v">잔여 사이클 표시</div></div>
+        <div class="fl"><div class="k">Alert</div><div class="v">도어 · 이상 감지</div></div>
+        <div class="fl"><div class="k">Diag</div><div class="v">LED 수명 카운터</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S04 — MODULAR ============ -->
   <section class="sec" id="s4" data-ch="modular" data-nm="MODULAR DESIGN">
-    <div class="wm">04</div>
-    <div class="num"><b>04</b> · 10</div>
-    <div class="eye">MODULAR DESIGN</div>
-    <h1><span class="li">Configure</span><br><span class="ac">your inside.</span></h1>
-    <div class="h-kr"><b>8가지 거치대</b>를 자유롭게 슬라이드 인·아웃.</div>
-    <div class="body">거치대 위치와 종류를 자유롭게 바꿀 수 있는 모듈식 구조. 매장 메뉴나 영업 규모에 따라 내부 구성을 새로 짤 수 있습니다. 기본 8개 모듈 (F02~F16) 포함, 추가 모듈은 별도 구매 가능합니다.</div>
-    <div class="mods">
-      <div class="m"><div class="c">F02</div><div class="n">타공선반</div></div>
-      <div class="m"><div class="c">F03</div><div class="n">칼</div></div>
-      <div class="m"><div class="c">F04</div><div class="n">도마</div></div>
-      <div class="m"><div class="c">F05</div><div class="n">고무장갑</div></div>
-      <div class="m"><div class="c">F06</div><div class="n">고무장화</div></div>
-      <div class="m"><div class="c">F10</div><div class="n">다기능</div></div>
-      <div class="m"><div class="c">F11</div><div class="n">도마받침</div></div>
-      <div class="m"><div class="c">F16</div><div class="n">앞치마</div></div>
+    <div class="gcard">
+      <div class="num"><b>04</b> · 10</div>
+      <div class="eye">MODULAR DESIGN</div>
+      <h1><span class="li">Configure</span><br><span class="ac">your inside.</span></h1>
+      <div class="h-kr"><b>8가지 거치대</b>를 자유롭게 슬라이드 인·아웃.</div>
+      <div class="body">거치대 위치·종류를 자유롭게 변경 가능한 모듈식 구조. 기본 8개 모듈 (F02~F16) 포함, 추가 모듈 별도 구매 가능.</div>
+      <div class="mods">
+        <div class="m"><div class="c">F02</div><div class="n">타공선반</div></div>
+        <div class="m"><div class="c">F03</div><div class="n">칼</div></div>
+        <div class="m"><div class="c">F04</div><div class="n">도마</div></div>
+        <div class="m"><div class="c">F05</div><div class="n">고무장갑</div></div>
+        <div class="m"><div class="c">F06</div><div class="n">고무장화</div></div>
+        <div class="m"><div class="c">F10</div><div class="n">다기능</div></div>
+        <div class="m"><div class="c">F11</div><div class="n">도마받침</div></div>
+        <div class="m"><div class="c">F16</div><div class="n">앞치마</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S05 — PREMIUM STAINLESS ============ -->
   <section class="sec" id="s5" data-ch="premium" data-nm="PREMIUM STAINLESS">
-    <div class="wm">05</div>
-    <div class="num"><b>05</b> · 10</div>
-    <div class="eye">MATERIAL</div>
-    <h1><span class="ac">STS-304 · 0.8T</span><br><span class="li">Built to last.</span></h1>
-    <div class="h-kr"><b>STS-304 0.8T</b> 식품 등급 스테인리스.</div>
-    <div class="body">바디와 도어 전체를 STS-304 0.8T 스테인리스 스틸로 마감. 식품 접촉 등급이라 위생적이며, 염분·산성 환경에서도 부식되지 않아 상업용 주방의 거친 조건에서 오래 사용할 수 있습니다. 다리는 조절식 스테인리스로 바닥 수평을 정확히 잡습니다.</div>
-    <div class="feat-list">
-      <div class="fl"><div class="k">Body</div><div class="v">STS-304 · 0.8T</div></div>
-      <div class="fl"><div class="k">Door</div><div class="v">STS-304 · 0.8T</div></div>
-      <div class="fl"><div class="k">Feet</div><div class="v">Adjustable Stainless</div></div>
-      <div class="fl"><div class="k">Window</div><div class="v">강화유리 · 투명</div></div>
+    <div class="gcard">
+      <div class="num"><b>05</b> · 10</div>
+      <div class="eye">MATERIAL</div>
+      <h1><span class="ac">STS-304 · 0.8T</span><br><span class="li">Built to last.</span></h1>
+      <div class="h-kr"><b>STS-304 0.8T</b> 식품 등급 스테인리스.</div>
+      <div class="body">바디·도어 전체 STS-304 0.8T 스테인리스 마감. 위생적·내부식·주방 등급. 다리는 조절식 스테인리스로 바닥 수평 정확히 조정.</div>
+      <div class="feat-list">
+        <div class="fl"><div class="k">Body</div><div class="v">STS-304 · 0.8T</div></div>
+        <div class="fl"><div class="k">Door</div><div class="v">STS-304 · 0.8T</div></div>
+        <div class="fl"><div class="k">Feet</div><div class="v">Adjustable Stainless</div></div>
+        <div class="fl"><div class="k">Window</div><div class="v">강화유리 · 투명</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S06 — DIMENSIONS ============ -->
   <section class="sec" id="s6" data-ch="dimensions" data-nm="DIMENSIONS">
-    <div class="wm">06</div>
-    <div class="num"><b>06</b> · 10</div>
-    <div class="eye">DIMENSIONS</div>
-    <h1><span class="ac">1000 × 600 × 1900</span><br><span class="li">millimeters.</span></h1>
-    <div class="h-kr">표준 설치 사양 · 본체 무게 약 <b>100kg</b>.</div>
-    <div class="body">단일 도어 폭 500mm, 좌우 양개식 (Dual Swing). 설치 시 좌우 도어 스윙 공간 각 600mm 권장. 220V 60Hz 단상 전원에 350W 정격 소비전력으로 일반 콘센트로 연결 가능.</div>
-    <div class="stats">
-      <div class="s"><div class="v">1000</div><div class="l">Width</div></div>
-      <div class="s"><div class="v">600</div><div class="l">Depth</div></div>
-      <div class="s"><div class="v">1900</div><div class="l">Height</div></div>
-      <div class="s"><div class="v">≈100kg</div><div class="l">Weight</div></div>
+    <div class="gcard">
+      <div class="num"><b>06</b> · 10</div>
+      <div class="eye">DIMENSIONS</div>
+      <h1><span class="ac">1000 × 600 × 1900</span><br><span class="li">millimeters.</span></h1>
+      <div class="h-kr">표준 설치 사양 · 본체 무게 약 <b>100kg</b>.</div>
+      <div class="body">단일 도어 폭 500mm, 좌우 양개식. 설치 시 좌우 도어 스윙 공간 각 600mm 권장. 220V 60Hz 단상 전원, 350W 정격 소비전력.</div>
+      <div class="stats">
+        <div class="s"><div class="v">1000</div><div class="l">Width</div></div>
+        <div class="s"><div class="v">600</div><div class="l">Depth</div></div>
+        <div class="s"><div class="v">1900</div><div class="l">Height</div></div>
+        <div class="s"><div class="v">≈100kg</div><div class="l">Weight</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S07 — SPEC TABLE ============ -->
   <section class="sec" id="s7" data-ch="dimensions" data-nm="SPECIFICATIONS">
-    <div class="wm">07</div>
-    <div class="num"><b>07</b> · 10</div>
-    <div class="eye">SPECIFICATIONS</div>
-    <h1>전체 사양</h1>
-    <div class="h-kr">HKNS-1019 · 2026 · 조달 24885355</div>
-    <div class="spec-tbl">
-      <div class="r"><div class="k">Model</div><div class="v">HKNS-1019</div></div>
-      <div class="r"><div class="k">Size (mm)</div><div class="v">W1000 × D600 × H1900</div></div>
-      <div class="r"><div class="k">Thickness</div><div class="v">STS-304 · 0.8T</div></div>
-      <div class="r"><div class="k">Door</div><div class="v">Dual Swing</div></div>
-      <div class="r"><div class="k">Sterilize</div><div class="v">UV-C LED · 280nm</div></div>
-      <div class="r"><div class="k">Power</div><div class="v">220V / 60Hz / 350W</div></div>
-      <div class="r"><div class="k">Control</div><div class="v">P.C.B</div></div>
-      <div class="r"><div class="k">Window</div><div class="v">Glass (Transparent)</div></div>
-      <div class="r"><div class="k">Feet</div><div class="v">Adjustable Stainless</div></div>
-      <div class="r"><div class="k">Cert</div><div class="v">KC · HACCP · 조달 24885355</div></div>
+    <div class="gcard">
+      <div class="num"><b>07</b> · 10</div>
+      <div class="eye">SPECIFICATIONS</div>
+      <h1>전체 사양</h1>
+      <div class="h-kr">HKNS-1019 · 2026 · 조달 24885355</div>
+      <div class="spec-tbl">
+        <div class="r"><div class="k">Model</div><div class="v">HKNS-1019</div></div>
+        <div class="r"><div class="k">Size (mm)</div><div class="v">W1000 × D600 × H1900</div></div>
+        <div class="r"><div class="k">Thickness</div><div class="v">STS-304 · 0.8T</div></div>
+        <div class="r"><div class="k">Door</div><div class="v">Dual Swing</div></div>
+        <div class="r"><div class="k">Sterilize</div><div class="v">UV-C LED · 280nm</div></div>
+        <div class="r"><div class="k">Power</div><div class="v">220V / 60Hz / 350W</div></div>
+        <div class="r"><div class="k">Window</div><div class="v">Glass · Transparent</div></div>
+        <div class="r"><div class="k">Feet</div><div class="v">Adjustable Stainless</div></div>
+        <div class="r"><div class="k">Cert</div><div class="v">KC · HACCP · 조달 24885355</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S08 — CERTIFICATIONS ============ -->
   <section class="sec" id="s8" data-ch="overview" data-nm="CERTIFICATIONS">
-    <div class="wm">08</div>
-    <div class="num"><b>08</b> · 10</div>
-    <div class="eye">CERTIFICATIONS</div>
-    <h1><span class="li">Certified for</span><br><span class="ac">trust.</span></h1>
-    <div class="h-kr"><b>KC · HACCP · 조달청 24885355</b></div>
-    <div class="body">전기·전자 안전 (KC), 식품 위생 호환 (HACCP), 조달청 공식 등록 (24885355). 공공기관·학교·병원 등 입찰·납품 절차에서 별도 검증 자료 없이 즉시 도입 가능합니다.</div>
-    <div class="feat-list">
-      <div class="fl"><div class="k">KC</div><div class="v">전기·전자 안전</div></div>
-      <div class="fl"><div class="k">HACCP</div><div class="v">식품 위생 호환</div></div>
-      <div class="fl"><div class="k">조달청</div><div class="v">24885355</div></div>
+    <div class="gcard">
+      <div class="num"><b>08</b> · 10</div>
+      <div class="eye">CERTIFICATIONS</div>
+      <h1><span class="li">Certified for</span><br><span class="ac">trust.</span></h1>
+      <div class="h-kr"><b>KC · HACCP · 조달청 24885355</b></div>
+      <div class="body">전기·전자 안전 (KC), 식품 위생 호환 (HACCP), 조달청 등록 (24885355). 공공기관·학교·병원 입찰·납품 즉시 도입 가능.</div>
+      <div class="feat-list">
+        <div class="fl"><div class="k">KC</div><div class="v">전기·전자 안전</div></div>
+        <div class="fl"><div class="k">HACCP</div><div class="v">식품 위생 호환</div></div>
+        <div class="fl"><div class="k">조달청</div><div class="v">24885355</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S09 — RESOURCES ============ -->
   <section class="sec" id="s9" data-ch="overview" data-nm="RESOURCES">
-    <div class="wm">09</div>
-    <div class="num"><b>09</b> · 10</div>
-    <div class="eye">RESOURCES</div>
-    <h1><span class="li">Everything in</span><br><span class="ac">one place.</span></h1>
-    <div class="h-kr">사용설명서 · 카탈로그 · 도면 · 인증서.</div>
-    <div class="body">구매·설치·운영에 필요한 모든 자료를 PDF로 제공합니다. 도면 파일은 PDF + DWG 형식으로 제공되어 설계 단계부터 정확한 치수 검토가 가능합니다.</div>
-    <div class="res-grid">
-      <div class="r"><div class="t">사용설명서</div><div class="e">User Manual · 12p</div><a class="dl" href="#" onclick="alert('준비 중'); return false;">↓ DOWNLOAD</a></div>
-      <div class="r"><div class="t">카탈로그</div><div class="e">Catalog · 24p</div><a class="dl" href="https://ffrbiz.cafe24.com/mall/pdf/web/neo_plus.pdf" target="_blank">↓ DOWNLOAD</a></div>
-      <div class="r"><div class="t">도면 · CAD</div><div class="e">PDF + DWG</div><a class="dl" href="#" onclick="alert('준비 중'); return false;">↓ DOWNLOAD</a></div>
-      <div class="r"><div class="t">인증서</div><div class="e">KC · HACCP · 조달</div><a class="dl" href="#" onclick="alert('준비 중'); return false;">↓ DOWNLOAD</a></div>
+    <div class="gcard">
+      <div class="num"><b>09</b> · 10</div>
+      <div class="eye">RESOURCES</div>
+      <h1><span class="li">Everything in</span><br><span class="ac">one place.</span></h1>
+      <div class="h-kr">사용설명서 · 카탈로그 · 도면 · 인증서.</div>
+      <div class="res-grid">
+        <div class="r"><div class="t">사용설명서</div><div class="e">User Manual · 12p</div><a class="dl" href="#" onclick="alert('준비 중'); return false;">↓ DOWNLOAD</a></div>
+        <div class="r"><div class="t">카탈로그</div><div class="e">Catalog · 24p</div><a class="dl" href="https://ffrbiz.cafe24.com/mall/pdf/web/neo_plus.pdf" target="_blank">↓ DOWNLOAD</a></div>
+        <div class="r"><div class="t">도면 · CAD</div><div class="e">PDF + DWG</div><a class="dl" href="#" onclick="alert('준비 중'); return false;">↓ DOWNLOAD</a></div>
+        <div class="r"><div class="t">인증서</div><div class="e">KC · HACCP · 조달</div><a class="dl" href="#" onclick="alert('준비 중'); return false;">↓ DOWNLOAD</a></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S10 — CTA ============ -->
-  <section class="sec cta" id="s10" data-ch="overview" data-nm="INQUIRY">
-    <div class="wm" style="color:rgba(255,255,255,0.04);">10</div>
-    <div class="num"><b>10</b> · 10</div>
-    <div class="eye">INQUIRY</div>
-    <h1><span class="li">Make it</span><br><span class="ac">yours.</span></h1>
-    <div class="h-kr">매장에 맞춘 <b>맞춤 견적</b>.</div>
-    <div class="body">모듈 구성, 설치 환경, 사용 빈도를 알려주시면 영업 담당자가 1영업일 이내 맞춤 견적을 보내드립니다.</div>
-    <button class="build-btn" onclick="alert('Builder는 다음 단계에 통합 예정')">BUILD YOUR CONFIGURATION  →</button>
-    <div class="contact">
-      <b>1899-3651</b>
-      본사 영업팀 · KakaoTalk @hkneo<br>
-      HK · NEO+ Sterilizer · HKNS-1019 · 2026
+  <section class="sec" id="s10" data-ch="overview" data-nm="INQUIRY">
+    <div class="gcard">
+      <div class="num"><b>10</b> · 10</div>
+      <div class="eye">INQUIRY</div>
+      <h1><span class="li">Make it</span><br><span class="ac">yours.</span></h1>
+      <div class="h-kr">매장에 맞춘 <b>맞춤 견적</b>.</div>
+      <div class="body">모듈 구성, 설치 환경, 사용 빈도를 알려주시면 영업 담당자가 1영업일 이내 맞춤 견적을 보내드립니다.</div>
+      <button class="build-btn" onclick="alert('Builder는 다음 단계에 통합 예정')">BUILD YOUR CONFIGURATION  →</button>
+      <div class="contact">
+        <b>1899-3651</b>
+        본사 영업팀 · KakaoTalk @hkneo<br>
+        HK · NEO+ Sterilizer · HKNS-1019 · 2026
+      </div>
     </div>
   </section>
 
@@ -739,20 +751,18 @@
     dots.forEach((d, k) => d.classList.toggle('on', k === i));
     crumbName.textContent = sec.dataset.nm || '';
     crumbIdx.textContent = String(i).padStart(2,'0') + '/10';
-    // 3D chapter sync — go 2 levels deep (v3 → mobile_configurator_final → HK)
     const ch = sec.dataset.ch || 'overview';
     try {
-      const outerWin = iframe.contentWindow;  // mobile_configurator_final
+      const outerWin = iframe.contentWindow;
       if (!outerWin) return;
-      // Find HK iframe inside mobile_configurator_final
       const hkInner = outerWin.document?.getElementById('hk-frame');
       const hkWin = hkInner?.contentWindow;
       if (hkWin && hkWin._enterChapter) hkWin._enterChapter(ch);
       else if (hkWin && hkWin.enterChapter) hkWin.enterChapter(ch);
-    } catch(e) { console.warn('[v3] chapter sync failed:', e); }
+    } catch(e) {}
   }
 
-  /* IntersectionObserver — fire on enter */
+  /* Section in-view observer */
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
@@ -761,7 +771,7 @@
         if (i >= 0) setActive(i);
       }
     });
-  }, { threshold: 0.3, root: frame });
+  }, { threshold: 0.55, root: frame });
   SECS.forEach(s => obs.observe(s));
 
   /* Dot click */
@@ -780,16 +790,15 @@
     });
   });
 
-  /* Inject CSS into nested iframe (mobile_configurator_final → HK) to hide unwanted UI */
+  /* Hide HK UI elements (2-level deep) */
   function injectInnerCSS() {
     try {
       const outerWin = iframe.contentWindow;
       if (!outerWin) return;
-      // Outer document (mobile_configurator_final.html)
       const outerDoc = outerWin.document;
-      if (outerDoc && !outerDoc.getElementById('v37_outer_hide')) {
+      if (outerDoc && !outerDoc.getElementById('v39_outer_hide')) {
         const s1 = outerDoc.createElement('style');
-        s1.id = 'v37_outer_hide';
+        s1.id = 'v39_outer_hide';
         s1.textContent = `
           #mobileLoading, .mobile-loading,
           .chapter-bar, #chapterBar, .ch-dot, #chapterDots,
@@ -807,13 +816,12 @@
         `;
         outerDoc.head.appendChild(s1);
       }
-      // Inner iframe (HK_3dconfigurator_final.html)
       const hkInner = outerDoc?.getElementById('hk-frame');
       const hkWin = hkInner?.contentWindow;
       const hkDoc = hkWin?.document;
-      if (hkDoc && !hkDoc.getElementById('v37_inner_hide')) {
+      if (hkDoc && !hkDoc.getElementById('v39_inner_hide')) {
         const s2 = hkDoc.createElement('style');
-        s2.id = 'v37_inner_hide';
+        s2.id = 'v39_inner_hide';
         s2.textContent = `
           .intro-content, .intro-eyebrow, .intro-headline, .intro-sub, .intro-icons,
           #chapterOverlay, .chapter-text, .ch-text, .chapter-headline, .ch-headline,
@@ -846,7 +854,6 @@
           }
         `;
         hkDoc.head.appendChild(s2);
-        // Hide floor in three.js scene
         try {
           if (hkWin._plainFloor) hkWin._plainFloor.visible = false;
           if (hkWin.shadowCatcher) hkWin.shadowCatcher.visible = false;
@@ -855,24 +862,50 @@
     } catch(e) {}
   }
 
-  /* Loading */
-  function hideLoad() {
-    setTimeout(() => loadEl.classList.add('go'), 400);
-    setTimeout(() => { loadEl.style.display = 'none'; }, 1500);
+  /* ✨ v3.9 — 로딩 검은화면 제거: HK 3D 첫 frame 렌더 완료까지 대기 */
+  function checkHKReady() {
+    try {
+      const outerWin = iframe.contentWindow;
+      const hkInner = outerWin?.document?.getElementById('hk-frame');
+      const hkWin = hkInner?.contentWindow;
+      // _introRenderReady is set by HK after intro frame rendered (from v78.167)
+      return hkWin && hkWin._introRenderReady === true;
+    } catch(e) { return false; }
   }
-  iframe.addEventListener('load', () => {
-    injectInnerCSS();
-    setTimeout(injectInnerCSS, 1500);
-    setTimeout(injectInnerCSS, 3500);
-    setTimeout(injectInnerCSS, 7000);
-    hideLoad();
-  });
-  setTimeout(hideLoad, 8000);
 
-  /* Initial in-view */
+  function hideLoad() {
+    loadEl.classList.add('go');
+    setTimeout(() => { loadEl.style.display = 'none'; }, 900);
+  }
+
+  function pollHKReady() {
+    let attempts = 0;
+    const maxAttempts = 80; // 80 * 100ms = 8 seconds max
+    const check = () => {
+      attempts++;
+      injectInnerCSS();
+      if (checkHKReady() || attempts >= maxAttempts) {
+        // ready! Or max wait. Hide load.
+        hideLoad();
+        return;
+      }
+      setTimeout(check, 100);
+    };
+    check();
+  }
+
+  iframe.addEventListener('load', () => {
+    // Start polling for HK ready, inject CSS along the way
+    injectInnerCSS();
+    setTimeout(pollHKReady, 500);
+  });
+  // Absolute safety fallback
+  setTimeout(hideLoad, 10000);
+
+  // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.7] mobile_configurator_final embed · sticky 55vh 3D · scroll below');
+  console.log('[v3.9] Frosted glass cards over 3D · mandatory snap · ready-poll loading');
 })();
 </script>
 
