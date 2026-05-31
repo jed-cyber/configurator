@@ -34,7 +34,7 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.25 — scroll 부드럽게: overscroll contain + scroll-padding으로 부드러운 snap */
+  /* ✨ v3.26 — scroll-snap 제거. JS smooth wheel/touch가 ease-out으로 직접 snap. */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
@@ -44,11 +44,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     background: transparent;
-    scroll-snap-type: y mandatory;
-    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    scroll-padding-top: 0;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
@@ -663,8 +660,8 @@
 
 <!-- v3.17 — blendBridge 제거. iframe mask-image로 대체 -->
 
-<!-- ✨ v3.21 — Segmented mode toggle (Scroll / Rotate) -->
-<div id="modeToggle" role="tablist" aria-label="Interaction mode">
+<!-- ✨ v3.26 — Segmented mode toggle: inline style로 강제 표시 (z 99999) -->
+<div id="modeToggle" role="tablist" aria-label="Interaction mode" style="position:fixed !important; bottom:18px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
   <button type="button" class="btn-scroll active" data-mode="scroll" role="tab" aria-selected="true">
     <span class="ico">⇅</span><span>SCROLL</span>
   </button>
@@ -727,8 +724,8 @@
     </div>
   </section>
 
-  <!-- ============ S03 — SMART CIRCULATION (v3.25 추가) ============ -->
-  <section class="sec" id="s_circ" data-ch="ionizer" data-nm="SMART CIRCULATION">
+  <!-- ============ S03 — SMART CIRCULATION (v3.25 추가, v3.26 data-ch="drying") ============ -->
+  <section class="sec" id="s_circ" data-ch="drying" data-nm="SMART CIRCULATION">
     <div class="gcard">
       <div class="num"><b>03</b> · 11</div>
       <div class="eye">CIRCULATION</div>
@@ -988,6 +985,66 @@
   }, { passive: true });
   setTimeout(updateActiveFromScroll, 300);
 
+  /* ✨ v3.26 — JS smooth wheel scroll (자석 + ease-out 부드러움, 일반 웹사이트 같은 느낌) */
+  let scrollAnimLock = false;
+  function smoothScrollToSec(idx) {
+    if (scrollAnimLock) return;
+    scrollAnimLock = true;
+    const sH = frame.clientHeight;
+    const target = idx * sH;
+    const start = frame.scrollTop;
+    const distance = target - start;
+    if (Math.abs(distance) < 2) { scrollAnimLock = false; return; }
+    const duration = 700;
+    const t0 = performance.now();
+    function tick(now) {
+      const elapsed = now - t0;
+      const p = Math.min(1, elapsed / duration);
+      // ease-out cubic
+      const ease = 1 - Math.pow(1 - p, 3);
+      frame.scrollTop = start + distance * ease;
+      if (p < 1) requestAnimationFrame(tick);
+      else { scrollAnimLock = false; }
+    }
+    requestAnimationFrame(tick);
+  }
+  // Wheel: 한 번에 한 sec씩 부드럽게
+  frame.addEventListener('wheel', (e) => {
+    if (document.body.classList.contains('rotate-mode')) return;
+    e.preventDefault();
+    if (scrollAnimLock) return;
+    const dir = e.deltaY > 0 ? 1 : -1;
+    const sH = frame.clientHeight;
+    const curIdx = Math.round(frame.scrollTop / sH);
+    const newIdx = Math.max(0, Math.min(SECS.length - 1, curIdx + dir));
+    if (newIdx !== curIdx) smoothScrollToSec(newIdx);
+  }, { passive: false });
+  // Touch: swipe 방향 감지 후 부드러운 snap
+  let touchStartY = null;
+  frame.addEventListener('touchstart', (e) => {
+    if (document.body.classList.contains('rotate-mode')) return;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  frame.addEventListener('touchend', (e) => {
+    if (document.body.classList.contains('rotate-mode')) return;
+    if (touchStartY === null || scrollAnimLock) return;
+    const endY = e.changedTouches[0].clientY;
+    const dy = touchStartY - endY;
+    touchStartY = null;
+    if (Math.abs(dy) < 30) {
+      // 너무 짧으면 현재 sec으로 snap back
+      const sH = frame.clientHeight;
+      const curIdx = Math.round(frame.scrollTop / sH);
+      smoothScrollToSec(curIdx);
+      return;
+    }
+    const dir = dy > 0 ? 1 : -1;
+    const sH = frame.clientHeight;
+    const curIdx = Math.round(frame.scrollTop / sH);
+    const newIdx = Math.max(0, Math.min(SECS.length - 1, curIdx + dir));
+    smoothScrollToSec(newIdx);
+  }, { passive: true });
+
   /* Dot click */
   dots.forEach((d, i) => {
     d.addEventListener('click', () => SECS[i] && SECS[i].scrollIntoView({ behavior: 'smooth' }));
@@ -1136,10 +1193,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.25] Smart Circulation chapter + toggle z9999 + black-screen wait + HK toast hide');
+  console.log('[v3.26] drying chapter + JS smooth wheel scroll + toggle inline z99999');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.25';
+    m.textContent = 'v3.26';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
