@@ -34,12 +34,12 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.18 — 기본은 100vh (전체 화면 스크롤 가능).
-                .rotate-mode 클래스 ON 시 42vh로 축소 → 하단 58vh는 3D 회전 영역 */
+  /* ✨ v3.20 — 항상 42vh로 고정 (sec 42vh와 일치, 마지막 sec[10]까지 정확히 snap 가능).
+                rotate-mode 클래스는 더 이상 mobileFrame 크기에 영향 안 줌 */
   #mobileFrame {
     position: fixed;
     top: 0;
-    height: 100vh;
+    height: 42vh;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 5;
@@ -49,10 +49,6 @@
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    transition: height 0.3s cubic-bezier(0.22,1,0.36,1);
-  }
-  body.rotate-mode #mobileFrame {
-    height: 42vh;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
@@ -85,6 +81,10 @@
     color: #050810;
     border-color: rgba(122,184,255,1);
     box-shadow: 0 0 24px rgba(122,184,255,0.55);
+  }
+  /* ✨ v3.20 — rotate-mode ON 시 iframe만 인터랙션 활성 */
+  body.rotate-mode #stage3d iframe {
+    pointer-events: auto;
   }
   /* 회전 모드일 때 작은 label */
   #rotateToggleLabel {
@@ -131,10 +131,12 @@
   }
   /* ✨ v3.17 — blendBridge 제거됨. iframe 자체에 mask-image로 fade 처리 (아래 #stage3d iframe 룰) */
   /* ✨ v3.18 — iframe mask-image 20 stops + fade 60%까지 확장으로 초고밀도 부드러운 fade-in */
+  /* ✨ v3.20 — iframe 기본 pointer-events:none.
+                .rotate-mode 클래스일 때만 auto → 카메라 회전 활성 */
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
-    pointer-events: auto;
+    pointer-events: none;
     touch-action: none;
     -webkit-mask-image: linear-gradient(180deg,
       transparent 0%,
@@ -257,7 +259,7 @@
     left: 0;
     right: 0;
     width: 100%;
-    padding: 50px 22px 18px;  /* v3.17 — 42vh에 맞춰 padding 축소 */
+    padding: 64px 22px 14px;  /* v3.20 — top 64px (top bar + stagger transform 여유) */
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -273,7 +275,7 @@
 
   /* hero card on first section — uses default .gcard layout */
   .sec.hero .gcard {
-    padding: 50px 22px 18px;
+    padding: 64px 22px 14px;
   }
 
   /* ============ TYPOGRAPHY (inside glass card) ============ */
@@ -764,8 +766,8 @@
     <div class="gcard">
       <div class="num"><b>07</b> · 10</div>
       <div class="eye">SPECIFICATIONS</div>
-      <h1>전체 사양</h1>
-      <div class="h-kr">HKNS-1019 · 2026 · 조달 24885355</div>
+      <h1>The <span class="ac">Full Spec.</span></h1>
+      <div class="h-kr"><b>HKNS-1019 · 2026 · 조달 24885355</b></div>
       <div class="spec-tbl">
         <div class="r"><div class="k">Model</div><div class="v">HKNS-1019</div></div>
         <div class="r"><div class="k">Size (mm)</div><div class="v">W1000 × D600 × H1900</div></div>
@@ -884,7 +886,7 @@
   }
 
   /* Section in-view observer */
-  /* ✨ v3.19 — rootMargin으로 top 42vh 영역만 관찰 (mobileFrame 100vh에서 sec 42vh 분리) */
+  /* ✨ v3.20 — mobileFrame 42vh + sec 42vh 일치, 정상 threshold */
   const obs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (e.isIntersecting) {
@@ -895,13 +897,13 @@
         e.target.classList.remove('in');
       }
     });
-  }, { threshold: 0.85, root: frame, rootMargin: '0px 0px -58% 0px' });
+  }, { threshold: 0.6, root: frame });
   SECS.forEach(s => obs.observe(s));
 
-  /* ✨ v3.19 — Scroll-based fallback: sec 높이(42vh)로 계산 */
+  /* ✨ v3.20 — Scroll-based fallback: container clientHeight 기준 */
   function updateActiveFromScroll() {
     const st = frame.scrollTop;
-    const sectionHeight = window.innerHeight * 0.42;  // sec is 42vh
+    const sectionHeight = frame.clientHeight || window.innerHeight * 0.42;
     const idx = Math.max(0, Math.min(SECS.length - 1, Math.round(st / sectionHeight)));
     SECS.forEach((s, k) => {
       if (k === idx) s.classList.add('in');
@@ -1051,10 +1053,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.19] scroll/observer math fix for mobileFrame 100vh + sec 42vh');
+  console.log('[v3.20] mobileFrame 42vh lock + title padding fix + ch10 reach + ch7 EN headline');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.19';
+    m.textContent = 'v3.20';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
