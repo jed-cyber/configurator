@@ -52,21 +52,21 @@
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ============ 3D STAGE — sticky top inside scroll container ============ */
-  /* 3D 영역은 상단 55vh, sticky로 고정. 이 영역 터치 = 3D 회전. */
+  /* ============ 3D STAGE — IN-FLOW (scrolls together with page) ============ */
+  /* ✨ v3.8 — sticky 제거. 전체 페이지가 한 덩어리로 자연 스크롤. */
   #stage3d {
-    position: sticky;
-    top: 0;
-    height: 55vh;
+    position: relative;
     width: 100%;
-    z-index: 2;
+    height: 78vh;
     background: radial-gradient(ellipse at 50% 40%, #f4f6fb 0%, #d8dee8 100%);
     overflow: hidden;
+    margin-bottom: 0;
   }
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
-    /* iframe 자체가 터치 받음 → 3D 회전. 자식 sec에서는 따로 처리 */
+    /* ✨ v3.8 — 줌/회전 비활성 → 스크롤이 그대로 통과 */
+    pointer-events: none;
   }
 
   /* 3D 하단 → 흰색 콘텐츠 영역으로 부드러운 fade (unified feel) */
@@ -74,8 +74,8 @@
     content: '';
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 100px;
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,1) 100%);
+    height: 80px;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,1) 100%);
     pointer-events: none;
     z-index: 5;
   }
@@ -135,16 +135,37 @@
     #dotNav { left: 6px; gap: 8px; }
   }
 
-  /* ============ SECTIONS (text panels, scrollable, below sticky 3D) ============ */
+  /* ============ SECTIONS (Daelim-page style, in-flow) ============ */
   .sec {
-    min-height: 75vh;
+    min-height: 88vh;
     background: #fff;
-    padding: 26px 24px 36px;
+    padding: 42px 26px 56px;
     scroll-snap-align: start;
     position: relative;
   }
-  /* First section: no extra top — directly under 3D's gradient fade */
-  .sec:first-of-type { padding-top: 16px; }
+  /* S00 (Hero) — 3D iframe takes most space, text below */
+  .sec.hero {
+    min-height: auto;
+    padding: 0;
+    background: #fff;
+  }
+  .sec.hero .hero-text {
+    padding: 30px 26px 50px;
+  }
+  /* Big watermark number for Daelim editorial feel */
+  .sec .wm {
+    position: absolute;
+    top: 24px; right: 22px;
+    font-family: 'Inter', sans-serif;
+    font-size: 88px; font-weight: 800;
+    color: #f3f3f6;
+    letter-spacing: -3px;
+    line-height: 1;
+    z-index: 0;
+    user-select: none;
+    pointer-events: none;
+  }
+  .sec > *:not(.wm) { position: relative; z-index: 1; }
 
   /* ============ ENTRANCE ANIMATIONS (cinematic) ============ */
   .sec .num, .sec .eye, .sec h1, .sec .h-kr,
@@ -485,29 +506,31 @@
 <!-- ===== MOBILE FRAME (scroll container) ===== -->
 <div id="mobileFrame">
 
-  <!-- 3D STAGE (sticky top, captures touch for rotation) -->
-  <div id="stage3d">
-    <!-- ✨ v3.7 — 최신 mobile setup 사용 (mobile_configurator_final.html: splat bg + v78.184 HK + 모든 모바일 최적화) -->
-    <iframe id="hk3d" src="mobile_configurator_final.html?_=v37&v3parent=1" allow="fullscreen"></iframe>
-  </div>
-
-  <!-- ============ S00 — OVERVIEW ============ -->
-  <section class="sec" id="s0" data-ch="overview" data-nm="OVERVIEW">
-    <div class="num"><b>00</b> · 10</div>
-    <div class="eye">HK · HKNS-1019</div>
-    <h1><span class="li">Engineered for</span><br><span class="ac">Pure Preservation.</span></h1>
-    <div class="h-kr">보이지 않는 곳까지 <b>99.9% 살균</b>.<br>호텔·단체급식·병원을 위한 살균 보관 캐비닛.</div>
-    <div class="body">매일 수백 인분의 식기와 조리 도구를 처리해야 하는 환경을 위해 설계된 STS-304 살균 캐비닛. 약품 없이, 교체 없이, 한 번의 사이클로 99.9% 살균을 달성합니다.</div>
-    <div class="stats">
-      <div class="s"><div class="v">99.9%</div><div class="l">Sterilization</div></div>
-      <div class="s"><div class="v">280nm</div><div class="l">UV-C</div></div>
-      <div class="s"><div class="v">25,000h</div><div class="l">LED Life</div></div>
-      <div class="s"><div class="v">STS-304</div><div class="l">0.8T</div></div>
+  <!-- ============ S00 — HERO (with 3D iframe inline) ============ -->
+  <section class="sec hero" id="s0" data-ch="overview" data-nm="OVERVIEW">
+    <!-- ✨ v3.8 — 3D iframe inline (sticky 아님). 페이지 전체와 함께 스크롤. pointer-events:none → 줌/회전 비활성, 스크롤만. -->
+    <div id="stage3d">
+      <iframe id="hk3d" src="mobile_configurator_final.html?_=v38&v3parent=1" allow="fullscreen"></iframe>
+    </div>
+    <div class="hero-text">
+      <div class="wm">00</div>
+      <div class="num"><b>00</b> · 10</div>
+      <div class="eye">HK · HKNS-1019</div>
+      <h1><span class="li">Engineered for</span><br><span class="ac">Pure Preservation.</span></h1>
+      <div class="h-kr">보이지 않는 곳까지 <b>99.9% 살균</b>.<br>호텔·단체급식·병원을 위한 살균 보관 캐비닛.</div>
+      <div class="body">매일 수백 인분의 식기와 조리 도구를 처리해야 하는 환경을 위해 설계된 STS-304 살균 캐비닛. 약품 없이, 교체 없이, 한 번의 사이클로 99.9% 살균을 달성합니다.</div>
+      <div class="stats">
+        <div class="s"><div class="v">99.9%</div><div class="l">Sterilization</div></div>
+        <div class="s"><div class="v">280nm</div><div class="l">UV-C</div></div>
+        <div class="s"><div class="v">25,000h</div><div class="l">LED Life</div></div>
+        <div class="s"><div class="v">STS-304</div><div class="l">0.8T</div></div>
+      </div>
     </div>
   </section>
 
   <!-- ============ S01 — UV-C ============ -->
   <section class="sec" id="s1" data-ch="uvc" data-nm="UV-C STERILIZATION">
+    <div class="wm">01</div>
     <div class="num"><b>01</b> · 10</div>
     <div class="eye">STERILIZATION</div>
     <h1><span class="ac">Kills 99.9%</span><br><span class="li">of what you can't see.</span></h1>
@@ -523,6 +546,7 @@
 
   <!-- ============ S02 — IONIZER ============ -->
   <section class="sec" id="s2" data-ch="ionizer" data-nm="AIR IONIZER">
+    <div class="wm">02</div>
     <div class="num"><b>02</b> · 10</div>
     <div class="eye">AIR PURIFICATION</div>
     <h1><span class="li">Clean air,</span><br><span class="ac">every cycle.</span></h1>
@@ -538,6 +562,7 @@
 
   <!-- ============ S03 — LED PANEL ============ -->
   <section class="sec" id="s3" data-ch="panel" data-nm="LED PANEL">
+    <div class="wm">03</div>
     <div class="num"><b>03</b> · 10</div>
     <div class="eye">INTERFACE</div>
     <h1><span class="li">Every cycle,</span><br><span class="ac">at a glance.</span></h1>
@@ -553,6 +578,7 @@
 
   <!-- ============ S04 — MODULAR ============ -->
   <section class="sec" id="s4" data-ch="modular" data-nm="MODULAR DESIGN">
+    <div class="wm">04</div>
     <div class="num"><b>04</b> · 10</div>
     <div class="eye">MODULAR DESIGN</div>
     <h1><span class="li">Configure</span><br><span class="ac">your inside.</span></h1>
@@ -572,6 +598,7 @@
 
   <!-- ============ S05 — PREMIUM STAINLESS ============ -->
   <section class="sec" id="s5" data-ch="premium" data-nm="PREMIUM STAINLESS">
+    <div class="wm">05</div>
     <div class="num"><b>05</b> · 10</div>
     <div class="eye">MATERIAL</div>
     <h1><span class="ac">STS-304 · 0.8T</span><br><span class="li">Built to last.</span></h1>
@@ -587,6 +614,7 @@
 
   <!-- ============ S06 — DIMENSIONS ============ -->
   <section class="sec" id="s6" data-ch="dimensions" data-nm="DIMENSIONS">
+    <div class="wm">06</div>
     <div class="num"><b>06</b> · 10</div>
     <div class="eye">DIMENSIONS</div>
     <h1><span class="ac">1000 × 600 × 1900</span><br><span class="li">millimeters.</span></h1>
@@ -602,6 +630,7 @@
 
   <!-- ============ S07 — SPEC TABLE ============ -->
   <section class="sec" id="s7" data-ch="dimensions" data-nm="SPECIFICATIONS">
+    <div class="wm">07</div>
     <div class="num"><b>07</b> · 10</div>
     <div class="eye">SPECIFICATIONS</div>
     <h1>전체 사양</h1>
@@ -622,6 +651,7 @@
 
   <!-- ============ S08 — CERTIFICATIONS ============ -->
   <section class="sec" id="s8" data-ch="overview" data-nm="CERTIFICATIONS">
+    <div class="wm">08</div>
     <div class="num"><b>08</b> · 10</div>
     <div class="eye">CERTIFICATIONS</div>
     <h1><span class="li">Certified for</span><br><span class="ac">trust.</span></h1>
@@ -636,6 +666,7 @@
 
   <!-- ============ S09 — RESOURCES ============ -->
   <section class="sec" id="s9" data-ch="overview" data-nm="RESOURCES">
+    <div class="wm">09</div>
     <div class="num"><b>09</b> · 10</div>
     <div class="eye">RESOURCES</div>
     <h1><span class="li">Everything in</span><br><span class="ac">one place.</span></h1>
@@ -651,6 +682,7 @@
 
   <!-- ============ S10 — CTA ============ -->
   <section class="sec cta" id="s10" data-ch="overview" data-nm="INQUIRY">
+    <div class="wm" style="color:rgba(255,255,255,0.04);">10</div>
     <div class="num"><b>10</b> · 10</div>
     <div class="eye">INQUIRY</div>
     <h1><span class="li">Make it</span><br><span class="ac">yours.</span></h1>
