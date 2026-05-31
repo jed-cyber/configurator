@@ -186,14 +186,17 @@
   }
 
   /* ============ TEXT AREA (no box, centered on dark BG, TOP half) ============ */
-  /* ✨ v3.11 — 자막 위, 3D 아래로 재스왑, 박스 없이 가운데 정렬 */
+  /* ✨ v3.14 — position:absolute로 변경 (각 .sec 안에 위치).
+                이전엔 position:fixed였지만 #mobileFrame이 transform을 가지므로
+                CSS 스펙상 fixed가 viewport가 아닌 mobileFrame을 containing block으로 잡아
+                스크롤 시 함께 사라지는 버그 발생. absolute로 각 sec 안에 두면 정상 동작. */
   .gcard {
-    position: fixed;
+    position: absolute;
     top: 0;
     height: 50vh;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100vw; max-width: 414px;
+    left: 0;
+    right: 0;
+    width: 100%;
     padding: 56px 28px 28px;  /* top 56px: top bar 공간 확보 */
     background: transparent;
     border: 0;
@@ -208,9 +211,8 @@
   .gcard::-webkit-scrollbar { width: 0; }
   .gcard > * { position: relative; z-index: 1; }
 
-  /* hero card on first section — same top layout as others */
+  /* hero card on first section — uses default .gcard layout */
   .sec.hero .gcard {
-    /* no override — inherits .gcard top:0 height:50vh */
     padding: 56px 28px 28px;
   }
 
@@ -385,12 +387,11 @@
     display: block; margin-bottom: 4px;
   }
 
-  /* ============ ENTRANCE ANIMATIONS (preserve translateX -50% centering) ============ */
-  /* ✨ v3.13 — IntersectionObserver + scroll-based fallback로 .in 클래스 100% 보장 */
+  /* ============ ENTRANCE ANIMATIONS ============ */
+  /* ✨ v3.14 — absolute라서 translateX 보정 불필요. opacity + translateY만 */
   .sec .gcard {
     opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-    z-index: 4;
+    transform: translateY(20px);
     pointer-events: none;
     transition:
       opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
@@ -398,8 +399,7 @@
   }
   .sec.in .gcard {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    z-index: 11;
+    transform: translateY(0);
     pointer-events: auto;
   }
 
@@ -978,11 +978,11 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.13] caption-fix + scroll-fallback + 3D rotate + blend');
+  console.log('[v3.14] gcard position:absolute (containing-block bug fix)');
   // Visible version marker (top-right under top bar) so deploy verification is unambiguous
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.13';
+    m.textContent = 'v3.14';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
