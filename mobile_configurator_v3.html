@@ -52,53 +52,72 @@
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ✨ v3.18 — 회전 모드 토글 버튼 (우측 하단, ↻ 아이콘) */
-  #rotateToggle {
+  /* ✨ v3.21 — Segmented toggle (Scroll / Rotate), 화면 하단 중앙 */
+  #modeToggle {
     position: fixed;
-    right: 14px; bottom: 16px;
-    width: 50px; height: 50px;
-    border-radius: 50%;
-    background: rgba(10,14,23,0.7);
-    border: 1px solid rgba(122,184,255,0.35);
-    color: rgba(255,255,255,0.75);
-    font-size: 20px;
+    bottom: 18px;
+    left: 50%; transform: translateX(-50%);
+    display: flex;
+    background: rgba(8,12,22,0.78);
+    border: 1px solid rgba(122,184,255,0.2);
+    border-radius: 100px;
+    padding: 4px;
     z-index: 250;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
     pointer-events: auto;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
-  #rotateToggle:hover { transform: scale(1.05); }
-  #rotateToggle:active { transform: scale(0.95); }
-  body.rotate-mode #rotateToggle {
-    background: rgba(122,184,255,0.92);
+  #modeToggle button {
+    background: transparent;
+    border: 0;
+    padding: 9px 18px;
+    border-radius: 100px;
+    color: rgba(255,255,255,0.55);
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 1.8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  #modeToggle button .ico {
+    font-size: 12px; line-height: 1;
+    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+  }
+  #modeToggle button:hover { color: rgba(255,255,255,0.85); }
+  /* Active state */
+  #modeToggle button.active {
+    background: linear-gradient(135deg, #7ab8ff 0%, #5080ff 100%);
     color: #050810;
-    border-color: rgba(122,184,255,1);
-    box-shadow: 0 0 24px rgba(122,184,255,0.55);
+    box-shadow: 0 4px 14px rgba(122,184,255,0.45), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  body.rotate-mode #modeToggle .btn-rotate .ico {
+    animation: rotate-spin 2.5s linear infinite;
+  }
+  @keyframes rotate-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
   /* ✨ v3.20 — rotate-mode ON 시 iframe만 인터랙션 활성 */
   body.rotate-mode #stage3d iframe {
     pointer-events: auto;
   }
-  /* 회전 모드일 때 작은 label */
-  #rotateToggleLabel {
-    position: fixed;
-    right: 70px; bottom: 26px;
-    font: 600 9.5px 'Inter', sans-serif;
-    letter-spacing: 1.5px;
-    color: rgba(255,255,255,0.6);
-    z-index: 250;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.25s ease;
+
+  /* ✨ v3.21 — 3D scroll sync: 스크롤 중 #stage3d도 살짝 움직임 (자막과 시각적 unit) */
+  #stage3d {
+    transition: transform 0.45s cubic-bezier(0.22,1,0.36,1),
+                opacity 0.4s cubic-bezier(0.22,1,0.36,1);
+    will-change: transform, opacity;
   }
-  body.rotate-mode #rotateToggleLabel { opacity: 1; }
+  body.snapping #stage3d {
+    transform: translateX(-50%) translateY(18px);
+    opacity: 0.78;
+  }
 
   /* ============ 3D STAGE ============ */
   /* ✨ v3.17 — top:42vh부터 시작 (자막 42vh 아래) */
@@ -259,7 +278,9 @@
     left: 0;
     right: 0;
     width: 100%;
-    padding: 64px 22px 14px;  /* v3.20 — top 64px (top bar + stagger transform 여유) */
+    padding: 60px 22px 24px;  /* v3.21 — bottom 24px로 scroll fade 시각 공간 */
+    -webkit-mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
+    mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
     background: transparent;
     border: 0;
     border-radius: 0;
@@ -631,9 +652,15 @@
 
 <!-- v3.17 — blendBridge 제거. iframe mask-image로 대체 -->
 
-<!-- ✨ v3.18 — 회전 모드 토글 (우측 하단) -->
-<button id="rotateToggle" type="button" aria-label="Toggle camera rotation mode">↻</button>
-<div id="rotateToggleLabel">ROTATE</div>
+<!-- ✨ v3.21 — Segmented mode toggle (Scroll / Rotate) -->
+<div id="modeToggle" role="tablist" aria-label="Interaction mode">
+  <button type="button" class="btn-scroll active" data-mode="scroll" role="tab" aria-selected="true">
+    <span class="ico">⇅</span><span>SCROLL</span>
+  </button>
+  <button type="button" class="btn-rotate" data-mode="rotate" role="tab" aria-selected="false">
+    <span class="ico">↻</span><span>ROTATE</span>
+  </button>
+</div>
 
 
 <!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
@@ -1053,24 +1080,37 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.20] mobileFrame 42vh lock + title padding fix + ch10 reach + ch7 EN headline');
+  console.log('[v3.21] segmented toggle + 3D scroll-sync + gcard fade-mask');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.20';
+    m.textContent = 'v3.21';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
 
-  /* ✨ v3.18 — 회전 모드 토글 */
+  /* ✨ v3.21 — Segmented toggle + 3D scroll-sync */
   try {
-    const rotateBtn = document.getElementById('rotateToggle');
-    if (rotateBtn) {
-      rotateBtn.addEventListener('click', () => {
-        document.body.classList.toggle('rotate-mode');
-        const isOn = document.body.classList.contains('rotate-mode');
-        console.log('[v3.18] rotate-mode:', isOn ? 'ON (3D 회전 가능)' : 'OFF (전체 스크롤)');
+    const modeButtons = document.querySelectorAll('#modeToggle button[data-mode]');
+    modeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        modeButtons.forEach(b => {
+          const active = b.dataset.mode === mode;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        document.body.classList.toggle('rotate-mode', mode === 'rotate');
+        console.log('[v3.21] mode:', mode);
       });
-    }
+    });
+
+    // 3D scroll-sync: snap 중 #stage3d도 살짝 움직임
+    let snapTimer;
+    frame.addEventListener('scroll', () => {
+      document.body.classList.add('snapping');
+      clearTimeout(snapTimer);
+      snapTimer = setTimeout(() => document.body.classList.remove('snapping'), 380);
+    }, { passive: true });
   } catch(e){}
 })();
 </script>
