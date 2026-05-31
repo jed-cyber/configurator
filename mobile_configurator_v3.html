@@ -34,24 +34,24 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
+  /* ✨ v3.9.1 — 투명 + z-index 5 (3D 위에 sections + glass cards 렌더) */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
-    z-index: 1;
+    z-index: 5;
     overflow-y: auto;
     overflow-x: hidden;
-    background: #050810;
+    background: transparent;
     box-shadow: 0 0 80px rgba(0,0,0,0.55);
-    /* ✨ v3.9 — mandatory snap → 휙 넘김 */
     scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
-  /* ============ 3D STAGE — full-screen background inside frame ============ */
+  /* ============ 3D STAGE — full-screen background INSIDE frame (z-index 2, behind sections) ============ */
   #stage3d {
     position: fixed;
     top: 0; bottom: 0;
@@ -60,6 +60,7 @@
     z-index: 2;
     overflow: hidden;
     pointer-events: none;
+    background: radial-gradient(ellipse at center, #14172a 0%, #04060c 100%);
   }
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
