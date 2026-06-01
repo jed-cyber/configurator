@@ -108,45 +108,55 @@
     50%     { text-shadow: 0 0 8px rgba(80,80,80,0.6); }
   }
   /* v3.31 — rotate-mode 클래스 제거. iframe 항상 회전 가능 */
-  /* ✨ v3.29 — 다음 챕터 ↓ 큰 반투명 화살표 (하단 중앙, 펄스+bob) */
-  #nextChapterBtn {
-    width: 68px; height: 68px;
+  /* ✨ v3.34 — ↑↓ 두 화살표 (하단 중앙 컨테이너) */
+  #chapterNav { transition: opacity 0.5s ease; }
+  #prevChapterBtn, #nextChapterBtn {
+    width: 56px; height: 56px;
     border-radius: 50%;
     border: 1.5px solid rgba(122,184,255,0.55);
-    background: rgba(10,14,23,0.5);
+    background: rgba(10,14,23,0.55);
     color: rgba(255,255,255,0.9);
-    font-size: 30px;
+    font-size: 26px;
     cursor: pointer;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
-    align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 0 0 rgba(122,184,255,0.5);
-    animation: nextPulse 2.6s cubic-bezier(0.22,1,0.36,1) infinite;
+    box-shadow: 0 6px 22px rgba(0,0,0,0.4);
+    pointer-events: auto;
   }
-  #nextChapterBtn .arrow {
+  #nextChapterBtn {
+    animation: arrowPulseDown 2.4s cubic-bezier(0.22,1,0.36,1) infinite;
+  }
+  #nextChapterBtn .arrow,
+  #prevChapterBtn .arrow {
     display: inline-block;
-    animation: arrowBob 1.8s cubic-bezier(0.45,0,0.55,1) infinite;
     font-weight: 300;
   }
-  #nextChapterBtn:hover {
+  #nextChapterBtn .arrow { animation: arrowBob 1.8s cubic-bezier(0.45,0,0.55,1) infinite; }
+  #prevChapterBtn:hover, #nextChapterBtn:hover {
     background: rgba(122,184,255,0.85);
     color: #050810;
-    transform: translateX(-50%) scale(1.08);
+    transform: scale(1.1);
     border-color: rgba(122,184,255,1);
   }
-  #nextChapterBtn:active { transform: translateX(-50%) scale(0.94); }
-  @keyframes nextPulse {
-    0%, 100% { box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 0 0 rgba(122,184,255,0.45); }
-    50%      { box-shadow: 0 6px 30px rgba(0,0,0,0.5), 0 0 0 18px rgba(122,184,255,0); }
+  #prevChapterBtn:active, #nextChapterBtn:active { transform: scale(0.94); }
+  @keyframes arrowPulseDown {
+    0%, 100% { box-shadow: 0 6px 22px rgba(0,0,0,0.4), 0 0 0 0 rgba(122,184,255,0.45); }
+    50%      { box-shadow: 0 6px 28px rgba(0,0,0,0.5), 0 0 0 14px rgba(122,184,255,0); }
   }
   @keyframes arrowBob {
     0%, 100% { transform: translateY(-3px); }
     50%      { transform: translateY(4px); }
   }
-  /* 마지막 챕터에서 화살표 위로 (다시 처음으로) */
-  body.last-chapter #nextChapterBtn .arrow { display: inline-block; transform: scaleY(-1); }
+  /* 첫 챕터: ↑ 비활성, 마지막 챕터: ↓ 비활성 */
+  body.first-chapter #prevChapterBtn { opacity: 0.25; pointer-events: none; cursor: not-allowed; }
+  body.last-chapter #nextChapterBtn { opacity: 0.25; pointer-events: none; cursor: not-allowed; animation: none; }
+  /* 로딩 중 화살표 + 도어 모두 숨김 */
+  body.loading #chapterNav { opacity: 0; pointer-events: none; }
+  body.loading #doorBtnLeft,
+  body.loading #doorBtnRight { opacity: 0 !important; pointer-events: none !important; }
 
   /* ✨ v3.29 — DOOR LEFT / DOOR RIGHT (좌우 양쪽 도어 토글) */
   #doorBtnLeft, #doorBtnRight {
@@ -252,11 +262,11 @@
     margin-bottom: 6px;
   }
 
-  /* ============ 3D STAGE — v3.33 비중 키움: 자막 35vh / 3D 65vh ============ */
+  /* ============ 3D STAGE — v3.34 더 크게: 자막 30vh / 3D 70vh ============ */
   #stage3d {
     position: sticky;
-    top: 35vh;
-    height: 65vh;
+    top: 30vh;
+    height: 70vh;
     width: 100%;
     z-index: 2;
     overflow: hidden;
@@ -406,11 +416,11 @@
   .gcard {
     position: absolute;
     top: 0;
-    height: 35vh;
+    height: 30vh;
     left: 0;
     right: 0;
     width: 100%;
-    padding: 56px 22px 14px;  /* v3.33 — 자막 영역 35vh로 축소 */
+    padding: 52px 22px 10px;  /* v3.34 — 자막 영역 30vh로 더 축소 */
     -webkit-mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
     mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
     background: transparent;
@@ -773,22 +783,23 @@
     display: block; margin-bottom: 4px;
   }
 
-  /* ✨ v3.31 — 자막 즉시 표시 (텀 없음). sec과 함께 absolute로 자연 동기 스크롤 */
+  /* ✨ v3.34 — 자막 stagger fade-in + slight translateY (생동감 모션) */
   .sec .gcard {
-    opacity: 1;
-    transform: none;
+    opacity: 0;
+    transform: translateY(10px);
     pointer-events: auto;
-    transition: none;
+    transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1),
+                transform 0.6s cubic-bezier(0.22,1,0.36,1);
   }
   .sec.in .gcard {
     opacity: 1;
-    transform: none;
-    pointer-events: auto;
+    transform: translateY(0);
   }
 
   /* Stagger inside */
   .sec .gcard .num,
-  /* v3.31 — 자막 자식들 즉시 보임. 텀 없이 sec과 함께 absolute로 스크롤 동기 */
+  /* ✨ v3.34 — 자막 자식 stagger 모션: 차례로 fade + translateY 부드럽게 등장 */
+  .sec .gcard .num,
   .sec .gcard .eye,
   .sec .gcard h1,
   .sec .gcard .h-kr,
@@ -798,25 +809,38 @@
   .sec .gcard .mods,
   .sec .gcard .spec-tbl,
   .sec .gcard .res-grid,
+  .sec .gcard .cert-grid,
+  .sec .gcard .res-main,
+  .sec .gcard .res-side-grid,
   .sec .gcard .build-btn,
+  .sec .gcard .build-sublabel,
+  .sec .gcard .trust-rows,
+  .sec .gcard .trust-deploy,
   .sec .gcard .contact {
-    opacity: 1;
-    transform: none;
-    transition: none;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1),
+                transform 0.55s cubic-bezier(0.22,1,0.36,1);
   }
-  /* v3.31 — stagger delay 제거. 자막 즉시 표시 */
-  .sec.in .gcard .num     { opacity: 1; transform: none; transition-delay: 0s; }
-  .sec.in .gcard .eye     { opacity: 1; transform: none; transition-delay: 0s; }
-  .sec.in .gcard h1       { opacity: 1; transform: none; transition-delay: 0s; }
-  .sec.in .gcard .h-kr    { opacity: 1; transform: none; transition-delay: 0s; }
-  .sec.in .gcard .body    { opacity: 1; transform: none; transition-delay: 0s; }
+  /* ✨ v3.34 — stagger delay: 자막 자식들 차례로 빠르게 등장 (총 0.5s 안에) */
+  .sec.in .gcard .num     { opacity: 1; transform: translateY(0); transition-delay: 0.05s; }
+  .sec.in .gcard .eye     { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
+  .sec.in .gcard h1       { opacity: 1; transform: translateY(0); transition-delay: 0.20s; }
+  .sec.in .gcard .h-kr    { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
+  .sec.in .gcard .body    { opacity: 1; transform: translateY(0); transition-delay: 0.36s; }
   .sec.in .gcard .stats,
   .sec.in .gcard .feat-list,
   .sec.in .gcard .mods,
   .sec.in .gcard .spec-tbl,
   .sec.in .gcard .res-grid,
+  .sec.in .gcard .cert-grid,
+  .sec.in .gcard .res-main,
+  .sec.in .gcard .res-side-grid,
   .sec.in .gcard .build-btn,
-  .sec.in .gcard .contact { opacity: 1; transform: translateY(0); transition-delay: 0.46s; }
+  .sec.in .gcard .build-sublabel,
+  .sec.in .gcard .trust-rows,
+  .sec.in .gcard .trust-deploy,
+  .sec.in .gcard .contact { opacity: 1; transform: translateY(0); transition-delay: 0.44s; }
 
   /* ============ LOAD SCREEN (white minimal) ============ */
   #load {
@@ -959,9 +983,15 @@
   <span class="lbl">DOOR</span><span class="ico">▶</span>
 </button>
 
-<button type="button" id="nextChapterBtn" aria-label="다음 챕터로 이동" style="position:fixed !important; bottom:24px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
-  <span class="arrow">↓</span>
-</button>
+<!-- ✨ v3.34 — 위/아래 화살표 두 개 (하단 중앙) -->
+<div id="chapterNav" style="position:fixed !important; bottom:24px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; gap:14px !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+  <button type="button" id="prevChapterBtn" aria-label="이전 챕터">
+    <span class="arrow">↑</span>
+  </button>
+  <button type="button" id="nextChapterBtn" aria-label="다음 챕터">
+    <span class="arrow">↓</span>
+  </button>
+</div>
 
 
 <!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
@@ -1269,7 +1299,8 @@
     crumbIdx.textContent = String(i).padStart(2,'0') + '/11';
     // ✨ v3.27 — content-only 챕터 (SPEC/CERT/RESOURCES/INQUIRY)일 때 3D 숨김
     document.body.classList.toggle('fullcontent', sec.classList.contains('content-only'));
-    // ✨ v3.28 — 마지막 챕터: 화살표 ↑로 (위로 향함)
+    // ✨ v3.34 — 첫 챕터/마지막 챕터에 따라 화살표 비활성
+    document.body.classList.toggle('first-chapter', i <= 0);
     document.body.classList.toggle('last-chapter', i >= SECS.length - 1);
     const ch = sec.dataset.ch || 'overview';
     try {
@@ -1444,13 +1475,16 @@
       const hkWin = hkInner?.contentWindow;
       if (hkWin && hkWin._enterChapter) hkWin._enterChapter('overview');
     } catch(e) {}
+    // ✨ v3.34 — 로딩 fadeout 시작과 동시에 OVERVIEW 자막 stagger 시작
+    if (SECS[0]) SECS[0].classList.add('in');
+    if (typeof setActive === 'function') setActive(0);
     // 두 frame 더 wait해서 첫 render 안정화
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         loadEl.classList.add('go');
         setTimeout(() => {
           loadEl.style.display = 'none';
-          document.body.classList.remove('loading');  // 도어 버튼 활성화
+          document.body.classList.remove('loading');  // 도어/화살표 활성화
         }, 700);
       });
     });
@@ -1483,10 +1517,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.33] 화살표만 스크롤 + 로딩 중 도어 비활성 + 검은화면 fix + 3D 65vh 자막 35vh');
+  console.log('[v3.34] ↑↓ 화살표 + OVERVIEW 자막 즉시 + 모션 stagger + 3D 70vh');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.33';
+    m.textContent = 'v3.34';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
@@ -1528,15 +1562,22 @@
       });
     }
 
-    // 다음 챕터 화살표
+    // ✨ v3.34 — 이전/다음 챕터 화살표
+    const prevBtn = document.getElementById('prevChapterBtn');
     const nextBtn = document.getElementById('nextChapterBtn');
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
-        const isLast = document.body.classList.contains('last-chapter');
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
         const sH = frame.clientHeight;
         const curIdx = Math.round(frame.scrollTop / sH);
-        // 마지막에서는 처음(0)으로 되돌아감
-        const newIdx = isLast ? 0 : Math.min(SECS.length - 1, curIdx + 1);
+        const newIdx = Math.max(0, curIdx - 1);
+        smoothScrollToSec(newIdx);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        const sH = frame.clientHeight;
+        const curIdx = Math.round(frame.scrollTop / sH);
+        const newIdx = Math.min(SECS.length - 1, curIdx + 1);
         smoothScrollToSec(newIdx);
       });
     }
