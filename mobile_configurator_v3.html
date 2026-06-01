@@ -34,7 +34,7 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.31 — mobileFrame pointer-events:none → 3D 영역에서 클릭 통과 → 자유 회전 */
+  /* ✨ v3.32 — native scroll-snap mandatory + smooth (튐 없음). pointer-events:none → 3D 영역 통과 */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
@@ -44,6 +44,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     background: transparent;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
     pointer-events: none;
@@ -247,18 +249,18 @@
     margin-bottom: 6px;
   }
 
-  /* ============ 3D STAGE ============ */
-  /* ✨ v3.17 — top:42vh부터 시작 (자막 42vh 아래) */
+  /* ============ 3D STAGE — v3.32 sticky inside mobileFrame ============ */
+  /* mobileFrame scroll 따라 자막과 함께 자연 이동. viewport bottom 50vh에 stick */
   #stage3d {
-    position: fixed;
-    top: 42vh;
-    bottom: 0;
-    left: 50%; transform: translateX(-50%);
-    width: 100vw; max-width: 414px;
+    position: sticky;
+    top: 50vh;
+    height: 50vh;
+    width: 100%;
     z-index: 2;
     overflow: hidden;
     pointer-events: auto;
     background: transparent;
+    margin-top: 0;
   }
   /* 자막 영역 BG — viewport 전체 차지 (iframe mask가 투명일 때 비치는 배경) */
   /* ✨ v3.17 — top:0 bottom:0 풀 viewport. 42vh까지 dark caption color, 그 아래도 #1a2236 유지 */
@@ -944,12 +946,7 @@
 <!-- ===== TOP DARK BG (under card, no 3D here) ===== -->
 <div id="topBg"></div>
 
-<!-- ===== 3D STAGE (bottom 62vh only) ===== -->
-<div id="stage3d">
-  <iframe id="hk3d" src="mobile_configurator_final.html?_=v393&v3parent=1" allow="fullscreen"></iframe>
-</div>
-
-<!-- v3.17 — blendBridge 제거. iframe mask-image로 대체 -->
+<!-- v3.32 — stage3d는 mobileFrame 안 sticky로 이동 (아래 참고) -->
 
 <!-- ✨ v3.31 — DOOR LEFT (화면 중간 좌측) / 화살표 (하단 중앙) / DOOR RIGHT (화면 중간 우측) -->
 <button type="button" id="doorBtnLeft" aria-label="왼쪽 도어 토글" style="position:fixed !important; top:50% !important; left:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
@@ -967,6 +964,11 @@
 
 <!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
 <div id="mobileFrame">
+
+  <!-- ✨ v3.32 — 3D iframe sticky inside mobileFrame (자막과 같이 자연 스크롤) -->
+  <div id="stage3d">
+    <iframe id="hk3d" src="mobile_configurator_final.html?_=v393&v3parent=1" allow="fullscreen"></iframe>
+  </div>
 
   <!-- ============ S00 — HERO ============ -->
   <section class="sec hero" id="s0" data-ch="overview" data-nm="OVERVIEW">
@@ -1293,7 +1295,7 @@
   }, { threshold: 0.5, root: frame });
   SECS.forEach(s => obs.observe(s));
 
-  /* ✨ v3.22 — Scroll-based fallback + 3D parallax */
+  /* ✨ v3.32 — parallax 완전 제거. 3D iframe sticky라 자막과 자연 동기 */
   const stage3d = document.getElementById('stage3d');
   function updateActiveFromScroll() {
     const st = frame.scrollTop;
@@ -1304,88 +1306,17 @@
       else s.classList.remove('in');
     });
     setActive(idx);
-
-    // ✨ v3.23 — 1:1 sync: 자막+3D 같이 위로 사라졌다 아래서 다시 등장
-    const inSec = st % sectionHeight;
-    const progress = inSec / sectionHeight;     // 0 ~ 1
-    let offsetVh;
-    if (progress < 0.5) {
-      // 0 → -100vh (위로 같이 사라짐, 자막과 1:1)
-      offsetVh = -(progress * 2) * 100;
-    } else {
-      // 100vh → 0 (아래에서 새로 올라옴)
-      offsetVh = (1 - progress) * 2 * 100;
-    }
-    if (stage3d) {
-      stage3d.style.transform = `translateX(-50%) translateY(${offsetVh}vh)`;
-    }
   }
   frame.addEventListener('scroll', () => {
     requestAnimationFrame(updateActiveFromScroll);
   }, { passive: true });
   setTimeout(updateActiveFromScroll, 300);
 
-  /* ✨ v3.27 — JS smooth scroll: duration 1100ms + ease-in-out cubic (더 부드러움) */
-  let scrollAnimLock = false;
+  /* ✨ v3.32 — JS smooth wheel/touch 제거. native CSS scroll-snap + smooth만 사용 → 튐 해결 */
   function smoothScrollToSec(idx) {
-    if (scrollAnimLock) return;
-    scrollAnimLock = true;
     const sH = frame.clientHeight;
-    const target = idx * sH;
-    const start = frame.scrollTop;
-    const distance = target - start;
-    if (Math.abs(distance) < 2) { scrollAnimLock = false; return; }
-    const duration = 1100;
-    const t0 = performance.now();
-    function tick(now) {
-      const elapsed = now - t0;
-      const p = Math.min(1, elapsed / duration);
-      // ease-in-out cubic: 시작/끝 부드럽게
-      const ease = p < 0.5
-        ? 4 * p * p * p
-        : 1 - Math.pow(-2 * p + 2, 3) / 2;
-      frame.scrollTop = start + distance * ease;
-      if (p < 1) requestAnimationFrame(tick);
-      else { scrollAnimLock = false; }
-    }
-    requestAnimationFrame(tick);
+    frame.scrollTo({ top: idx * sH, behavior: 'smooth' });
   }
-  // Wheel: 한 번에 한 sec씩 부드럽게
-  frame.addEventListener('wheel', (e) => {
-    if (document.body.classList.contains('rotate-mode')) return;
-    e.preventDefault();
-    if (scrollAnimLock) return;
-    const dir = e.deltaY > 0 ? 1 : -1;
-    const sH = frame.clientHeight;
-    const curIdx = Math.round(frame.scrollTop / sH);
-    const newIdx = Math.max(0, Math.min(SECS.length - 1, curIdx + dir));
-    if (newIdx !== curIdx) smoothScrollToSec(newIdx);
-  }, { passive: false });
-  // Touch: swipe 방향 감지 후 부드러운 snap
-  let touchStartY = null;
-  frame.addEventListener('touchstart', (e) => {
-    if (document.body.classList.contains('rotate-mode')) return;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  frame.addEventListener('touchend', (e) => {
-    if (document.body.classList.contains('rotate-mode')) return;
-    if (touchStartY === null || scrollAnimLock) return;
-    const endY = e.changedTouches[0].clientY;
-    const dy = touchStartY - endY;
-    touchStartY = null;
-    if (Math.abs(dy) < 30) {
-      // 너무 짧으면 현재 sec으로 snap back
-      const sH = frame.clientHeight;
-      const curIdx = Math.round(frame.scrollTop / sH);
-      smoothScrollToSec(curIdx);
-      return;
-    }
-    const dir = dy > 0 ? 1 : -1;
-    const sH = frame.clientHeight;
-    const curIdx = Math.round(frame.scrollTop / sH);
-    const newIdx = Math.max(0, Math.min(SECS.length - 1, curIdx + dir));
-    smoothScrollToSec(newIdx);
-  }, { passive: true });
 
   /* Dot click */
   dots.forEach((d, i) => {
@@ -1535,10 +1466,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.31] 3D 자유 회전 (no button) + DOOR L/R 화면 중간 + 자막 텀 0');
+  console.log('[v3.32] 3D iframe sticky inside mobileFrame + parallax 제거 + native snap');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.31';
+    m.textContent = 'v3.32';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
