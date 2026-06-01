@@ -34,7 +34,7 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.26 — scroll-snap 제거. JS smooth wheel/touch가 ease-out으로 직접 snap. */
+  /* ✨ v3.31 — mobileFrame pointer-events:none → 3D 영역에서 클릭 통과 → 자유 회전 */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
@@ -46,6 +46,7 @@
     background: transparent;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+    pointer-events: none;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
@@ -108,26 +109,7 @@
     0%,100% { text-shadow: 0 0 0 transparent; }
     50%     { text-shadow: 0 0 8px rgba(80,80,80,0.6); }
   }
-  /* ✨ v3.24 — rotate-mode 강력 fix: 모든 위 layer pass-through, stage3d 최상위로 */
-  body.rotate-mode #mobileFrame,
-  body.rotate-mode #mobileFrame *,
-  body.rotate-mode #topBg,
-  body.rotate-mode #topBar,
-  body.rotate-mode #topBar *,
-  body.rotate-mode #dotNav,
-  body.rotate-mode #dotNav * {
-    pointer-events: none !important;
-  }
-  body.rotate-mode #stage3d {
-    z-index: 600 !important;
-  }
-  body.rotate-mode #stage3d iframe {
-    pointer-events: auto !important;
-  }
-  /* 토글은 ROTATE 모드에서도 항상 클릭 가능 */
-  #modeToggle, #modeToggle * {
-    pointer-events: auto !important;
-  }
+  /* v3.31 — rotate-mode 클래스 제거. iframe 항상 회전 가능 */
   /* ✨ v3.29 — 다음 챕터 ↓ 큰 반투명 화살표 (하단 중앙, 펄스+bob) */
   #nextChapterBtn {
     width: 68px; height: 68px;
@@ -195,6 +177,7 @@
     background: rgba(122,184,255,0.18);
     color: #fff;
     border-color: rgba(122,184,255,0.5);
+    transform: translateY(-50%) scale(1.05);
   }
   #doorBtnLeft.open, #doorBtnRight.open {
     background: linear-gradient(135deg, #7ab8ff, #5080ff);
@@ -295,12 +278,12 @@
   }
   /* ✨ v3.17 — blendBridge 제거됨. iframe 자체에 mask-image로 fade 처리 (아래 #stage3d iframe 룰) */
   /* ✨ v3.18 — iframe mask-image 20 stops + fade 60%까지 확장으로 초고밀도 부드러운 fade-in */
-  /* ✨ v3.20 — iframe 기본 pointer-events:none.
-                .rotate-mode 클래스일 때만 auto → 카메라 회전 활성 */
+  /* ✨ v3.31 — iframe pointer-events:auto 항상 (3D 자유 회전).
+                mobileFrame은 pointer-events:none이라 swipe가 iframe까지 통과 */
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
-    pointer-events: none;
+    pointer-events: auto;
     touch-action: none;
     -webkit-mask-image: linear-gradient(180deg,
       transparent 0%,
@@ -786,24 +769,22 @@
     display: block; margin-bottom: 4px;
   }
 
-  /* ============ ENTRANCE ANIMATIONS ============ */
-  /* ✨ v3.14 — absolute라서 translateX 보정 불필요. opacity + translateY만 */
+  /* ✨ v3.31 — 자막 즉시 표시 (텀 없음). sec과 함께 absolute로 자연 동기 스크롤 */
   .sec .gcard {
-    opacity: 0;
-    transform: translateY(20px);
-    pointer-events: none;
-    transition:
-      opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition: none;
   }
   .sec.in .gcard {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
     pointer-events: auto;
   }
 
   /* Stagger inside */
   .sec .gcard .num,
+  /* v3.31 — 자막 자식들 즉시 보임. 텀 없이 sec과 함께 absolute로 스크롤 동기 */
   .sec .gcard .eye,
   .sec .gcard h1,
   .sec .gcard .h-kr,
@@ -815,15 +796,16 @@
   .sec .gcard .res-grid,
   .sec .gcard .build-btn,
   .sec .gcard .contact {
-    opacity: 0;
-    transform: translateY(12px);
-    transition: opacity 0.4s ease-out, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
-  .sec.in .gcard .num     { opacity: 1; transform: translateY(0); transition-delay: 0.18s; }
-  .sec.in .gcard .eye     { opacity: 1; transform: translateY(0); transition-delay: 0.22s; }
-  .sec.in .gcard h1       { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
-  .sec.in .gcard .h-kr    { opacity: 1; transform: translateY(0); transition-delay: 0.34s; }
-  .sec.in .gcard .body    { opacity: 1; transform: translateY(0); transition-delay: 0.40s; }
+  /* v3.31 — stagger delay 제거. 자막 즉시 표시 */
+  .sec.in .gcard .num     { opacity: 1; transform: none; transition-delay: 0s; }
+  .sec.in .gcard .eye     { opacity: 1; transform: none; transition-delay: 0s; }
+  .sec.in .gcard h1       { opacity: 1; transform: none; transition-delay: 0s; }
+  .sec.in .gcard .h-kr    { opacity: 1; transform: none; transition-delay: 0s; }
+  .sec.in .gcard .body    { opacity: 1; transform: none; transition-delay: 0s; }
   .sec.in .gcard .stats,
   .sec.in .gcard .feat-list,
   .sec.in .gcard .mods,
@@ -969,17 +951,17 @@
 
 <!-- v3.17 — blendBridge 제거. iframe mask-image로 대체 -->
 
-<!-- ✨ v3.29 — DOOR LEFT / 화살표 / DOOR RIGHT 3개 버튼 하단 -->
-<button type="button" id="doorBtnLeft" aria-label="왼쪽 도어 토글" style="position:fixed !important; bottom:24px !important; left:calc(50% - 207px + 18px) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+<!-- ✨ v3.31 — DOOR LEFT (화면 중간 좌측) / 화살표 (하단 중앙) / DOOR RIGHT (화면 중간 우측) -->
+<button type="button" id="doorBtnLeft" aria-label="왼쪽 도어 토글" style="position:fixed !important; top:50% !important; left:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
   <span class="ico">◀</span><span class="lbl">DOOR</span>
 </button>
 
-<button type="button" id="nextChapterBtn" aria-label="다음 챕터로 이동" style="position:fixed !important; bottom:22px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
-  <span class="arrow">↓</span>
+<button type="button" id="doorBtnRight" aria-label="오른쪽 도어 토글" style="position:fixed !important; top:50% !important; right:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+  <span class="lbl">DOOR</span><span class="ico">▶</span>
 </button>
 
-<button type="button" id="doorBtnRight" aria-label="오른쪽 도어 토글" style="position:fixed !important; bottom:24px !important; right:calc(50% - 207px + 18px) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
-  <span class="lbl">DOOR</span><span class="ico">▶</span>
+<button type="button" id="nextChapterBtn" aria-label="다음 챕터로 이동" style="position:fixed !important; bottom:24px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+  <span class="arrow">↓</span>
 </button>
 
 
@@ -1553,10 +1535,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.30] DOOR L/R + ↓arrow + CERT badges + RES priority + INQUIRY CTA');
+  console.log('[v3.31] 3D 자유 회전 (no button) + DOOR L/R 화면 중간 + 자막 텀 0');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.30';
+    m.textContent = 'v3.31';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
