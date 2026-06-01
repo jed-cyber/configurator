@@ -34,18 +34,22 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.33 — overflow:hidden → 사용자 swipe 차단. JS scrollTo로만 이동. 화살표만 사용 */
+  /* ✨ v3.35 — overflow-y:auto (scrollTo 작동) + JS로 wheel/touch 차단 */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 5;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     background: transparent;
+    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
     pointer-events: none;
   }
+  #mobileFrame::-webkit-scrollbar { width: 0; }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
   /* ✨ v3.25 — Toggle z-index 9999 (rotate-mode stage3d z:600 위로 확실히) */
@@ -783,22 +787,16 @@
     display: block; margin-bottom: 4px;
   }
 
-  /* ✨ v3.34 — 자막 stagger fade-in + slight translateY (생동감 모션) */
+  /* ✨ v3.35 — .gcard 자체는 항상 visible (안전망). 자식만 stagger */
   .sec .gcard {
-    opacity: 0;
-    transform: translateY(10px);
-    pointer-events: auto;
-    transition: opacity 0.55s cubic-bezier(0.22,1,0.36,1),
-                transform 0.6s cubic-bezier(0.22,1,0.36,1);
-  }
-  .sec.in .gcard {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
+    pointer-events: auto;
   }
 
   /* Stagger inside */
   .sec .gcard .num,
-  /* ✨ v3.34 — 자막 자식 stagger 모션: 차례로 fade + translateY 부드럽게 등장 */
+  /* ✨ v3.35 — 자막 자식 항상 보이게 (안전망). transition만 적용해서 .in 진입 시 부드럽게 */
   .sec .gcard .num,
   .sec .gcard .eye,
   .sec .gcard h1,
@@ -817,17 +815,17 @@
   .sec .gcard .trust-rows,
   .sec .gcard .trust-deploy,
   .sec .gcard .contact {
-    opacity: 0;
-    transform: translateY(14px);
+    opacity: 1;
+    transform: none;
     transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1),
                 transform 0.55s cubic-bezier(0.22,1,0.36,1);
   }
-  /* ✨ v3.34 — stagger delay: 자막 자식들 차례로 빠르게 등장 (총 0.5s 안에) */
-  .sec.in .gcard .num     { opacity: 1; transform: translateY(0); transition-delay: 0.05s; }
-  .sec.in .gcard .eye     { opacity: 1; transform: translateY(0); transition-delay: 0.12s; }
-  .sec.in .gcard h1       { opacity: 1; transform: translateY(0); transition-delay: 0.20s; }
-  .sec.in .gcard .h-kr    { opacity: 1; transform: translateY(0); transition-delay: 0.28s; }
-  .sec.in .gcard .body    { opacity: 1; transform: translateY(0); transition-delay: 0.36s; }
+  /* sec이 .in 진입 시: 살짝 슬라이드업 stagger (생동감) */
+  .sec.in .gcard .num     { animation: gcardStagger 0.55s cubic-bezier(0.22,1,0.36,1) 0.05s both; }
+  .sec.in .gcard .eye     { animation: gcardStagger 0.55s cubic-bezier(0.22,1,0.36,1) 0.12s both; }
+  .sec.in .gcard h1       { animation: gcardStagger 0.6s  cubic-bezier(0.22,1,0.36,1) 0.20s both; }
+  .sec.in .gcard .h-kr    { animation: gcardStagger 0.55s cubic-bezier(0.22,1,0.36,1) 0.28s both; }
+  .sec.in .gcard .body    { animation: gcardStagger 0.55s cubic-bezier(0.22,1,0.36,1) 0.36s both; }
   .sec.in .gcard .stats,
   .sec.in .gcard .feat-list,
   .sec.in .gcard .mods,
@@ -840,7 +838,13 @@
   .sec.in .gcard .build-sublabel,
   .sec.in .gcard .trust-rows,
   .sec.in .gcard .trust-deploy,
-  .sec.in .gcard .contact { opacity: 1; transform: translateY(0); transition-delay: 0.44s; }
+  .sec.in .gcard .contact { animation: gcardStagger 0.55s cubic-bezier(0.22,1,0.36,1) 0.44s both; }
+  @keyframes gcardStagger {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* v3.35 — 이전 stagger delay 규칙은 animation으로 대체 (위 keyframes) */
+  /* v3.35 — 위에서 animation으로 처리. 이 규칙은 안전망용 (animation 안 발동 시) */
 
   /* ============ LOAD SCREEN (white minimal) ============ */
   #load {
@@ -1345,11 +1349,26 @@
   }, { passive: true });
   setTimeout(updateActiveFromScroll, 300);
 
-  /* ✨ v3.32 — JS smooth wheel/touch 제거. native CSS scroll-snap + smooth만 사용 → 튐 해결 */
+  /* ✨ v3.35 — 화살표만 스크롤. 사용자 wheel/touch 모두 차단 */
   function smoothScrollToSec(idx) {
     const sH = frame.clientHeight;
     frame.scrollTo({ top: idx * sH, behavior: 'smooth' });
   }
+  // 사용자 wheel + touchmove 차단 (frame 영역만)
+  window.addEventListener('wheel', e => {
+    // iframe 영역(3D) 안에서는 회전을 위해 차단 안 함 (iframe content가 처리)
+    e.preventDefault();
+  }, { passive: false });
+  // touch는 iframe 안 카메라 회전용으로 두고 frame swipe만 차단
+  let _touchYStart = null;
+  window.addEventListener('touchstart', e => { _touchYStart = e.touches[0].clientY; }, { passive: true });
+  window.addEventListener('touchmove', e => {
+    // 3D iframe 영역 (viewport 30vh~ 이하)이면 통과 (카메라 회전)
+    const y = e.touches[0].clientY;
+    const threshold = window.innerHeight * 0.30;
+    if (y > threshold) return;  // 3D 영역, iframe이 처리
+    e.preventDefault();  // 자막 영역 (위 30vh): 스크롤 차단
+  }, { passive: false });
 
   /* Dot click */
   dots.forEach((d, i) => {
@@ -1517,10 +1536,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.34] ↑↓ 화살표 + OVERVIEW 자막 즉시 + 모션 stagger + 3D 70vh');
+  console.log('[v3.35] 자막 안전망 (gcard 항상 visible, 자식 animation stagger) + scroll fix');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.34';
+    m.textContent = 'v3.35';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
