@@ -34,20 +34,16 @@
   }
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
-  /* ✨ v3.32 — native scroll-snap mandatory + smooth (튐 없음). pointer-events:none → 3D 영역 통과 */
+  /* ✨ v3.33 — overflow:hidden → 사용자 swipe 차단. JS scrollTo로만 이동. 화살표만 사용 */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 5;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     background: transparent;
-    scroll-snap-type: y mandatory;
     scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
     pointer-events: none;
   }
   #mobileFrame::-webkit-scrollbar { width: 0; }
@@ -181,6 +177,13 @@
     border-color: rgba(122,184,255,0.5);
     transform: translateY(-50%) scale(1.05);
   }
+  /* ✨ v3.33 — 로딩 중 도어 버튼 비활성화 */
+  body.loading #doorBtnLeft,
+  body.loading #doorBtnRight {
+    opacity: 0.25 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+  }
   #doorBtnLeft.open, #doorBtnRight.open {
     background: linear-gradient(135deg, #7ab8ff, #5080ff);
     color: #050810;
@@ -249,12 +252,11 @@
     margin-bottom: 6px;
   }
 
-  /* ============ 3D STAGE — v3.32 sticky inside mobileFrame ============ */
-  /* mobileFrame scroll 따라 자막과 함께 자연 이동. viewport bottom 50vh에 stick */
+  /* ============ 3D STAGE — v3.33 비중 키움: 자막 35vh / 3D 65vh ============ */
   #stage3d {
     position: sticky;
-    top: 50vh;
-    height: 50vh;
+    top: 35vh;
+    height: 65vh;
     width: 100%;
     z-index: 2;
     overflow: hidden;
@@ -404,11 +406,11 @@
   .gcard {
     position: absolute;
     top: 0;
-    height: 42vh;
+    height: 35vh;
     left: 0;
     right: 0;
     width: 100%;
-    padding: 60px 22px 24px;  /* v3.21 — bottom 24px로 scroll fade 시각 공간 */
+    padding: 56px 22px 14px;  /* v3.33 — 자막 영역 35vh로 축소 */
     -webkit-mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
     mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
     background: transparent;
@@ -1431,12 +1433,27 @@
     } catch(e) { return false; }
   }
 
+  // ✨ v3.33 — 시작 시 body.loading 클래스 (도어 버튼 비활성화 용)
+  document.body.classList.add('loading');
+
   function hideLoad() {
-    // ✨ v3.25 — 검은화면 방지: HK iframe content 첫 frame 안전하게 그려진 후 fadeout
-    setTimeout(() => {
-      loadEl.classList.add('go');
-      setTimeout(() => { loadEl.style.display = 'none'; }, 900);
-    }, 400);
+    // ✨ v3.33 — HK iframe overview 챕터 진입 강제 후 fadeout (검은화면 완전 제거)
+    try {
+      const outerWin = iframe.contentWindow;
+      const hkInner = outerWin?.document?.getElementById('hk-frame');
+      const hkWin = hkInner?.contentWindow;
+      if (hkWin && hkWin._enterChapter) hkWin._enterChapter('overview');
+    } catch(e) {}
+    // 두 frame 더 wait해서 첫 render 안정화
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        loadEl.classList.add('go');
+        setTimeout(() => {
+          loadEl.style.display = 'none';
+          document.body.classList.remove('loading');  // 도어 버튼 활성화
+        }, 700);
+      });
+    });
   }
 
   function pollHKReady() {
@@ -1466,10 +1483,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.32] 3D iframe sticky inside mobileFrame + parallax 제거 + native snap');
+  console.log('[v3.33] 화살표만 스크롤 + 로딩 중 도어 비활성 + 검은화면 fix + 3D 65vh 자막 35vh');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.32';
+    m.textContent = 'v3.33';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
