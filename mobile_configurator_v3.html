@@ -49,11 +49,7 @@
     -webkit-overflow-scrolling: touch;
     pointer-events: none;
   }
-  /* ✨ v3.37 — 모바일에서 풀 너비 (max-width 해제, 일반 핸드폰 비율 채움) */
-  @media (max-width: 767px) {
-    #mobileFrame { max-width: 100vw !important; }
-    #stage3d { max-width: 100vw !important; }
-  }
+  /* ✨ v3.38 — v3.37 가로 해제 revert. 가로 414px 유지 (사용자 요청) */
   #mobileFrame::-webkit-scrollbar { width: 0; }
   #mobileFrame::-webkit-scrollbar { width: 0; }
 
@@ -230,7 +226,7 @@
   }
   /* content-only sec의 gcard: viewport 전체 사용 */
   .sec.content-only .gcard {
-    height: 100vh;
+    height: 100dvh;
     padding: 72px 26px 100px;
     justify-content: flex-start;
     overflow-y: auto;
@@ -273,10 +269,10 @@
     margin-bottom: 6px;
   }
 
-  /* ============ 3D STAGE — v3.36 fixed로 되돌림. 자막 30vh / 3D 70vh ============ */
+  /* ============ 3D STAGE — v3.38 dvh 기반. 자막 30dvh / 3D 70dvh ============ */
   #stage3d {
     position: fixed;
-    top: 30vh;
+    top: 30dvh;
     bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
@@ -410,9 +406,9 @@
   }
 
   /* ============ SECTIONS (just scroll triggers; content is inside glass card) ============ */
-  /* ✨ v3.24 — sec 100vh + scroll-snap-stop:always (한 번에 1 sec만 snap) */
+  /* ✨ v3.38 — sec 100dvh (폰 toolbar 영역 제외) */
   .sec {
-    height: 100vh;
+    height: 100dvh;
     scroll-snap-align: start;
     scroll-snap-stop: always;
     position: relative;
@@ -427,7 +423,7 @@
   .gcard {
     position: absolute;
     top: 0;
-    height: 30vh;
+    height: 30dvh;
     left: 0;
     right: 0;
     width: 100%;
@@ -857,9 +853,11 @@
   #load .sb {
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 400;
-    letter-spacing: -0.2px; margin-bottom: 56px;
+    letter-spacing: -0.2px; margin-bottom: 28px;
     text-align: center;
   }
+  /* ✨ v3.38 — 로딩창 자막 묶음 무게중심 정확히 센터 */
+  #load { padding-bottom: 60px; }
   #load .pb {
     width: 220px; height: 1px; background: rgba(255,255,255,0.1);
     overflow: hidden; position: relative;
@@ -972,7 +970,7 @@
 </button>
 
 <!-- ✨ v3.34 — 위/아래 화살표 두 개 (하단 중앙) -->
-<div id="chapterNav" style="position:fixed !important; bottom:24px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; gap:14px !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+<div id="chapterNav" style="position:fixed !important; bottom:calc(env(safe-area-inset-bottom, 0px) + 24px) !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; gap:14px !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
   <button type="button" id="prevChapterBtn" aria-label="이전 챕터">
     <span class="arrow">↑</span>
   </button>
@@ -1520,10 +1518,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.37] 모바일 풀 너비 + 즉시 자막 (stagger animation 제거)');
+  console.log('[v3.38] 가로 414 유지 + 100dvh (폰 toolbar 잘림 fix) + 화살표 safe-area + 로딩 센터');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.37';
+    m.textContent = 'v3.38';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
