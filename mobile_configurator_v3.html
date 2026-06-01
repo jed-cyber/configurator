@@ -100,6 +100,14 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
+  /* v3.28 — DOOR 활성 시 동일 위계 스타일 */
+  #modeToggle .btn-door.active .ico {
+    animation: door-glow 1.8s ease-in-out infinite;
+  }
+  @keyframes door-glow {
+    0%,100% { text-shadow: 0 0 0 transparent; }
+    50%     { text-shadow: 0 0 8px rgba(80,80,80,0.6); }
+  }
   /* ✨ v3.24 — rotate-mode 강력 fix: 모든 위 layer pass-through, stage3d 최상위로 */
   body.rotate-mode #mobileFrame,
   body.rotate-mode #mobileFrame *,
@@ -120,6 +128,48 @@
   #modeToggle, #modeToggle * {
     pointer-events: auto !important;
   }
+  /* ✨ v3.28 — 다음 챕터 ↓ 화살표 (반투명, 펄스) */
+  #nextChapterBtn {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(122,184,255,0.6);
+    background: rgba(10,14,23,0.55);
+    color: rgba(255,255,255,0.85);
+    font-size: 24px;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(122,184,255,0.5);
+    animation: nextPulse 2.4s cubic-bezier(0.22,1,0.36,1) infinite;
+  }
+  #nextChapterBtn .arrow {
+    display: inline-block;
+    animation: arrowBob 1.8s cubic-bezier(0.45,0,0.55,1) infinite;
+  }
+  #nextChapterBtn:hover {
+    background: rgba(122,184,255,0.85);
+    color: #050810;
+    transform: translateY(-50%) scale(1.08);
+    border-color: rgba(122,184,255,1);
+  }
+  #nextChapterBtn:active { transform: translateY(-50%) scale(0.95); }
+  #nextChapterBtn.hidden {
+    opacity: 0; pointer-events: none; transform: translateY(-50%) scale(0.7);
+  }
+  @keyframes nextPulse {
+    0%, 100% { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(122,184,255,0.45); }
+    50%      { box-shadow: 0 4px 22px rgba(0,0,0,0.45), 0 0 0 14px rgba(122,184,255,0); }
+  }
+  @keyframes arrowBob {
+    0%, 100% { transform: translateY(-2px); }
+    50%      { transform: translateY(3px); }
+  }
+  /* 마지막 챕터에서 화살표 위로 향함 */
+  body.last-chapter #nextChapterBtn .arrow { transform: scaleY(-1); }
 
   /* ✨ v3.22 — 3D parallax는 JS에서 inline transform으로 처리. CSS transition 없음 (즉시 반응) */
   #stage3d {
@@ -713,15 +763,20 @@
 
 <!-- v3.17 — blendBridge 제거. iframe mask-image로 대체 -->
 
-<!-- ✨ v3.26 — Segmented mode toggle: inline style로 강제 표시 (z 99999) -->
-<div id="modeToggle" role="tablist" aria-label="Interaction mode" style="position:fixed !important; bottom:18px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
-  <button type="button" class="btn-scroll active" data-mode="scroll" role="tab" aria-selected="true">
-    <span class="ico">⇅</span><span>SCROLL</span>
+<!-- ✨ v3.28 — DOOR / ROTATE 토글 (SCROLL 제거, 핵심 인터랙션 위계로) -->
+<div id="modeToggle" role="tablist" aria-label="Interaction mode" style="position:fixed !important; bottom:22px !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+  <button type="button" class="btn-door" data-mode="door" role="tab" aria-pressed="false">
+    <span class="ico">⛶</span><span>DOOR</span>
   </button>
-  <button type="button" class="btn-rotate" data-mode="rotate" role="tab" aria-selected="false">
+  <button type="button" class="btn-rotate" data-mode="rotate" role="tab" aria-pressed="false">
     <span class="ico">↻</span><span>ROTATE</span>
   </button>
 </div>
+
+<!-- ✨ v3.28 — 다음 챕터 ↓ 화살표 (큰 반투명, 펄스 애니메이션) -->
+<button type="button" id="nextChapterBtn" aria-label="다음 챕터로 이동" style="position:fixed !important; right:24px !important; top:50% !important; transform:translateY(-50%) !important; z-index:9998 !important;">
+  <span class="arrow">↓</span>
+</button>
 
 
 <!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
@@ -730,7 +785,7 @@
   <!-- ============ S00 — HERO ============ -->
   <section class="sec hero" id="s0" data-ch="overview" data-nm="OVERVIEW">
     <div class="gcard">
-      <div class="num"><b>00</b> · 10</div>
+      <div class="num"><b>00</b> · 11</div>
       <div class="eye">HK · HKNS-1019</div>
       <h1><span class="li">Engineered for</span><br><span class="ac">Pure Preservation.</span></h1>
       <div class="h-kr">보이지 않는 곳까지 <b>99.9% 살균</b>.<br>호텔·단체급식·병원을 위한 살균 캐비닛.</div>
@@ -746,7 +801,7 @@
   <!-- ============ S01 — UV-C ============ -->
   <section class="sec" id="s1" data-ch="uvc" data-nm="UV-C STERILIZATION">
     <div class="gcard">
-      <div class="num"><b>01</b> · 10</div>
+      <div class="num"><b>01</b> · 11</div>
       <div class="eye">STERILIZATION</div>
       <h1><span class="ac">Kills 99.9%</span><br><span class="li">of what you can't see.</span></h1>
       <div class="h-kr"><b>280nm UV-C LED</b>가 캐비닛 내부 전체를 살균합니다.</div>
@@ -763,7 +818,7 @@
   <!-- ============ S02 — IONIZER ============ -->
   <section class="sec" id="s2" data-ch="ionizer" data-nm="AIR IONIZER">
     <div class="gcard">
-      <div class="num"><b>02</b> · 10</div>
+      <div class="num"><b>02</b> · 11</div>
       <div class="eye">AIR PURIFICATION</div>
       <h1><span class="li">Clean air,</span><br><span class="ac">every cycle.</span></h1>
       <div class="h-kr">cm³당 <b>1,200,000 음이온</b>으로 공기까지 깨끗하게.</div>
@@ -797,7 +852,7 @@
   <!-- ============ S04 — LED PANEL ============ -->
   <section class="sec" id="s3" data-ch="panel" data-nm="LED PANEL">
     <div class="gcard">
-      <div class="num"><b>03</b> · 10</div>
+      <div class="num"><b>04</b> · 11</div>
       <div class="eye">INTERFACE</div>
       <h1><span class="li">Every cycle,</span><br><span class="ac">at a glance.</span></h1>
       <div class="h-kr">하나의 패널, 모든 상태를 <b>한 눈에</b>.</div>
@@ -814,7 +869,7 @@
   <!-- ============ S04 — MODULAR ============ -->
   <section class="sec" id="s4" data-ch="modular" data-nm="MODULAR DESIGN">
     <div class="gcard">
-      <div class="num"><b>04</b> · 10</div>
+      <div class="num"><b>05</b> · 11</div>
       <div class="eye">MODULAR DESIGN</div>
       <h1><span class="li">Configure</span><br><span class="ac">your inside.</span></h1>
       <div class="h-kr"><b>8가지 거치대</b>를 자유롭게 슬라이드 인·아웃.</div>
@@ -835,7 +890,7 @@
   <!-- ============ S05 — PREMIUM STAINLESS ============ -->
   <section class="sec" id="s5" data-ch="premium" data-nm="PREMIUM STAINLESS">
     <div class="gcard">
-      <div class="num"><b>05</b> · 10</div>
+      <div class="num"><b>06</b> · 11</div>
       <div class="eye">MATERIAL</div>
       <h1><span class="ac">STS-304 · 0.8T</span><br><span class="li">Built to last.</span></h1>
       <div class="h-kr"><b>STS-304 0.8T</b> 식품 등급 스테인리스.</div>
@@ -852,7 +907,7 @@
   <!-- ============ S06 — DIMENSIONS ============ -->
   <section class="sec" id="s6" data-ch="dimensions" data-nm="DIMENSIONS">
     <div class="gcard">
-      <div class="num"><b>06</b> · 10</div>
+      <div class="num"><b>07</b> · 11</div>
       <div class="eye">DIMENSIONS</div>
       <h1><span class="ac">1000 × 600 × 1900</span><br><span class="li">millimeters.</span></h1>
       <div class="h-kr">표준 설치 사양 · 본체 무게 약 <b>100kg</b>.</div>
@@ -869,7 +924,7 @@
   <!-- ============ S07 — SPEC TABLE ============ -->
   <section class="sec content-only" id="s7" data-ch="overview" data-nm="SPECIFICATIONS">
     <div class="gcard">
-      <div class="num"><b>07</b> · 10</div>
+      <div class="num"><b>08</b> · 11</div>
       <div class="eye">SPECIFICATIONS</div>
       <h1>The <span class="ac">Full Spec.</span></h1>
       <div class="h-kr"><b>HKNS-1019 · 2026 · 조달 24885355</b></div>
@@ -890,7 +945,7 @@
   <!-- ============ S08 — CERTIFICATIONS ============ -->
   <section class="sec content-only" id="s8" data-ch="overview" data-nm="CERTIFICATIONS">
     <div class="gcard">
-      <div class="num"><b>08</b> · 10</div>
+      <div class="num"><b>09</b> · 11</div>
       <div class="eye">CERTIFICATIONS</div>
       <h1><span class="li">Certified for</span><br><span class="ac">trust.</span></h1>
       <div class="h-kr"><b>KC · HACCP · 조달청 24885355</b></div>
@@ -906,7 +961,7 @@
   <!-- ============ S09 — RESOURCES ============ -->
   <section class="sec content-only" id="s9" data-ch="overview" data-nm="RESOURCES">
     <div class="gcard">
-      <div class="num"><b>09</b> · 10</div>
+      <div class="num"><b>10</b> · 11</div>
       <div class="eye">RESOURCES</div>
       <h1><span class="li">Everything in</span><br><span class="ac">one place.</span></h1>
       <div class="h-kr">사용설명서 · 카탈로그 · 도면 · 인증서.</div>
@@ -922,7 +977,7 @@
   <!-- ============ S10 — CTA ============ -->
   <section class="sec content-only" id="s10" data-ch="overview" data-nm="INQUIRY">
     <div class="gcard">
-      <div class="num"><b>10</b> · 10</div>
+      <div class="num"><b>11</b> · 11</div>
       <div class="eye">INQUIRY</div>
       <h1><span class="li">Make it</span><br><span class="ac">yours.</span></h1>
       <div class="h-kr">매장에 맞춘 <b>맞춤 견적</b>.</div>
@@ -982,6 +1037,8 @@
     crumbIdx.textContent = String(i).padStart(2,'0') + '/11';
     // ✨ v3.27 — content-only 챕터 (SPEC/CERT/RESOURCES/INQUIRY)일 때 3D 숨김
     document.body.classList.toggle('fullcontent', sec.classList.contains('content-only'));
+    // ✨ v3.28 — 마지막 챕터: 화살표 ↑로 (위로 향함)
+    document.body.classList.toggle('last-chapter', i >= SECS.length - 1);
     const ch = sec.dataset.ch || 'overview';
     try {
       const outerWin = iframe.contentWindow;
@@ -1250,31 +1307,74 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.27] content-only fullscreen (SPEC/CERT/RES/INQ) + ease-in-out 1100ms');
+  console.log('[v3.28] DOOR/ROTATE toggle + next-chapter arrow + counter N·11 통일');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.27';
+    m.textContent = 'v3.28';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
 
-  /* ✨ v3.21 — Segmented toggle + 3D scroll-sync */
+  /* ✨ v3.28 — DOOR / ROTATE 토글 + 다음 챕터 화살표 */
   try {
-    const modeButtons = document.querySelectorAll('#modeToggle button[data-mode]');
-    modeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode;
-        modeButtons.forEach(b => {
-          const active = b.dataset.mode === mode;
-          b.classList.toggle('active', active);
-          b.setAttribute('aria-selected', active ? 'true' : 'false');
-        });
-        document.body.classList.toggle('rotate-mode', mode === 'rotate');
-        console.log('[v3.21] mode:', mode);
-      });
-    });
+    let doorOpen = false;
+    function callHK(fn, arg) {
+      try {
+        const outerWin = iframe.contentWindow;
+        const hkInner = outerWin?.document?.getElementById('hk-frame');
+        const hkWin = hkInner?.contentWindow;
+        if (!hkWin) return;
+        if (typeof hkWin[fn] === 'function') hkWin[fn](arg);
+      } catch(e) {}
+    }
+    const doorBtn = document.querySelector('#modeToggle .btn-door');
+    const rotateBtn = document.querySelector('#modeToggle .btn-rotate');
 
-    // v3.22 — snapping 효과 제거. parallax는 updateActiveFromScroll에서 처리
+    if (doorBtn) {
+      doorBtn.addEventListener('click', () => {
+        doorOpen = !doorOpen;
+        doorBtn.classList.toggle('active', doorOpen);
+        doorBtn.setAttribute('aria-pressed', doorOpen ? 'true' : 'false');
+        // HK door toggle 함수 호출 시도 (여러 이름 시도)
+        const fnNames = doorOpen
+          ? ['_openDoor', 'openDoor', '_toggleDoor', 'toggleDoor', '_door', '_doorOpen']
+          : ['_closeDoor', 'closeDoor', '_toggleDoor', 'toggleDoor', '_door', '_doorClose'];
+        try {
+          const outerWin = iframe.contentWindow;
+          const hkInner = outerWin?.document?.getElementById('hk-frame');
+          const hkWin = hkInner?.contentWindow;
+          for (const n of fnNames) {
+            if (hkWin && typeof hkWin[n] === 'function') {
+              hkWin[n](doorOpen);
+              console.log('[v3.28] door call:', n, doorOpen);
+              break;
+            }
+          }
+        } catch(e) {}
+      });
+    }
+    if (rotateBtn) {
+      rotateBtn.addEventListener('click', () => {
+        const isOn = !document.body.classList.contains('rotate-mode');
+        document.body.classList.toggle('rotate-mode', isOn);
+        rotateBtn.classList.toggle('active', isOn);
+        rotateBtn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        console.log('[v3.28] rotate-mode:', isOn);
+      });
+    }
+
+    // 다음 챕터 화살표
+    const nextBtn = document.getElementById('nextChapterBtn');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        const isLast = document.body.classList.contains('last-chapter');
+        const dir = isLast ? -1 : 1;
+        const sH = frame.clientHeight;
+        const curIdx = Math.round(frame.scrollTop / sH);
+        const newIdx = Math.max(0, Math.min(SECS.length - 1, curIdx + dir));
+        smoothScrollToSec(newIdx);
+      });
+    }
   } catch(e){}
 })();
 </script>
