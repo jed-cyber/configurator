@@ -35,18 +35,15 @@
 
   /* ============ MOBILE FRAME (414px scroll container) ============ */
   /* ✨ v3.35 — overflow-y:auto (scrollTo 작동) + JS로 wheel/touch 차단 */
+  /* ✨ v3.41 — scroll 완전 제거. 챕터 toggle 기반 (자막 fade in/out, 3D 풀 viewport) */
   #mobileFrame {
     position: fixed;
     top: 0; bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     z-index: 5;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     background: transparent;
-    scroll-snap-type: y mandatory;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
     pointer-events: none;
   }
   /* ✨ v3.38 — v3.37 가로 해제 revert. 가로 414px 유지 (사용자 요청) */
@@ -158,18 +155,18 @@
   /* 첫 챕터: ↑ 비활성, 마지막 챕터: ↓ 비활성 */
   body.first-chapter #prevChapterBtn { opacity: 0.25; pointer-events: none; cursor: not-allowed; }
   body.last-chapter #nextChapterBtn { opacity: 0.25; pointer-events: none; cursor: not-allowed; animation: none; }
-  /* v3.36 — 로딩 중에도 화살표는 보이도록 (단 비활성). 도어만 숨김 */
-  body.loading #chapterNav { opacity: 0.4; pointer-events: none; }
+  /* ✨ v3.41 — 로딩 중 DOOR/화살표 완전 숨김 + 끝나면 디졸브로 등장 */
+  body.loading #chapterNav { opacity: 0 !important; pointer-events: none; }
   body.loading #doorBtnLeft,
   body.loading #doorBtnRight { opacity: 0 !important; pointer-events: none !important; }
   /* v3.36 — 화살표 항상 보장 (display + visibility 강제) */
-  #chapterNav { display: flex !important; visibility: visible !important; }
+  #chapterNav { display: flex !important; visibility: visible !important; transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important; }
   /* ✨ v3.40 — DOOR 버튼: 콘텐츠 챕터(8~11)에서만 숨김. OVERVIEW에서는 디졸브로 등장 */
   body.fullcontent #doorBtnLeft,
   body.fullcontent #doorBtnRight {
     display: none !important;
   }
-  /* ✨ v3.40 — 디졸브 transition (로딩 끝나면 opacity 0→1 자동 페이드인) */
+  /* ✨ v3.40 — DOOR 디졸브 transition (로딩 끝나면 opacity 0→1 자동 페이드인) */
   #doorBtnLeft, #doorBtnRight {
     transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important;
   }
@@ -278,10 +275,10 @@
     margin-bottom: 6px;
   }
 
-  /* ============ 3D STAGE — v3.40 자막 20dvh / 3D 80dvh (3D 위쪽까지 보임) ============ */
+  /* ============ 3D STAGE — v3.41 풀 viewport (자막은 위에 떠있음) ============ */
   #stage3d {
     position: fixed;
-    top: 18dvh;
+    top: 0;
     bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
@@ -415,13 +412,20 @@
   }
 
   /* ============ SECTIONS (just scroll triggers; content is inside glass card) ============ */
-  /* ✨ v3.38 — sec 100dvh (폰 toolbar 영역 제외) */
+  /* ✨ v3.41 — 모든 sec 같은 자리 absolute. .in 클래스만 보임. fade transition */
   .sec {
-    height: 100dvh;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    position: relative;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    width: 100%; height: 100dvh;
     pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.42s cubic-bezier(0.22,1,0.36,1), visibility 0s linear 0.42s;
+  }
+  .sec.in {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.42s cubic-bezier(0.22,1,0.36,1), visibility 0s linear 0s;
   }
 
   /* ============ TEXT AREA (no box, centered on dark BG, TOP half) ============ */
@@ -1328,6 +1332,8 @@
     curIdx = i;
     const sec = SECS[i];
     if (!sec) return;
+    /* ✨ v3.41 — 모든 sec의 .in 클래스 토글 (fade in/out 트리거) */
+    SECS.forEach((s, k) => s.classList.toggle('in', k === i));
     dots.forEach((d, k) => d.classList.toggle('on', k === i));
     crumbName.textContent = sec.dataset.nm || '';
     crumbIdx.textContent = String(i).padStart(2,'0') + '/11';
@@ -1376,62 +1382,26 @@
     } catch(e) {}
   }
 
-  /* Section in-view observer */
-  /* ✨ v3.22 — mobileFrame 100vh + sec 100vh. */
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('in');
-        const i = Array.from(SECS).indexOf(e.target);
-        if (i >= 0) setActive(i);
-      } else {
-        e.target.classList.remove('in');
-      }
-    });
-  }, { threshold: 0.5, root: frame });
-  SECS.forEach(s => obs.observe(s));
-
-  /* ✨ v3.32 — parallax 완전 제거. 3D iframe sticky라 자막과 자연 동기 */
-  const stage3d = document.getElementById('stage3d');
-  function updateActiveFromScroll() {
-    const st = frame.scrollTop;
-    const sectionHeight = frame.clientHeight || window.innerHeight;
-    const idx = Math.max(0, Math.min(SECS.length - 1, Math.round(st / sectionHeight)));
-    SECS.forEach((s, k) => {
-      if (k === idx) s.classList.add('in');
-      else s.classList.remove('in');
-    });
+  /* ✨ v3.41 — scroll 기반 → toggle 기반. 화살표/dot 클릭으로 직접 setActive */
+  // smoothScrollToSec replaced with goToChapter
+  function goToChapter(idx) {
+    if (idx < 0 || idx >= SECS.length) return;
     setActive(idx);
   }
-  frame.addEventListener('scroll', () => {
-    requestAnimationFrame(updateActiveFromScroll);
-  }, { passive: true });
-  setTimeout(updateActiveFromScroll, 300);
 
-  /* ✨ v3.35 — 화살표만 스크롤. 사용자 wheel/touch 모두 차단 */
-  function smoothScrollToSec(idx) {
-    const sH = frame.clientHeight;
-    frame.scrollTo({ top: idx * sH, behavior: 'smooth' });
-  }
-  // 사용자 wheel + touchmove 차단 (frame 영역만)
-  window.addEventListener('wheel', e => {
-    // iframe 영역(3D) 안에서는 회전을 위해 차단 안 함 (iframe content가 처리)
-    e.preventDefault();
-  }, { passive: false });
-  // touch는 iframe 안 카메라 회전용으로 두고 frame swipe만 차단
-  let _touchYStart = null;
-  window.addEventListener('touchstart', e => { _touchYStart = e.touches[0].clientY; }, { passive: true });
+  // 사용자 swipe / wheel 차단 (스크롤 자체 안 일어남, 안전망)
+  window.addEventListener('wheel', e => { e.preventDefault(); }, { passive: false });
   window.addEventListener('touchmove', e => {
-    // 3D iframe 영역 (viewport 30vh~ 이하)이면 통과 (카메라 회전)
+    // 3D iframe 영역 (viewport 22dvh~ 이하)이면 통과 (카메라 회전)
     const y = e.touches[0].clientY;
-    const threshold = window.innerHeight * 0.30;
+    const threshold = window.innerHeight * 0.22;
     if (y > threshold) return;  // 3D 영역, iframe이 처리
-    e.preventDefault();  // 자막 영역 (위 30vh): 스크롤 차단
+    e.preventDefault();
   }, { passive: false });
 
   /* Dot click */
   dots.forEach((d, i) => {
-    d.addEventListener('click', () => SECS[i] && SECS[i].scrollIntoView({ behavior: 'smooth' }));
+    d.addEventListener('click', () => goToChapter(i));
   });
 
   /* TOC */
@@ -1440,7 +1410,7 @@
   document.querySelectorAll('#toc .it').forEach(it => {
     it.addEventListener('click', () => {
       const i = parseInt(it.dataset.jump);
-      if (SECS[i]) SECS[i].scrollIntoView({ behavior: 'smooth' });
+      if (SECS[i]) goToChapter(i);
       tocEl.classList.remove('show');
     });
   });
@@ -1595,10 +1565,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.40] 자막 18dvh + 폰트 -20% + overflow:hidden + 블랙 디졸브 + DOOR 디졸브 + PREMIUM HDRI +50%');
+  console.log('[v3.41] scroll 완전 제거 + 챕터 fade toggle + 3D 풀 viewport + 로딩 끝나면 UI 디졸브');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.40';
+    m.textContent = 'v3.41';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
@@ -1640,23 +1610,19 @@
       });
     }
 
-    // ✨ v3.34 — 이전/다음 챕터 화살표
+    // ✨ v3.41 — 화살표 클릭 → goToChapter 직접 호출 (scroll 없음)
     const prevBtn = document.getElementById('prevChapterBtn');
     const nextBtn = document.getElementById('nextChapterBtn');
     if (prevBtn) {
       prevBtn.addEventListener('click', () => {
-        const sH = frame.clientHeight;
-        const curIdx = Math.round(frame.scrollTop / sH);
         const newIdx = Math.max(0, curIdx - 1);
-        smoothScrollToSec(newIdx);
+        goToChapter(newIdx);
       });
     }
     if (nextBtn) {
       nextBtn.addEventListener('click', () => {
-        const sH = frame.clientHeight;
-        const curIdx = Math.round(frame.scrollTop / sH);
         const newIdx = Math.min(SECS.length - 1, curIdx + 1);
-        smoothScrollToSec(newIdx);
+        goToChapter(newIdx);
       });
     }
   } catch(e){}
