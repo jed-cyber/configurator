@@ -164,12 +164,14 @@
   body.loading #doorBtnRight { opacity: 0 !important; pointer-events: none !important; }
   /* v3.36 — 화살표 항상 보장 (display + visibility 강제) */
   #chapterNav { display: flex !important; visibility: visible !important; }
-  /* ✨ v3.39 — DOOR 버튼: 인트로(0)와 콘텐츠 챕터(8~11)에서 숨김. 다른 챕터에서만 노출 */
-  body.first-chapter #doorBtnLeft,
-  body.first-chapter #doorBtnRight,
+  /* ✨ v3.40 — DOOR 버튼: 콘텐츠 챕터(8~11)에서만 숨김. OVERVIEW에서는 디졸브로 등장 */
   body.fullcontent #doorBtnLeft,
   body.fullcontent #doorBtnRight {
     display: none !important;
+  }
+  /* ✨ v3.40 — 디졸브 transition (로딩 끝나면 opacity 0→1 자동 페이드인) */
+  #doorBtnLeft, #doorBtnRight {
+    transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important;
   }
 
   /* ✨ v3.29 — DOOR LEFT / DOOR RIGHT (좌우 양쪽 도어 토글) */
@@ -276,10 +278,10 @@
     margin-bottom: 6px;
   }
 
-  /* ============ 3D STAGE — v3.38 dvh 기반. 자막 30dvh / 3D 70dvh ============ */
+  /* ============ 3D STAGE — v3.40 자막 20dvh / 3D 80dvh (3D 위쪽까지 보임) ============ */
   #stage3d {
     position: fixed;
-    top: 30dvh;
+    top: 18dvh;
     bottom: 0;
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
@@ -430,18 +432,18 @@
   .gcard {
     position: absolute;
     top: 0;
-    height: 30dvh;
+    height: 22dvh;  /* v3.40 — 자막 20%대 / 3D 80%대 */
     left: 0;
     right: 0;
     width: 100%;
-    padding: 64px 22px 10px;  /* v3.39 — 헤드라인 상단 잘림 fix (+12px) */
-    -webkit-mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
-    mask-image: linear-gradient(180deg, black 0%, black 88%, transparent 100%);
+    padding: 56px 22px 6px;  /* v3.40 — 폰트 -20%에 맞춰 padding 축소 */
+    -webkit-mask-image: linear-gradient(180deg, black 0%, black 92%, transparent 100%);
+    mask-image: linear-gradient(180deg, black 0%, black 92%, transparent 100%);
     background: transparent;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    overflow-y: auto;
+    overflow: hidden;  /* v3.40 — 텍스트 영역 스크롤 완전 차단 */
     pointer-events: auto;
     text-align: center;
     display: flex; flex-direction: column; justify-content: center;
@@ -452,9 +454,9 @@
 
   /* hero card on first section — uses default .gcard layout */
   .sec.hero .gcard {
-    padding: 76px 22px 14px;  /* v3.39 — hero 헤드라인 잘림 +12px */
+    padding: 68px 22px 10px;  /* v3.40 — hero padding 축소 */
   }
-  /* ✨ v3.39 — 콘텐츠 많은 챕터 (modular 8개 카드, premium 4행, dimensions 4컬럼) 자막 영역 확장 */
+  /* ✨ v3.40 — 콘텐츠 많은 챕터 (modular 8개 카드, premium 4행, dimensions 4컬럼) 자막 영역 - 폰트 -20%로 압축됨 */
   .sec[data-ch="modular"] .gcard,
   .sec[data-ch="premium"] .gcard,
   .sec[data-ch="dimensions"] .gcard,
@@ -462,7 +464,7 @@
   .sec[data-ch="ionizer"] .gcard,
   .sec[data-ch="drying"] .gcard,
   .sec[data-ch="panel"] .gcard {
-    height: 42dvh;
+    height: 30dvh;
   }
 
   /* ============ TYPOGRAPHY (inside glass card) ============ */
@@ -814,6 +816,27 @@
     pointer-events: auto;
   }
 
+  /* ✨ v3.40 — UI/텍스트 전반 -20% 압축 (화면에 다 들어가게) */
+  .gcard .num { font-size: 7.6px !important; margin-bottom: 3px !important; }
+  .gcard .eye { font-size: 7.6px !important; margin-bottom: 8px !important; }
+  .gcard h1 { font-size: 19px !important; margin-bottom: 8px !important; line-height: 1.05 !important; }
+  .gcard .h-kr { font-size: 11px !important; margin-bottom: 6px !important; }
+  .gcard .body { font-size: 9.5px !important; line-height: 1.5 !important; margin-bottom: 8px !important; }
+  .gcard .stats { gap: 1px !important; margin-top: 5px !important; }
+  .gcard .stats .s { padding: 6px 3px !important; }
+  .gcard .stats .s .v { font-size: 10px !important; }
+  .gcard .stats .s .l { font-size: 6px !important; margin-top: 2px !important; }
+  .gcard .mods { gap: 1px !important; margin-top: 5px !important; }
+  .gcard .mods .m { padding: 5px 3px !important; }
+  .gcard .mods .m .c { font-size: 6px !important; }
+  .gcard .mods .m .n { font-size: 8px !important; margin-top: 2px !important; }
+  .gcard .feat-list .fl { padding: 8px 0 !important; font-size: 10px !important; }
+  .gcard .feat-list .fl .k { font-size: 8.5px !important; }
+  .gcard .feat-list .fl .v { font-size: 10px !important; }
+  /* content-only chapters은 풀스크린이라 더 작게 처리 안 함 */
+  .sec.content-only .gcard h1 { font-size: 24px !important; }
+  .sec.content-only .gcard .body { font-size: 11px !important; }
+
   /* Stagger inside */
   .sec .gcard .num,
   /* ✨ v3.35 — 자막 자식 항상 보이게 (안전망). transition만 적용해서 .in 진입 시 부드럽게 */
@@ -870,11 +893,16 @@
   #load .sb {
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 400;
-    letter-spacing: -0.2px; margin-bottom: 28px;
+    letter-spacing: -0.2px; margin-bottom: 20px;
     text-align: center;
   }
-  /* ✨ v3.38 — 로딩창 자막 묶음 무게중심 정확히 센터 */
-  #load { padding-bottom: 60px; }
+  /* ✨ v3.40 — 로딩창 자막 정확한 화면 센터 (footer 영역 빼고) */
+  #load {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    justify-content: center !important;
+  }
+  #load .ft { display: none !important; }
   #load .pb {
     width: 220px; height: 1px; background: rgba(255,255,255,0.1);
     overflow: hidden; position: relative;
@@ -1001,6 +1029,9 @@
 <div id="stage3d">
   <iframe id="hk3d" src="mobile_configurator_final.html?_=v393&v3parent=1" allow="fullscreen"></iframe>
 </div>
+
+<!-- ✨ v3.40 — 챕터 전환 블랙 디졸브 오버레이 -->
+<div id="chTrans" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9998;transition:opacity 0.28s ease-out;"></div>
 
 <!-- ===== MOBILE FRAME (scroll container, sections are scroll triggers + glass cards) ===== -->
 <div id="mobileFrame">
@@ -1306,6 +1337,18 @@
     document.body.classList.toggle('first-chapter', i <= 0);
     document.body.classList.toggle('last-chapter', i >= SECS.length - 1);
     const ch = sec.dataset.ch || 'overview';
+    /* ✨ v3.40 — 챕터 전환 블랙 디졸브 (in:280ms / out:420ms) */
+    try {
+      const ovT = document.getElementById('chTrans');
+      if (ovT) {
+        ovT.style.transition = 'opacity 0.28s ease-out';
+        ovT.style.opacity = '1';
+        setTimeout(() => {
+          ovT.style.transition = 'opacity 0.42s ease-in';
+          ovT.style.opacity = '0';
+        }, 320);
+      }
+    } catch(e) {}
     try {
       const outerWin = iframe.contentWindow;
       if (!outerWin) return;
@@ -1313,6 +1356,23 @@
       const hkWin = hkInner?.contentWindow;
       if (hkWin && hkWin._enterChapter) hkWin._enterChapter(ch);
       else if (hkWin && hkWin.enterChapter) hkWin.enterChapter(ch);
+      /* ✨ v3.40 — PREMIUM STAINLESS 챕터에서만 refl HDRI brightness +50% */
+      try {
+        if (ch === 'premium') {
+          if (hkWin && hkWin._setReflBrightness) hkWin._setReflBrightness(2.775);  // 1.85 * 1.5
+          else if (hkWin && hkWin.envColorState) {
+            hkWin.envColorState.brightness = 2.775;
+            if (hkWin._applyReflBrightness) hkWin._applyReflBrightness();
+          }
+        } else {
+          // 다른 챕터는 기본값 (1.85) 으로 복원
+          if (hkWin && hkWin._setReflBrightness) hkWin._setReflBrightness(1.85);
+          else if (hkWin && hkWin.envColorState) {
+            hkWin.envColorState.brightness = 1.85;
+            if (hkWin._applyReflBrightness) hkWin._applyReflBrightness();
+          }
+        }
+      } catch(e) {}
     } catch(e) {}
   }
 
@@ -1535,10 +1595,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.39] DOOR 위치 78%/콘텐츠챕터 숨김 + 헤드라인 +12px + 콘텐츠 많은 챕터 42dvh');
+  console.log('[v3.40] 자막 18dvh + 폰트 -20% + overflow:hidden + 블랙 디졸브 + DOOR 디졸브 + PREMIUM HDRI +50%');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.39';
+    m.textContent = 'v3.40';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
