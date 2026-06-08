@@ -12,7 +12,7 @@
   *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0;
-    background: #050810;
+    background: #000;  /* v3.44 — 완전 검정 (3D 로딩 전후 단색 영역 자연스럽게) */
     color: #fff;
     font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -61,8 +61,7 @@
     border-radius: 100px;
     padding: 4px;
     z-index: 9999;
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
+    /* v3.44 — backdrop-filter 제거 (모바일 GPU 부하 큼) */
     box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
     pointer-events: auto;
     user-select: none;
@@ -120,8 +119,7 @@
     color: rgba(255,255,255,0.9);
     font-size: 26px;
     cursor: pointer;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    /* v3.44 — backdrop-filter 제거 */
     display: flex; align-items: center; justify-content: center;
     transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
     -webkit-tap-highlight-color: transparent;
@@ -193,8 +191,7 @@
     letter-spacing: 1.5px;
     font-weight: 700;
     cursor: pointer;
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
+    /* v3.44 — backdrop-filter 제거 */
     align-items: center; justify-content: center; gap: 6px;
     transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
     -webkit-tap-highlight-color: transparent;
@@ -317,55 +314,12 @@
   /* ✨ v3.18 — iframe mask-image 20 stops + fade 60%까지 확장으로 초고밀도 부드러운 fade-in */
   /* ✨ v3.31 — iframe pointer-events:auto 항상 (3D 자유 회전).
                 mobileFrame은 pointer-events:none이라 swipe가 iframe까지 통과 */
+  /* ✨ v3.44 — iframe mask 완전 제거 (위쪽 단색 배경 제거 + GPU 부하 감소) */
   #stage3d iframe {
     width: 100%; height: 100%; border: 0; display: block;
     background: transparent;
     pointer-events: auto;
     touch-action: none;
-    -webkit-mask-image: linear-gradient(180deg,
-      transparent 0%,
-      rgba(0,0,0,0.005) 2%,
-      rgba(0,0,0,0.015) 5%,
-      rgba(0,0,0,0.035) 8%,
-      rgba(0,0,0,0.065) 11%,
-      rgba(0,0,0,0.105) 14%,
-      rgba(0,0,0,0.16) 17%,
-      rgba(0,0,0,0.225) 20%,
-      rgba(0,0,0,0.3) 23%,
-      rgba(0,0,0,0.385) 26%,
-      rgba(0,0,0,0.475) 30%,
-      rgba(0,0,0,0.565) 34%,
-      rgba(0,0,0,0.655) 38%,
-      rgba(0,0,0,0.74) 42%,
-      rgba(0,0,0,0.815) 46%,
-      rgba(0,0,0,0.88) 50%,
-      rgba(0,0,0,0.93) 54%,
-      rgba(0,0,0,0.97) 58%,
-      rgba(0,0,0,0.99) 62%,
-      black 66%,
-      black 100%);
-    mask-image: linear-gradient(180deg,
-      transparent 0%,
-      rgba(0,0,0,0.005) 2%,
-      rgba(0,0,0,0.015) 5%,
-      rgba(0,0,0,0.035) 8%,
-      rgba(0,0,0,0.065) 11%,
-      rgba(0,0,0,0.105) 14%,
-      rgba(0,0,0,0.16) 17%,
-      rgba(0,0,0,0.225) 20%,
-      rgba(0,0,0,0.3) 23%,
-      rgba(0,0,0,0.385) 26%,
-      rgba(0,0,0,0.475) 30%,
-      rgba(0,0,0,0.565) 34%,
-      rgba(0,0,0,0.655) 38%,
-      rgba(0,0,0,0.74) 42%,
-      rgba(0,0,0,0.815) 46%,
-      rgba(0,0,0,0.88) 50%,
-      rgba(0,0,0,0.93) 54%,
-      rgba(0,0,0,0.97) 58%,
-      rgba(0,0,0,0.99) 62%,
-      black 66%,
-      black 100%);
   }
 
   /* ============ TOP BAR (over 3D) ============ */
@@ -378,8 +332,7 @@
     display: flex; align-items: center;
     padding: 0 18px;
     background: linear-gradient(180deg, rgba(5,8,16,0.65), rgba(5,8,16,0));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    /* v3.44 — backdrop-filter 제거 */
     pointer-events: none;
   }
   #topBar > * { pointer-events: auto; }
@@ -446,22 +399,21 @@
   .gcard {
     position: absolute;
     top: 0;
-    height: 22dvh;  /* v3.40 — 자막 20%대 / 3D 80%대 */
+    height: 22dvh;
     left: 0;
     right: 0;
     width: 100%;
-    padding: 56px 22px 6px;  /* v3.40 — 폰트 -20%에 맞춰 padding 축소 */
-    -webkit-mask-image: linear-gradient(180deg, black 0%, black 92%, transparent 100%);
-    mask-image: linear-gradient(180deg, black 0%, black 92%, transparent 100%);
+    padding: 56px 22px 6px;
+    /* ✨ v3.44 — mask 단순화 (GPU 부하 감소) */
     background: transparent;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    overflow: hidden;  /* v3.40 — 텍스트 영역 스크롤 완전 차단 */
+    overflow: hidden;
     pointer-events: auto;
     text-align: center;
     display: flex; flex-direction: column; justify-content: center;
-    transition: opacity 0.5s cubic-bezier(0.22,1,0.36,1);
+    transition: opacity 0.4s ease;
   }
   .gcard::-webkit-scrollbar { width: 0; }
   .gcard > * { position: relative; z-index: 1; }
@@ -946,7 +898,7 @@
     left: 50%; transform: translateX(-50%);
     width: 100vw; max-width: 414px;
     background: rgba(10,14,23,0.98);
-    backdrop-filter: blur(20px);
+    /* v3.44 — backdrop-filter 제거 */
     color: #fff;
     z-index: 80;
     padding: 70px 24px 36px;
@@ -1041,7 +993,7 @@
 
 <!-- ✨ v3.36 — 3D STAGE fixed (mobileFrame 밖). 모든 챕터에서 viewport bottom 70vh에 항상 보임 -->
 <div id="stage3d">
-  <iframe id="hk3d" src="mobile_configurator_final.html?_=v393&v3parent=1" allow="fullscreen"></iframe>
+  <iframe id="hk3d" src="mobile_configurator_final.html?_=v394&v3parent=1&mobile=1&lite=1" allow="fullscreen"></iframe>
 </div>
 
 <!-- ✨ v3.40 — 챕터 전환 블랙 디졸브 오버레이 -->
@@ -1575,10 +1527,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.43] 인트로(OVERVIEW)에서 DOOR 버튼 숨김 복원');
+  console.log('[v3.44] iframe mask 제거 (위쪽 단색 BG 제거) + backdrop-filter 5곳 제거 + .gcard mask 제거 + body#000');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.43';
+    m.textContent = 'v3.44';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
