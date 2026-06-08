@@ -155,20 +155,30 @@
   /* 첫 챕터: ↑ 비활성, 마지막 챕터: ↓ 비활성 */
   body.first-chapter #prevChapterBtn { opacity: 0.25; pointer-events: none; cursor: not-allowed; }
   body.last-chapter #nextChapterBtn { opacity: 0.25; pointer-events: none; cursor: not-allowed; animation: none; }
-  /* ✨ v3.41 — 로딩 중 DOOR/화살표 완전 숨김 + 끝나면 디졸브로 등장 */
-  body.loading #chapterNav { opacity: 0 !important; pointer-events: none; }
+  /* ✨ v3.42 — default opacity:1 + transition. 로딩 시 0 강제 */
+  #chapterNav {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1;
+    transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important;
+  }
+  #doorBtnLeft, #doorBtnRight {
+    opacity: 1;
+    transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important;
+  }
+  /* ✨ v3.42 — 로딩 시 UI 버튼 완전 숨김 (inline opacity 제거 후 깔끔히 적용됨) */
+  body.loading #chapterNav,
   body.loading #doorBtnLeft,
-  body.loading #doorBtnRight { opacity: 0 !important; pointer-events: none !important; }
-  /* v3.36 — 화살표 항상 보장 (display + visibility 강제) */
-  #chapterNav { display: flex !important; visibility: visible !important; transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important; }
-  /* ✨ v3.40 — DOOR 버튼: 콘텐츠 챕터(8~11)에서만 숨김. OVERVIEW에서는 디졸브로 등장 */
+  body.loading #doorBtnRight {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  /* ✨ v3.43 — DOOR 버튼: 인트로(OVERVIEW) + 콘텐츠 챕터(8~11)에서 숨김 */
+  body.first-chapter #doorBtnLeft,
+  body.first-chapter #doorBtnRight,
   body.fullcontent #doorBtnLeft,
   body.fullcontent #doorBtnRight {
     display: none !important;
-  }
-  /* ✨ v3.40 — DOOR 디졸브 transition (로딩 끝나면 opacity 0→1 자동 페이드인) */
-  #doorBtnLeft, #doorBtnRight {
-    transition: opacity 1.4s cubic-bezier(0.22,1,0.36,1) !important;
   }
 
   /* ✨ v3.29 — DOOR LEFT / DOOR RIGHT (좌우 양쪽 도어 토글) */
@@ -1010,16 +1020,16 @@
 <!-- v3.32 — stage3d는 mobileFrame 안 sticky로 이동 (아래 참고) -->
 
 <!-- ✨ v3.31 — DOOR LEFT (화면 중간 좌측) / 화살표 (하단 중앙) / DOOR RIGHT (화면 중간 우측) -->
-<button type="button" id="doorBtnLeft" aria-label="왼쪽 도어 토글" style="position:fixed !important; top:78% !important; left:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+<button type="button" id="doorBtnLeft" aria-label="왼쪽 도어 토글" style="position:fixed !important; top:78% !important; left:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; pointer-events:auto !important;">
   <span class="ico">◀</span><span class="lbl">DOOR</span>
 </button>
 
-<button type="button" id="doorBtnRight" aria-label="오른쪽 도어 토글" style="position:fixed !important; top:78% !important; right:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+<button type="button" id="doorBtnRight" aria-label="오른쪽 도어 토글" style="position:fixed !important; top:78% !important; right:calc(50% - 207px + 14px) !important; transform:translateY(-50%) !important; z-index:99999 !important; display:flex !important; visibility:visible !important; pointer-events:auto !important;">
   <span class="lbl">DOOR</span><span class="ico">▶</span>
 </button>
 
 <!-- ✨ v3.34 — 위/아래 화살표 두 개 (하단 중앙) -->
-<div id="chapterNav" style="position:fixed !important; bottom:calc(env(safe-area-inset-bottom, 0px) + 24px) !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; gap:14px !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important;">
+<div id="chapterNav" style="position:fixed !important; bottom:calc(env(safe-area-inset-bottom, 0px) + 24px) !important; left:50% !important; transform:translateX(-50%) !important; z-index:99999 !important; display:flex !important; gap:14px !important; visibility:visible !important; pointer-events:auto !important;">
   <button type="button" id="prevChapterBtn" aria-label="이전 챕터">
     <span class="arrow">↑</span>
   </button>
@@ -1565,10 +1575,10 @@
   // Force initial in-view (in case S0 doesn't trigger observer immediately)
   setTimeout(() => SECS[0] && SECS[0].classList.add('in'), 200);
 
-  console.log('[v3.41] scroll 완전 제거 + 챕터 fade toggle + 3D 풀 viewport + 로딩 끝나면 UI 디졸브');
+  console.log('[v3.43] 인트로(OVERVIEW)에서 DOOR 버튼 숨김 복원');
   try {
     const m = document.createElement('div');
-    m.textContent = 'v3.41';
+    m.textContent = 'v3.43';
     m.style.cssText = 'position:fixed;top:6px;right:8px;z-index:9999;font:600 9px Inter,sans-serif;letter-spacing:1px;color:rgba(255,255,255,0.45);pointer-events:none;';
     document.body.appendChild(m);
   } catch(e){}
@@ -1597,16 +1607,17 @@
     const doorR = document.getElementById('doorBtnRight');
     if (doorL) {
       doorL.addEventListener('click', () => {
-        const ok = callDoorHK('L');
+        /* ✨ v3.42 — DOOR L/R 인자 스왑 (화면 왼쪽 버튼 → 캐비닛 시점 R 도어) */
+        const ok = callDoorHK('R');
         doorL.classList.toggle('open');
-        console.log('[v3.29] door L toggle, ok:', ok);
+        console.log('[v3.42] door L btn → R, ok:', ok);
       });
     }
     if (doorR) {
       doorR.addEventListener('click', () => {
-        const ok = callDoorHK('R');
+        const ok = callDoorHK('L');
         doorR.classList.toggle('open');
-        console.log('[v3.29] door R toggle, ok:', ok);
+        console.log('[v3.42] door R btn → L, ok:', ok);
       });
     }
 
